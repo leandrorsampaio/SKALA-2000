@@ -14,12 +14,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var director = DeskDirector(sound: sound)
     private var desk: DeskWindowController?
     private var bench: BenchLog?
+    private lazy var settings = AppSettings(host: host, sound: sound)
+    private lazy var settingsWindow = SettingsWindowController(settings: settings)
     private lazy var textLog = TextLogWindowController { [weak self] in
         self?.host.console?.log.readText(lastCharacters: 200_000) ?? ""
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DeskFonts.register()
+        NSApp.mainMenu = MainMenu.build(
+            MainMenu.Actions(
+                showDesk: { [weak self] in self?.desk?.show() },
+                showSettings: { [weak self] in self?.settingsWindow.show() },
+                showTextLog: { [weak self] in self?.textLog.show() },
+                openSafetyLog: { [weak self] in self?.settings.openSafetyLog() },
+                openDataFolder: { [weak self] in self?.settings.openDataFolder() }))
+        // Before the console opens: the model reads its memory when it starts.
+        if host.bench == nil { MemoryImport.offerIfDue() }
         host.open()
         bench = BenchLog(folder: ConsoleFolder.url)
         host.listenForHooks()
@@ -50,7 +61,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         self.desk = desk
+        settings.applyToDesk = { [weak self] in
+            guard let self else { return }
+            self.desk?.desk?.lampCodes = self.settings.lampCodes
+        }
         desk.show()
+        settings.applyToDesk()
+        if ProcessInfo.processInfo.environment["SKALA_SHOW_SETTINGS"] == "1" {
+            settingsWindow.show()
+        }
     }
 
     /// The relays, the buzzer and the window follow the model, not the view: a hidden
