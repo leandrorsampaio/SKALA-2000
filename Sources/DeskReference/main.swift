@@ -296,6 +296,20 @@ MainActor.assumeIsolated {
                 DeskPrinter.image(model.snapshot, style: ArtStyle(night: true), scale: 1)!,
                 out.appendingPathComponent("mains-off-night.png"))
             print("wrote states")
+        case "icon":
+            // The app icon, every size the .icns needs, into Resources/AppIcon.iconset.
+            let folder = Reference.root.appendingPathComponent("build/AppIcon.iconset")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            for (points, factor) in [
+                (16, 1), (16, 2), (32, 1), (32, 2), (128, 1), (128, 2), (256, 1), (256, 2),
+                (512, 1), (512, 2),
+            ] {
+                let name =
+                    factor == 1 ? "icon_\(points)x\(points).png" : "icon_\(points)x\(points)@2x.png"
+                try Compare.write(
+                    AppIcon.image(pixels: points * factor)!, folder.appendingPathComponent(name))
+            }
+            print("wrote \(folder.path)")
         case "timing":
             for scale in [1.024, 1.28, 1.6, 2.048] as [CGFloat] {
                 let started = Date()

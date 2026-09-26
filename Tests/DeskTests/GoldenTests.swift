@@ -15,7 +15,10 @@ import Testing
 /// The tolerance is a mean difference in 255 levels: sub-pixel antialiasing and the JPEG
 /// cost about 3 over the whole desk; a painter that goes wrong costs far more in its own
 /// instruments, and the per-instrument check catches it.
-@Suite(.enabled(if: MTLCreateSystemDefaultDevice() != nil))
+@Suite(
+    .enabled(
+        if: MTLCreateSystemDefaultDevice() != nil
+            && ProcessInfo.processInfo.environment["CI"] != "true"))
 struct GoldenTests {
 
     static let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent()

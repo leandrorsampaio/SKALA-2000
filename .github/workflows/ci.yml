@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version
+      - name: Build
+        run: swift build -c release
+      # The golden tests compare pixels, and a CI machine's font rasterising may differ:
+      # they run on the owner's Mac and are skipped here (CI=true).
+      - name: Test
+        run: swift test
+      - name: Assemble the app
+        run: scripts/build-app.sh
+
+  format:
+    name: Format
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint
+        run: swift format lint --recursive --strict Sources Tests

@@ -1,5 +1,6 @@
 import ConsoleKit
 import DeskArt
+import FakeSources
 import QuartzCore
 import Testing
 
@@ -222,5 +223,48 @@ struct DeskLayersTests {
         #expect(layers.needles[PK4.toolShareMeter]?.animation(forKey: "swing") == nil)
         #expect(layers.guards[PK4.f8]?.flap.animation(forKey: "swing") == nil)
         #expect(layers.knob.animation(forKey: "detent") == nil)
+    }
+}
+
+/// A whole scripted day through the real model, every snapshot applied with animation:
+/// nothing may pile up.
+@MainActor
+struct LongRunTests {
+
+    @Test func aWholeDayLeavesTheLayerTreeAsItFoundIt() {
+        let layers = DeskLayers()
+        layers.install(DeskLayersTests.art)
+        let clock = ManualClock()
+        let model = ConsoleModel(clock: clock, store: MemoryConsoleStore(), log: MemoryConsoleLog())
+        layers.apply(model.snapshot, animated: false)
+
+        func count(_ layer: CALayer) -> Int { 1 + (layer.sublayers ?? []).map(count).reduce(0, +) }
+        func animations(_ layer: CALayer) -> Int {
+            (layer.animationKeys()?.count ?? 0)
+                + (layer.sublayers ?? []).map(animations).reduce(0, +)
+        }
+        let layersBefore = count(layers.desk)
+
+        var day = FakeDay(start: clock.now)
+        var applied = 0
+        var peak = 0
+        var last = model.snapshot
+        while !day.isOver {
+            let readings = day.step()
+            clock.now = day.now
+            model.ingest(readings)
+            model.advance()
+            if model.snapshot != last {
+                last = model.snapshot
+                layers.apply(last, animated: true)
+                applied += 1
+                peak = max(peak, animations(layers.desk))
+            }
+        }
+        #expect(applied > 500)
+        #expect(count(layers.desk) == layersBefore)
+        // Every animation replaces the one before it under the same key: however long the
+        // day, there is at most one of each kind per layer.
+        #expect(peak < 400, "at most \(peak) animations were attached at once")
     }
 }

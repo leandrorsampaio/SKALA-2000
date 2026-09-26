@@ -85,10 +85,17 @@ public final class DeskView: NSView {
 
     /// Main-thread time per snapshot applied, for the benches.
     public nonisolated(unsafe) static var applySeconds: [(at: Double, seconds: Double)] = []
+    /// Whether the timings above are kept: only for the benches, or they would grow for as
+    /// long as the app runs.
+    public nonisolated(unsafe) static var recordsTimings = false
 
     public func apply(_ snapshot: ConsoleSnapshot) {
         let started = CACurrentMediaTime()
-        defer { Self.applySeconds.append((started, CACurrentMediaTime() - started)) }
+        defer {
+            if Self.recordsTimings {
+                Self.applySeconds.append((started, CACurrentMediaTime() - started))
+            }
+        }
         let state = Self.signposts.beginInterval("apply snapshot")
         self.snapshot = snapshot
         if snapshot.finish != finish { finish = snapshot.finish }
@@ -118,7 +125,9 @@ public final class DeskView: NSView {
 
     public override func setFrameSize(_ newSize: NSSize) {
         let started = CACurrentMediaTime()
-        defer { Self.resizeSeconds.append(CACurrentMediaTime() - started) }
+        defer {
+            if Self.recordsTimings { Self.resizeSeconds.append(CACurrentMediaTime() - started) }
+        }
         super.setFrameSize(newSize)
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -205,7 +214,11 @@ public final class DeskView: NSView {
             DispatchQueue.main.async { [weak self] in
                 guard let self, ticket == self.generation else { return }
                 let installStarted = CACurrentMediaTime()
-                defer { Self.installSeconds.append(CACurrentMediaTime() - installStarted) }
+                defer {
+                    if Self.recordsTimings {
+                        Self.installSeconds.append(CACurrentMediaTime() - installStarted)
+                    }
+                }
                 CATransaction.begin()
                 CATransaction.setDisableActions(true)
                 if styleSwap {

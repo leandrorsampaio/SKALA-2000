@@ -1,7 +1,9 @@
 # Performance
 
-Every number here was measured on the owner's Mac: an Apple M4 Pro, macOS 26.5, driving a
-Samsung 5K display ("looks like" 2560 × 1440, **60 Hz**) with the lid closed. CPU is the
+Every number here was measured on the owner's Mac, an Apple M4 Pro with macOS 26.5: first
+driving a Samsung 5K display ("looks like" 2560 × 1440, **60 Hz**) with the lid closed,
+and at the end on the MacBook's own 120 Hz display, after the 5K was unplugged. Each
+number says which where it matters. CPU is the
 app process as a percentage of one core, averaged over 60 s after 10 s of warm-up, from
 `ps -o time=` deltas, the way the reference was measured (`scripts/measure-cpu.sh`,
 `scripts/bench.sh`). "With children" adds the processes the app starts and waits for,
@@ -11,15 +13,15 @@ which is where the Claude Code feed spends its time (`claude agents --json`).
 
 | Scenario | Target | SKALA-2000 | Notes |
 | --- | --- | --- | --- |
-| Visible, idle (MAINS on, no sessions, no alarms) | ≤ 0.3% | **0.02%** | `bench.sh static` |
-| Four lamps flashing, buzzer silenced | ≤ 0.5% | **0.00%** | `bench.sh flash`; the render server animates. See WindowServer below |
-| Busy telemetry (the scripted day) | ≤ 2% | **0.77%** | `bench.sh demo` |
+| Visible, idle (MAINS on, no sessions, no alarms) | ≤ 0.3% | **0.02%** (final build: 0.03%) | `bench.sh static` |
+| Four lamps flashing, buzzer silenced | ≤ 0.5% | **0.00%** (final build: 0.02%) | `bench.sh flash`; the render server animates. See WindowServer below |
+| Busy telemetry (the scripted day) | ≤ 2% | **0.77%** (final build: 0.70%; 0.95% over a ten-minute soak) | `bench.sh demo` |
 | Real Claude Code feed, this session busy | — | **0.10%** (0.53% with children) | `bench.sh real` |
 | Hidden (minimised), real feed | ≤ 0.3% | **0.10%** (0.54% with children) | the feed's `claude agents` runs are the rest; the reference measured 0.52% in total |
 | Hidden, no feed | ≤ 0.3% | **0.02%** | |
 | Live resize, 1280 wide to the widest the screen allows | no dropped frames; ≤ 2 ms main thread per frame | **0 of 272 frames missed**; DeskView **0.04 ms** per frame (max 0.12) | the whole `NSWindow.setFrame` step is 2.2 ms, of which an *empty* AppKit window takes 1.44 ms (p95 4.4 ms) |
 | Click → cap visibly down | next frame | cap transform set inside `mouseDown`, committed with that turn of the run loop | see "Input" |
-| Launch → interactive desk | ≤ 0.5 s warm, ≤ 1.5 s cold | **0.40–0.42 s warm**, **1.17 s** first launch after a build | from `exec` to the art on screen; the art comes from the disk cache in 12 ms |
+| Launch → interactive desk | ≤ 0.5 s warm, ≤ 1.5 s cold | **0.37–0.40 s warm**, **1.17 s** first launch after a build | from `exec` to the art on screen; the art comes from the disk cache in 12 ms |
 | Memory, 5K full screen | ≤ 250 MB | **161 MB** | was 346 MB before the art moved into IOSurfaces |
 
 The reference app as it runs on this Mac right now (Mac Command Center, console window
@@ -95,7 +97,36 @@ and night, under LAMP TEST and with MAINS off: a mean difference of about 3.4 le
 255 over the whole desk, mostly antialiasing, with every lamp, cap, tube, drum, meter and
 guard checked on its own.
 
-### Open items
+### Switching between day and night
 
-- Instruments' Animation Hitches shows single-frame hitches during the power-up sequence
-  at launch, while every sprite is shown for the first time.
+When the Mac switches between Light and Dark, the art for the other theme is read from
+the disk cache or drawn (145 ms at 5K, off the main thread) and swapped in with a 0.25 s
+crossfade. Measured by flipping the appearance four times: installs took 5.7–9.4 ms of
+main thread each, and the enamel read (84, 93, 85) by night and (162, 171, 153) by day.
+
+### Hitches on a 120 Hz display
+
+Measured later on the MacBook's own ProMotion display (120 Hz, an 8.3 ms frame), with the
+scripted day running: Instruments' Animation Hitches flags about one commit in ten as a
+single frame late (8.3 ms), none longer, apart from the first frame at launch. Time
+Profiler puts the main thread at about 1% of a core after launch, most of it Core
+Animation's own commit and the model's timers; nothing the view does per snapshot is
+costly (0.56 ms mean, 4.6 ms at the 95th percentile). The late frames are commits landing
+just after a vsync, not work, and no stutter is visible. At 60 Hz on the 5K display the
+resize bench missed no frames.
+
+### Long runs
+
+A whole scripted day, 08:55 to 18:00, run through the real model with every snapshot
+applied to the layer tree and animated (`LongRunTests`): the layer count is unchanged at
+the end, and no more than a few hundred animations are ever attached at once, since each
+replaces the last under its key.
+
+The app itself, playing the scripted day for ten minutes with its window visible:
+
+| Minute | 0 | 1 | 2 | 4 | 6 | 8 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Footprint | 56 MB | 55 MB | 55 MB | 55 MB | 55 MB | 55 MB | 55 MB |
+
+No growth, and 5.7 s of CPU in 600 s (0.95% of a core). The timings the benches collect
+are kept only under `SKALA_BENCH`; before that fix they grew by one entry per snapshot.

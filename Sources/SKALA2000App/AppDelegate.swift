@@ -3,6 +3,7 @@ import ConsoleKit
 import ConsoleRuntime
 import DeskArt
 import DeskSound
+import DeskView
 import Observation
 import os
 
@@ -33,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if host.bench == nil { MemoryImport.offerIfDue() }
         host.open()
         bench = BenchLog(folder: ConsoleFolder.url)
+        DeskView.recordsTimings = bench != nil
         host.listenForHooks()
         director.openLog = { [weak self] in self?.textLog.show() }
         observeSleep()

@@ -86,6 +86,21 @@ final class DeskWindowController: NSObject, NSWindowDelegate {
         if environment["SKALA_BENCH_FULLSCREEN"] == "1" {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { window.toggleFullScreen(nil) }
         }
+        if environment["SKALA_BENCH_APPEARANCE"] == "1" {
+            // Day, night, day, night, as the Mac switching Light and Dark would.
+            for step in 1...4 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(step) * 2) {
+                    NSApp.appearance = NSAppearance(named: step % 2 == 1 ? .darkAqua : .aqua)
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [host] in
+                let installs = DeskView.installSeconds.map { String(format: "%.1f", $0 * 1000) }
+                let line = "appearance switches: installs \(installs.joined(separator: ", ")) ms\n"
+                try? line.write(
+                    to: host.folder.appendingPathComponent("appearance.log"), atomically: true,
+                    encoding: .utf8)
+            }
+        }
         if environment["SKALA_BENCH_HIDE"] == "1" {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { window.miniaturize(nil) }
         }
