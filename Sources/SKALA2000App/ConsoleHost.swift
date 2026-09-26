@@ -3,6 +3,7 @@ import ConsoleKit
 import ConsoleRuntime
 import FakeSources
 import Foundation
+import HookServer
 import KeepAwake
 import Observation
 import TelemetryKit
@@ -41,6 +42,9 @@ final class ConsoleHost {
     @ObservationIgnored var onConsoleChange: () -> Void = {}
 
     @ObservationIgnored let keepAwake = KeepAwake()
+    @ObservationIgnored private var hooks: HookServer?
+    /// Why the hook receiver is not listening, if it isn't: for Settings.
+    private(set) var hookProblem: String?
     @ObservationIgnored private var consolePowered = false
     @ObservationIgnored private var demoFeed: DemoFeed?
     @ObservationIgnored private var claude: ClaudeCodeFeed?
@@ -106,8 +110,38 @@ final class ConsoleHost {
 
     func quit() {
         close()
+        hooks?.stop()
         keepAwake.releaseAll()
     }
+
+    // MARK: - Hooks
+
+    /// The socket Claude Code's hooks reach the app on.
+    static var hookSocket: URL { ConsoleFolder.url.appendingPathComponent("hooks.sock") }
+
+    /// Starts listening for hook events. Parsing happens off the main thread, a PostToolUse
+    /// body being up to megabytes; only the readings come to the console.
+    func listenForHooks() {
+        let server = HookServer(socketURL: Self.hookSocket) { [weak self] body in
+            let readings = ClaudeHooks.readings(from: body, at: Date())
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeIsolated { self?.hookEvents(readings) }
+            }
+        }
+        server.refused = { reason in
+            Log.hooks("refused \(reason)")
+        }
+        do {
+            try server.start()
+            hooks = server
+            hookProblem = nil
+        } catch {
+            hookProblem = "\(error)"
+            Log.hooks("hook receiver did not start: \(error)")
+        }
+    }
+
+    var isListeningForHooks: Bool { hooks?.isRunning ?? false }
 
     // MARK: - Feeds
 

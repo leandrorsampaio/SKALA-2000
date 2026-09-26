@@ -14,11 +14,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var director = DeskDirector(sound: sound)
     private var desk: DeskWindowController?
     private var bench: BenchLog?
+    private lazy var textLog = TextLogWindowController { [weak self] in
+        self?.host.console?.log.readText(lastCharacters: 200_000) ?? ""
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DeskFonts.register()
         host.open()
         bench = BenchLog(folder: ConsoleFolder.url)
+        host.listenForHooks()
+        director.openLog = { [weak self] in self?.textLog.show() }
+        observeSleep()
         host.onConsoleChange = { [weak self] in self?.consoleChanged() }
         director.announce = { words in
             // An alarm is announced as it is raised, so a VoiceOver user hears it.
@@ -72,6 +78,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         follow()
     }
 
+    /// The owner runs the MacBook closed on AC with a 5K display; losing the display sends
+    /// it to sleep. On wake, the Keep Awake lenses are read afresh once, and the view
+    /// re-renders for whatever screen it is on now.
+    private func observeSleep() {
+        let center = NSWorkspace.shared.notificationCenter
+        center.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) {
+            [weak self] _ in
+            MainActor.assumeIsolated { self?.host.didWake() }
+        }
+    }
+
     /// Closing the window keeps the console running; the Dock icon brings it back.
     func applicationShouldHandleReopen(
         _ sender: NSApplication, hasVisibleWindows flag: Bool
@@ -92,8 +109,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 enum Log {
     static let subsystem = "com.leandrorossisampaio.skala2000"
     private static let perf = OSLogShim(category: "performance")
+    private static let hook = OSLogShim(category: "hooks")
 
     static func performance(_ message: String) { perf.log(message) }
+    static func hooks(_ message: String) { hook.log(message) }
 }
 
 struct OSLogShim {

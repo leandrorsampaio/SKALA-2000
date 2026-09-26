@@ -1,6 +1,7 @@
 #if !APP_STORE
 
 import Foundation
+import HookServer
 import Testing
 
 @testable import ConsoleKit
@@ -89,6 +90,72 @@ struct LiveProbeTests {
                 + "CPU \(String(format: "%.2f", cpu)) s in \(String(format: "%.1f", elapsed)) s "
                 + "= \(String(format: "%.1f", 100 * cpu / elapsed))% of a core")
         #expect(batches >= 9)
+    }
+
+    /// One real Claude Code run, its hooks installed from the real snippet but pointed at a
+    /// hook receiver on a socket of the test's own, and everything that arrives fed to the
+    /// console. Costs one short Haiku call.
+    @Test func realHooksReachTheConsole() async throws {
+        let socket = URL(fileURLWithPath: "/tmp/skala-live-\(getpid()).sock")
+        let bench = Bench(start: Date())
+        final class Bodies: @unchecked Sendable {
+            let lock = NSLock()
+            var list: [Data] = []
+        }
+        let bodies = Bodies()
+        let server = HookServer(socketURL: socket) { body in
+            bodies.lock.withLock { bodies.list.append(body) }
+        }
+        try server.start()
+        defer { server.stop() }
+
+        // The snippet exactly as the installer writes it, on this test's port.
+        let scripts = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
+                "scripts")
+        let snippet = try String(
+            contentsOf: scripts.appendingPathComponent("claude-hooks.json"), encoding: .utf8
+        )
+        .replacingOccurrences(
+            of: "$HOME/Library/Application Support/SKALA-2000/hooks.sock", with: socket.path)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "skala-hooks-\(getpid())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let settings = folder.appendingPathComponent("settings.json")
+        try snippet.write(to: settings, atomically: true, encoding: .utf8)
+
+        let claude = try #require(ClaudeExecutable.locate())
+        let process = Process()
+        process.executableURL = claude
+        process.currentDirectoryURL = folder
+        process.arguments = [
+            "-p", "--model", "haiku", "--settings", settings.path, "--allowedTools", "Bash(echo:*)",
+            "--", "Use the Bash tool to run exactly: echo pk4-live. Then reply OK.",
+        ]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        while process.isRunning { try await Task.sleep(for: .milliseconds(200)) }
+        // The hooks are async: give the last curls a moment to land.
+        try await Task.sleep(for: .seconds(2))
+        var seen: [Field] = []
+        for body in bodies.lock.withLock({ bodies.list }) {
+            let readings = ClaudeHooks.readings(from: body, at: bench.now)
+            seen += readings.map(\.field)
+            bench.feed(readings)
+        }
+
+        print("hook readings in order:", seen.map(\.rawValue))
+        let taken = bench.log.events(.slotTaken)
+        let released = bench.log.events(.slotReleased)
+        print("slot taken:", taken.first?.slot ?? 0, "released:", released.first?.detail ?? "-")
+        #expect(seen.first == .sessionStarted)
+        #expect(seen.contains(.promptSubmitted))
+        #expect(seen.contains(.toolUsed))
+        #expect(seen.contains(.turnDone))
+        #expect(seen.last == .sessionEnded)
+        #expect(taken.count == 1)
+        #expect(released.first?.detail == "session end")
     }
 
     /// This process and every child it has waited for.
