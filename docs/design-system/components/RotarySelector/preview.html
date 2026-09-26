@@ -1,0 +1,20 @@
+<!-- @dsCard group="Controls" height=372 subtitle="Click the knob: it snaps to the next session" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>RotarySelector — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click the right half of the knob to go up a position, the left half to go back, or click a number. It stops at 1 and at 4.');
+  var big = P.NixieReadout({ label: 'Selected', value: '1', xl: true });
+  stage.appendChild(P.RotarySelector({ positions: 4, value: 1, onChange: function (p) { P.nixie(big, String(p)); } }));
+  stage.appendChild(big);
+
+})();
+</script>
+</body>
+</html>

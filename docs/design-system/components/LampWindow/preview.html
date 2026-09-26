@@ -1,0 +1,28 @@
+<!-- @dsCard group="Indicators" height=416 width=1000 subtitle="Click a window: off → on → flash → off" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>LampWindow — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click any window to cycle off → on → flash. Rows: with designator · text only · trial: all lettering light · trial: all lettering dark.');
+  var defs = [['Run','white','on'],['Busy','green','on'],['Wait','red','flash'],['Block','red','off'],['Cmpct','amber','off'],['Auto','amber','on'],['Done','green','off']];
+  function row(title, opts) {
+    var r = P.h('div', { 'class': 'pk-row' }); r.style.cssText = 'width:100%;gap:10px;flex-wrap:wrap';
+    var cap = P.plate(title); cap.style.width = '150px'; r.appendChild(cap);
+    defs.forEach(function (d) {
+      var w = P.LampWindow({ label: d[0], color: d[1], state: d[2], code: opts.code, ink: opts.ink }); w.style.cursor = 'pointer';
+      w.addEventListener('click', function () { var st = w.getAttribute('data-state'); P.lamp(w, st === 'off' ? 'on' : st === 'on' ? 'flash' : 'off'); P.sound.clunk(); });
+      r.appendChild(w);
+    });
+    stage.appendChild(r);
+  }
+  row('With designator', {}); row('Text only', { code: false }); row('Trial · light ink', { code: false, ink: 'light' }); row('Trial · dark ink', { code: false, ink: 'dark' });
+})();
+</script>
+</body>
+</html>

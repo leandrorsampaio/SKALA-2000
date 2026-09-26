@@ -1,0 +1,24 @@
+{
+ "v": 3,
+ "assetGroups": {},
+ "blobs": {},
+ "createdOnFiles": {
+  "at": "2026-09-21T09:00:00Z",
+  "v": 1
+ },
+ "docs": {
+  "sections": []
+ },
+ "groups": [],
+ "lastChange": {
+  "by": "Leandro Rossi Sampaio",
+  "at": "2026-09-21T21:00:00Z",
+  "via": "Claude chat",
+  "note": "GuardedButton: removed the hold progress bar; the hold is a silent time-delay relay with a clunk at 2 s."
+ },
+ "layout": "files",
+ "libraries": [],
+ "namespace": "PK4",
+ "sections": {},
+ "title": "PK-4 Console"
+}

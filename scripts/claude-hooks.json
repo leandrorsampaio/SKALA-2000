@@ -1,0 +1,149 @@
+{
+  "_comment": "Claude Code hooks that report into SKALA-2000. Each pipes the hook's own JSON input over the app's Unix domain socket in its data folder: no port, unreachable from a browser, and no clash with Mac Command Center's hooks on 127.0.0.1:8787. The marker 'SKALA-2000/hooks.sock' tells these apart from anything else in ~/.claude/settings.json. 'async' means Claude Code never waits; '-m 2' and '|| true' mean a closed app costs a session nothing. Install from SKALA-2000 Settings, or with scripts/install-claude-hooks.sh.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sS -m 2 --unix-socket \"$HOME/Library/Application Support/SKALA-2000/hooks.sock\" -H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- 'http://localhost/v1/events/claude' >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

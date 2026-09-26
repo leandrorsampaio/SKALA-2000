@@ -1,0 +1,20 @@
+<!-- @dsCard group="Controls" height=335 subtitle="Mains toggle with its POWER ON window" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ToggleSwitch — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Flip the mains switch.');
+  var w = P.LampWindow({ label: 'Power on', color: 'green', state: 'on' });
+  stage.appendChild(P.ToggleSwitch({ label: 'Mains 220 V 50 Hz', on: true, onChange: function (on) { setTimeout(function () { P.lamp(w, on ? 'on' : 'off'); }, on ? 250 : 0); } }));
+  stage.appendChild(w);
+
+})();
+</script>
+</body>
+</html>

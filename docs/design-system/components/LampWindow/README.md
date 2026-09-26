@@ -1,0 +1,23 @@
+A rectangular back-lit glass window with painted lettering: the basic status indicator of the console. It is an indicator, never a control; in the product it does not respond to clicks.
+
+**Construction, back to front.** (1) Spill, only when lit: see *Light, not glow* below. (2) Bezel: 4px dark metal frame, bevelled (top `#4d4d48`, left `#3b3b37`, right `#1c1c1a`, bottom `#0c0c0b`), a bright line under it and a `plate-raise` shadow. (3) Glass: the `-off` colour. (4) Lit layer with the two hot spots; only its opacity animates. (5) Lettering. (6) Fixed glass layer on top of everything: the `recess` shadow the bezel throws on the glass, a 1px dark inner line, and one diagonal sheen (30% white at the top fading to 8% by 44% of the height, a hard edge, then a slight darkening toward the bottom). Layer 6 is identical in every state; it is what makes the window glass instead of a coloured rectangle.
+
+**Light, not glow.** A lit window is a 24 V bulb behind coloured glass in a dark metal frame, not a neon sign. There is **no coloured aura** hugging the bezel. The brightness lives inside the glass: the two hot spots, and a slight top-to-bottom lift across the pane. Outside the glass only two things happen. First, the bezel's inner bevel catches the lamp: a 1.5px line in the `-hot` colour at 42%, right at the glass edge. Second, the lamp spills onto the paint around it (`glow-*`): wide (22px blur), faint (20% in a lit room), with no visible edge, so it reads as the panel being lit, not as a halo. With the room lights dimmed (night theme) the same spill is stronger (42%, 26px), because that is when you would actually see it. If the spill can be seen as a shape, it is too strong.
+
+**Variants.** `code` on (default: the HL designator sits small under the lettering) or off (**text only**, for a cleaner console; designators then live only in the documentation). `ink`: default is per-colour ink (below); `light` and `dark` force all lettering one way and exist only as trials in the preview, to show why neither works everywhere (light ink vanishes on lit amber and white; dark ink is weak on dark red and green).
+
+**Colours carry one meaning each.** `red`: the operator must act (WAITING, BLOCKED, BYPASS, PRICE UNKNOWN, DATA STALE, BATTERY LOW). `amber`: abnormal but not urgent (COMPACTING, AUTO, X-HIGH, OTHER). `green`: working / on / power present. `white` (yellowed): plain status. Colour is never the only carrier: every window has lettering and a position.
+
+**States.** `off` (dark glass, lettering still readable), `on` (steady), `flash` (2 Hz, unacknowledged alarm, red only in practice), `test` (LAMP TEST held: every window on).
+
+**Light behaves like a filament.** On: opacity 0 → 1 in 90 ms ease-in. Off: 1 → 0 in 220 ms ease-out (the filament cools slower than it heats). Flash period 500 ms: rise 80 ms, hold to 250 ms, decay 200 ms, dark 50 ms. Lit glass adds `glow-*`.
+
+**Two bulbs behind every window, whatever its colour,** so one burnt filament never hides a signal. They show as two soft hot spots in the `lamp-*-hot` colour centred at 23% and 77% of the width: wide ellipses (30% × 95% of the window) that fall off gradually to nothing by the centre, never a hard disc. Lettering sits in the calmer middle between them. Dark glass shows no spots. (Button caps and round lenses are small and have one bulb: a single soft hot centre.)
+
+**Lettering is paint, and paint does not change colour when a lamp comes on.** Red and green glass carry light ink, amber and white glass carry dark ink, in every state and both themes; ink never flips between light and dark. What changes is the light on it: each colour has an `ink-*-off` and an `ink-*-on` value. Lit, light ink goes warmer and brighter with a faint white halo (5px, 55%); dark ink goes brown or umber as the lamp leaks through it. The ink changes with the same filament timing as the glass (90 ms up, 220 ms down) and flashes with it.
+
+**One size, everywhere: 96×46.** Annunciator, lamp groups, range lamps, power source, warnings: every LampWindow on the console is the same stamped part, and there is no width or height option. That is an outside dimension: the 4px bezel is part of the window, so the glass is 88×38. Lettering is 13px, one line of up to 11 characters or two lines of up to 11 each (then 12px); anything longer is abbreviated, never squeezed and never given a wider window (ACCEPT / EDITS, PRICE / UNKNOWN, SUBAGENT, BATT LOW).
+
+**Consumer provides:** label, colour, state.
+
+**Native.** One `Canvas`/layer per window: base fill = off colour, lit layer on top with animated opacity, glow as a blurred copy (radius 7pt) not a shadow on text. Drive `flash` from one shared 2 Hz clock so every flashing window on the console is in phase.

@@ -1,0 +1,21 @@
+<!-- @dsCard group="Controls" height=273 subtitle="Press: the cap travels, the lamp waits for the machine" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PushButton — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Press and release. The cap moves at once; the lamp lights only when the machine confirms. NO ANSWER shows the 3 s timeout.');
+  stage.appendChild(P.PushButton({ cap: 'F2', label: '[Function 2]' }));
+  stage.appendChild(P.PushButton({ cap: 'ACK', label: 'Acknowledge', tone: 'amber', momentary: true, confirmAfter: 80 }));
+  stage.appendChild(P.PushButton({ cap: 'PRT', label: 'Print text', momentary: true }));
+  stage.appendChild(P.PushButton({ cap: 'F5', label: 'No answer', simulate: 'fail' }));
+
+})();
+</script>
+</body>
+</html>

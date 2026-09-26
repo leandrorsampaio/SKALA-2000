@@ -1,0 +1,27 @@
+<!-- @dsCard group="Indicators" height=273 subtitle="Click a row to change its value" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>NixieReadout — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click a readout to feed it a new value. Digits switch, they do not roll.');
+  var a = P.NixieReadout({ label: 'Output tokens', value: '00391400', unit: 'tok' });
+  var b = P.NixieReadout({ label: 'Last turn', value: '02:05', unit: 'min:s' });
+  var c = P.NixieReadout({ label: 'Selected', value: '1', xl: true });
+  var n = 391400, t = 125, sel = 1;
+  a.style.cursor = b.style.cursor = c.style.cursor = 'pointer';
+  a.addEventListener('click', function () { n += Math.floor(Math.random() * 9000) + 137; P.nixie(a, ('00000000' + n).slice(-8)); });
+  b.addEventListener('click', function () { t += 17; P.nixie(b, ('0' + Math.floor(t / 60) % 100).slice(-2) + ':' + ('0' + t % 60).slice(-2)); });
+  c.addEventListener('click', function () { sel = sel % 4 + 1; P.nixie(c, String(sel)); });
+  var col = P.h('div', { 'class': 'pk-col' }, [a, b]); col.style.alignItems = 'flex-start';
+  stage.appendChild(col); stage.appendChild(c);
+
+})();
+</script>
+</body>
+</html>

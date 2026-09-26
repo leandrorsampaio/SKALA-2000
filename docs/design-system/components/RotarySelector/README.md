@@ -1,0 +1,11 @@
+A four-position rotary switch that chooses which session feeds the shared instruments of panel B and receives the commands of panel C and the guarded commands on panel A. Positions are 60° apart, numbered 1 to 4 around the knob.
+
+**Construction.** A brushed aluminium dial plate (228px) carries the engraved position ticks and numerals and two stop pins. On it sits a black bakelite skirt (108px) with a knurled edge and, across the skirt, a 30×120 bar grip with a white index line at its pointing end and a slotted screw at the centre. The skirt's body shading, its specular highlight and its drop shadow are fixed to the room light and do **not** rotate; only the knurling, the bar, the index line and the screw rotate, all about the exact centre of the plate. (If the highlight turns with the knob it looks like a sticker.)
+
+**Size.** 160px on the console (the drawing is a 240-unit square, scaled); numerals 20px as drawn.
+
+**Detents and end stops, not a dial.** The switch has four positions across 180° and a stop pin at each end, so it does **not** wrap: from 4 the only way is back to 3. (A four-position switch that could go 4 → 1 would have to sweep 180° backward past 3 and 2, selecting each on the way; real ones are pinned.) Click the right half of the knob to go one position clockwise, the left half to go one back; Right/Up and Left/Down arrows do the same. Each step snaps in 170 ms with a hard overshoot (about 8°) and a `clunk`. At a stop, the knob leans 6° against the pin and springs back in 90 ms with a dull `click`, and nothing changes. Clicking a numeral walks the knob there one detent at a time, 110 ms apart, with a clunk per detent, so intermediate sessions are visibly passed through. Dragging around the knob may be added, but it must still land on detents and respect the stops.
+
+When the position changes: the SELECTED readout and both COMMAND GOES TO SESSION readouts change at once; every panel B nixie swaps to the new session's values (normal digit swap); meters swing to the new values with their usual spring; lamp groups change with filament timing. Drum counters are console-wide totals and do not change.
+
+**Consumer provides:** number of positions, current position, change handler.

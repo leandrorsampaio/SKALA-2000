@@ -1,0 +1,22 @@
+<!-- @dsCard group="Indicators" height=263 subtitle="Click to add; wheels roll and carry" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>DrumCounter — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click a counter to add to it. Wheels roll forward and carry, with a tick per wheel.');
+  var a = P.DrumCounter({ label: 'Lines added', digits: 6, value: 1366 }), b = P.DrumCounter({ label: 'Total cost', digits: 6, value: 418, unit: '$' });
+  a.style.cursor = b.style.cursor = 'pointer';
+  a.addEventListener('click', function () { P.drum(a, a.value + [1, 7, 34, 634][Math.floor(Math.random() * 4)]); });
+  b.addEventListener('click', function () { P.drum(b, b.value + 1); });
+  stage.appendChild(a); stage.appendChild(b);
+
+})();
+</script>
+</body>
+</html>

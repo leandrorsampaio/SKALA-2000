@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PK-4 · Signal to component map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><style>
+  :root {
+    --ground: #eef1ec;
+    --surface: #ffffff;
+    --surface-2: #f6f8f4;
+    --ink: #1b1f19;
+    --ink-2: #4d5548;
+    --muted: #767f70;
+    --line: #d5dbd0;
+    --line-soft: #e4e9e0;
+    --accent: #a8560f;
+    --wired: #2f6d3a;
+    --wired-bg: #e2eee3;
+    --avail: #9a6208;
+    --avail-bg: #f5ead6;
+    --gone: #6f776b;
+    --gone-bg: #e6e9e3;
+    --never: #9d2f24;
+    --never-bg: #f6e2df;
+
+    --display: "Barlow Condensed", "DIN Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #12150f;
+      --surface: #1a1e16;
+      --surface-2: #20251c;
+      --ink: #e7ebe2;
+      --ink-2: #b3bcab;
+      --muted: #8b9484;
+      --line: #2e3429;
+      --line-soft: #262c22;
+      --accent: #e08b3c;
+      --wired: #78c185;
+      --wired-bg: #1d2c1f;
+      --avail: #e0aa54;
+      --avail-bg: #2e2617;
+      --gone: #8b9484;
+      --gone-bg: #23271f;
+      --never: #e08272;
+      --never-bg: #2e1d1a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #12150f;
+    --surface: #1a1e16;
+    --surface-2: #20251c;
+    --ink: #e7ebe2;
+    --ink-2: #b3bcab;
+    --muted: #8b9484;
+    --line: #2e3429;
+    --line-soft: #262c22;
+    --accent: #e08b3c;
+    --wired: #78c185;
+    --wired-bg: #1d2c1f;
+    --avail: #e0aa54;
+    --avail-bg: #2e2617;
+    --gone: #8b9484;
+    --gone-bg: #23271f;
+    --never: #e08272;
+    --never-bg: #2e1d1a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.55;
+    padding-inline: 20px;
+    padding-block: 0;
+  }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-block: 44px 72px;
+  }
+
+  /* ---------- Masthead ---------- */
+
+  .eyebrow {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(38px, 7vw, 58px);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+    margin: 0 0 16px;
+  }
+
+  .lede {
+    max-width: 62ch;
+    color: var(--ink-2);
+    margin: 0 0 8px;
+  }
+
+  .verified {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin: 20px 0 0;
+  }
+
+  /* ---------- Tally ---------- */
+
+  .tally {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 32px 0 40px;
+  }
+
+  .tally div {
+    background: var(--surface);
+    padding: 16px 18px;
+  }
+
+  .tally .n {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    display: block;
+  }
+
+  .tally .k {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-top: 8px;
+  }
+
+  .tally .wired .n { color: var(--wired); }
+  .tally .avail .n { color: var(--avail); }
+  .tally .gone .n  { color: var(--gone); }
+
+  /* ---------- Filter ---------- */
+
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    background: var(--ground);
+    padding-block: 12px;
+    margin-bottom: 8px;
+    z-index: 5;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .filter span {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+
+  .filter button {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 13px;
+    cursor: pointer;
+  }
+
+  .filter button:hover { border-color: var(--muted); }
+
+  .filter button[aria-pressed="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--ground);
+  }
+
+  .filter button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Sections ---------- */
+
+  section { margin-top: 44px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  h2 .idx {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .note {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 16px;
+    max-width: 68ch;
+  }
+
+  .scroller {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 720px;
+  }
+
+  thead th {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    vertical-align: top;
+    font-size: 14px;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+
+  tbody tr:hover td { background: var(--surface-2); }
+
+  .f {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .f small {
+    display: block;
+    font-family: var(--body);
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--muted);
+    white-space: normal;
+    margin-top: 3px;
+    max-width: 30ch;
+  }
+
+  .t {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  .src {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .inst { color: var(--ink-2); white-space: nowrap; font-size: 13.5px; }
+
+  .pill {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 2px;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .pill.wired { background: var(--wired-bg); color: var(--wired); }
+  .pill.avail { background: var(--avail-bg); color: var(--avail); }
+  .pill.gone  { background: var(--gone-bg);  color: var(--gone); }
+  .pill.never { background: var(--never-bg); color: var(--never); }
+
+  /* ---------- Footnotes ---------- */
+
+  .foot {
+    margin-top: 56px;
+    border-top: 2px solid var(--ink);
+    padding-top: 20px;
+  }
+
+  .foot h3 {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+
+  .foot ol { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 13.5px; }
+  .foot li { margin-bottom: 9px; max-width: 74ch; }
+  .foot code, .note code, .lede code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 2px;
+    padding: 1px 4px;
+  }
+
+  sup { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+
+  @media (max-width: 560px) {
+    .wrap { padding-block: 30px 56px; }
+    body { padding-inline: 16px; }
+  }
+
+  td.where{font-family:var(--display);font-size:15px;letter-spacing:.04em;color:var(--ink);min-width:170px}
+  td.how{color:var(--ink-2);font-size:13.5px;min-width:220px}
+  td.inst{min-width:150px;font-weight:500}
+  small.srcs{display:block;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:3px}
+  .wrap{max-width:1280px}
+  .links a{color:var(--accent)}
+</style></head><body>
+<div class="wrap">
+  <p class="eyebrow">PK-4 Console &middot; wiring list</p>
+  <h1>Signal to component map</h1>
+  <p class="lede">Every field of the Claude Code telemetry inventory, and which instrument of the PK-4 design system shows it, where on the console it sits, and how the raw value becomes a reading. Same sections and field ids as the inventory.</p>
+  <p class="lede links">Components: <a href="https://claude.ai/artifact/2LbGUNVv9wfMai69k5ysJ3">PK-4 Console design system</a>. Assembled reference: <a href="https://claude.ai/artifact/MhXrUUphhFazoh3UA1bnsj">live console</a>. The console has no text display, so strings never reach the panel: they go to the text log that PRINT TEXT writes.</p>
+  <div class="tally">
+    <div class="wired"><span class="n" id="n-panel">0</span><span class="k">On the panel</span></div>
+    <div class="avail"><span class="n" id="n-log">0</span><span class="k">Text log only</span></div>
+    <div class="gone"><span class="n" id="n-rest">0</span><span class="k">Not shown or reserved</span></div>
+  </div>
+  <div class="filter">
+    <span>Show</span>
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="panel" aria-pressed="false">On the panel</button>
+    <button type="button" data-f="log" aria-pressed="false">Log only</button>
+    <button type="button" data-f="rest" aria-pressed="false">Not shown</button>
+  </div>
+<section><h2><span class="idx">A</span> Session identity &amp; presence</h2><p class="note">One record per running session. A new session takes the lowest free slot (1 to 4) and keeps it until its record disappears; a fifth session is not shown. Strings have no instrument: they go to the text log that PRINT TEXT writes, and the project name goes once onto the pencil strip.</p><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">(record exists)<small>A session has a record in agents --json</small></td><td class="t">Boolean, derived<small class="srcs">agents --json</small></td><td class="inst">LampWindow · white</td><td class="where">A · RUNNING, the slot’s column</td><td class="how">On while the record exists. Whole column dark when the slot is free.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">sessions.count<small>Running, and busy</small></td><td class="t">Integer ×2<small class="srcs">derived</small></td><td class="inst">NixieReadout · 1 digit, ×2</td><td class="where">A · SESSIONS RUNNING, SESSIONS BUSY</td><td class="how">Count of records; count of records with status busy. 0 to 4.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">project<small>Basename of cwd</small></td><td class="t">String<small class="srcs">derived</small></td><td class="inst">PencilStrip</td><td class="where">A · under the session number</td><td class="how">Pre-fill once, only when the strip of a newly taken slot is empty. 12 characters, then it belongs to the operator.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">name<small>Derived label, e.g. maccommandcenter-13</small></td><td class="t">String<small class="srcs">agents --json</small></td><td class="inst">none</td><td class="where">Log line on PRINT TEXT</td><td class="how">S&lt;slot&gt; NAME &lt;value&gt;</td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="log"><td class="f">cwd<small>Working directory</small></td><td class="t">String (path)<small class="srcs">agents --json</small></td><td class="inst">none</td><td class="where">Log line on PRINT TEXT</td><td class="how">S&lt;slot&gt; CWD &lt;value&gt;</td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="panel"><td class="f">startedAt<small>Session start, epoch ms</small></td><td class="t">Timestamp<small class="srcs">agents --json</small></td><td class="inst">NixieReadout · 00:00</td><td class="where">B · SESSION UPTIME (h:min)</td><td class="how">now − startedAt. Caps at 99:59.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">kind<small>interactive …</small></td><td class="t">Enum<small class="srcs">agents --json</small></td><td class="inst">LampWindow · white, ×2</td><td class="where">B · KIND: INTERACTIVE / DETACHED</td><td class="how">interactive → INTERACTIVE. Anything else, or a jobs/ record → DETACHED.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="hidden"><td class="f">sessionId</td><td class="t">String (UUID)<small class="srcs">agents --json</small></td><td class="inst">none</td><td class="where">never displayed</td><td class="how">Join key between agents, transcript, cost-state and hooks. Written to the safety log.</td><td><span class="pill gone">Not shown</span></td></tr><tr data-s="hidden"><td class="f">pid</td><td class="t">Integer<small class="srcs">agents --json</small></td><td class="inst">none</td><td class="where">never displayed</td><td class="how">Join key to sessions/&lt;pid&gt;.json.</td><td><span class="pill gone">Not shown</span></td></tr><tr data-s="panel"><td class="f">version<small>Claude Code build, e.g. 2.1.273</small></td><td class="t">String<small class="srcs">sessions/*.json</small></td><td class="inst">Paper card in a holder (PencilStrip construction, read-only)</td><td class="where">Header · PROGRAM BUILD</td><td class="how">Typewriter face. Highest version among running sessions.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">gitBranch<small>Branch each turn ran on</small></td><td class="t">String<small class="srcs">transcript</small></td><td class="inst">none</td><td class="where">Log line on PRINT TEXT</td><td class="how">S&lt;slot&gt; BRANCH &lt;value&gt;</td><td><span class="pill avail">Text log only</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">B</span> What it is doing</h2><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">status<small>Observed: busy</small></td><td class="t">Enum<small class="srcs">agents --json</small></td><td class="inst">LampWindow · green</td><td class="where">A · BUSY</td><td class="how">status == busy. Do not infer idle from any other value; lean on the Stop hook for the transition.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">aiTitle<small>What the session is about</small></td><td class="t">String<small class="srcs">transcript · ai-title</small></td><td class="inst">none</td><td class="where">Log line on PRINT TEXT</td><td class="how">S&lt;slot&gt; TITLE &lt;value&gt;</td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="panel"><td class="f">permissionMode<small>auto, plan …</small></td><td class="t">Enum<small class="srcs">transcript · permission-mode</small></td><td class="inst">LampWindow ×5 · white, AUTO amber, BYPASS red</td><td class="where">B · PERMISSION MODE</td><td class="how">default, acceptEdits, plan, auto, bypassPermissions → one window each. Unknown value: group dark plus a log line.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">mode<small>normal …</small></td><td class="t">Enum<small class="srcs">transcript · mode</small></td><td class="inst">LampWindow ×2 · white, amber</td><td class="where">B · MODE: NORMAL / OTHER MODE</td><td class="how">normal → NORMAL. Any other value → OTHER MODE.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">queue.depth<small>Prompts waiting their turn</small></td><td class="t">Integer<small class="srcs">transcript · queue-operation</small></td><td class="inst">NixieReadout · 2 digits</td><td class="where">B · QUEUE DEPTH</td><td class="how">Shows 99 on overflow.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">lastPrompt<small>Verbatim text</small></td><td class="t">String<small class="srcs">transcript · last-prompt</small></td><td class="inst">none</td><td class="where">Log line on PRINT TEXT</td><td class="how">Private text: log file only, never on the console surface.</td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="panel"><td class="f">tools.count<small>Tool calls this session</small></td><td class="t">Integer<small class="srcs">derived</small></td><td class="inst">NixieReadout · 4 digits</td><td class="where">B · TOOL CALLS</td><td class="how">May be advanced live by PostToolUse between transcript reads.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">tools.mix<small>Calls per tool name</small></td><td class="t">Map<small class="srcs">derived</small></td><td class="inst">none</td><td class="where">Log block on PRINT TEXT</td><td class="how">No instrument can show a map. One line per tool.</td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="panel"><td class="f">isSidechain<small>Record belongs to a subagent</small></td><td class="t">Boolean<small class="srcs">transcript</small></td><td class="inst">LampWindow · white</td><td class="where">B · WARNINGS · SUBAGENT ACTIVE</td><td class="how">On while a sidechain record was seen in the last 30 s. Also excludes those records from the session’s own counters.</td><td><span class="pill wired">On the panel</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">C</span> Context &amp; tokens</h2><p class="note">Cumulative figures are deduplicated by requestId before they reach an instrument. All token readouts have eight tubes so their columns line up.</p><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">context.left<small>Room remaining</small></td><td class="t">Fraction 0–1<small class="srcs">derived</small></td><td class="inst">MovingCoilMeter · red sector 0 to 20%</td><td class="where">B · CONTEXT REMAINING</td><td class="how">1 − used / window. Needle on the left stop when the slot is empty.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">context.used<small>input + cache_creation + cache_read</small></td><td class="t">Integer (tokens)<small class="srcs">usage</small></td><td class="inst">NixieReadout · 8 digits</td><td class="where">B · CONTEXT USED (tok)</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">context.window<small>1M or 200K</small></td><td class="t">Integer<small class="srcs">cost-state</small></td><td class="inst">LampWindow ×2 · white</td><td class="where">B · under the context meter: 200K / 1M</td><td class="how">Read from the billed model id in cost-state ([1m]), never from the assistant record.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">tokens.output<small>Cumulative</small></td><td class="t">Integer<small class="srcs">usage</small></td><td class="inst">NixieReadout · 8 digits, and DrumCounter · 6</td><td class="where">B · OUTPUT TOKENS; B · TOTAL OUTPUT ×1000</td><td class="how">Drum = sum of deltas over all sessions, persisted by the app, forward only.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">tokens.input<small>Fresh tokens only</small></td><td class="t">Integer<small class="srcs">usage</small></td><td class="inst">NixieReadout · 8 digits</td><td class="where">B · INPUT TOKENS (tok)</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">tokens.thinking</td><td class="t">Integer<small class="srcs">usage · output_tokens_details</small></td><td class="inst">NixieReadout · 8 digits</td><td class="where">B · THINKING TOKENS (tok)</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">tokens.cacheRead</td><td class="t">Integer<small class="srcs">usage</small></td><td class="inst">NixieReadout · 8 digits</td><td class="where">B · CACHE READ (×1000)</td><td class="how">Value ÷ 1000, floored.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">tokens.cacheCreation</td><td class="t">Integer<small class="srcs">usage</small></td><td class="inst">NixieReadout · 8 digits</td><td class="where">B · CACHE WRITTEN (×1000)</td><td class="how">Value ÷ 1000, floored.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">model<small>The id actually answering</small></td><td class="t">String<small class="srcs">transcript, cost-state</small></td><td class="inst">LampWindow ×4 · white, OTHER amber</td><td class="where">B · MODEL: OPUS / SONNET / HAIKU / OTHER</td><td class="how">Substring match on the id. No match → OTHER. Full id to the log.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">serviceTier<small>standard …</small></td><td class="t">Enum<small class="srcs">usage</small></td><td class="inst">LampWindow ×2 · white, amber</td><td class="where">B · SERVICE TIER: STANDARD / OTHER TIER</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">compacted<small>Context squeezed and reset</small></td><td class="t">Event + Timestamp<small class="srcs">system · compact_boundary</small></td><td class="inst">LampWindow · amber</td><td class="where">A · COMPACTING (clears it)</td><td class="how">COMPACTING lights on PreCompact and goes dark on compact_boundary or after a 5 min TTL.</td><td><span class="pill wired">On the panel</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">D</span> Cost &amp; effort</h2><p class="note">cost-state is a checkpoint, not a live figure; the label plate on the readout says so.</p><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">totalCostUSD<small>Spend at last checkpoint</small></td><td class="t">Money<small class="srcs">cost-state</small></td><td class="inst">NixieReadout · 0000.00, and DrumCounter · 6</td><td class="where">B · COST, LAST CHECKPOINT ($); B · TOTAL COST ($)</td><td class="how">Drum = whole dollars, sum of positive deltas over all sessions, persisted.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">modelUsage<small>Per-model tokens and cost</small></td><td class="t">Map<small class="srcs">cost-state</small></td><td class="inst">none</td><td class="where">Log block on PRINT TEXT</td><td class="how"></td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="panel"><td class="f">effort<small>xhigh …</small></td><td class="t">Enum<small class="srcs">transcript</small></td><td class="inst">LampWindow ×4 · white, X-HIGH amber</td><td class="where">B · EFFORT: LOW / MEDIUM / HIGH / X-HIGH</td><td class="how">Latest turn’s value.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">linesAdded / linesRemoved</td><td class="t">Integer ×2<small class="srcs">cost-state</small></td><td class="inst">DrumCounter · 6, ×2</td><td class="where">B · LINES ADDED, LINES REMOVED</td><td class="how">Sum of positive deltas over all sessions, persisted.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">hasUnknownModelCost<small>A model had no price table</small></td><td class="t">Boolean<small class="srcs">cost-state</small></td><td class="inst">LampWindow · red, steady</td><td class="where">B · WARNINGS · PRICE UNKNOWN</td><td class="how">Steady, not an alarm: no flash, no buzzer.</td><td><span class="pill wired">On the panel</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">E</span> Timing</h2><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">turn.durationMs<small>Per completed turn</small></td><td class="t">Duration<small class="srcs">system · turn_duration</small></td><td class="inst">NixieReadout · 00:00</td><td class="where">B · LAST TURN (min:s)</td><td class="how">Last completed turn. Caps at 99:59.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">turn.messageCount</td><td class="t">Integer<small class="srcs">system · turn_duration</small></td><td class="inst">NixieReadout · 3 digits</td><td class="where">B · TURN MESSAGES</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="hidden"><td class="f">totalDuration<small>Wall clock since start</small></td><td class="t">Duration<small class="srcs">cost-state</small></td><td class="inst">none</td><td class="where">denominator only</td><td class="how">Used for the two share meters; uptime comes from startedAt.</td><td><span class="pill gone">Not shown</span></td></tr><tr data-s="panel"><td class="f">totalAPIDuration</td><td class="t">Duration<small class="srcs">cost-state</small></td><td class="inst">MovingCoilMeter</td><td class="where">B · API SHARE OF TIME</td><td class="how">totalAPIDuration ÷ totalDuration.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">totalToolDuration</td><td class="t">Duration<small class="srcs">cost-state</small></td><td class="inst">MovingCoilMeter</td><td class="where">B · TOOL SHARE OF TIME</td><td class="how">totalToolDuration ÷ totalDuration.</td><td><span class="pill wired">On the panel</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">F</span> Background agents</h2><p class="note">A job takes a slot like any session. It is the case the annunciator exists for: nobody is looking at its terminal.</p><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">tempo<small>Observed: blocked</small></td><td class="t">Enum<small class="srcs">jobs/*/state.json</small></td><td class="inst">LampWindow · red, alarm</td><td class="where">A · BLOCKED</td><td class="how">blocked → flash + buzzer until ACKNOWLEDGE, steady until it clears.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">needs<small>“send a prompt to start”</small></td><td class="t">String<small class="srcs">jobs/*/state.json</small></td><td class="inst">none</td><td class="where">Log line, written automatically when BLOCKED raises</td><td class="how">S&lt;slot&gt; NEEDS &lt;value&gt;</td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="panel"><td class="f">state<small>Observed: working</small></td><td class="t">Enum<small class="srcs">jobs/*/state.json</small></td><td class="inst">LampWindow · white and green</td><td class="where">A · BACKGROUND JOB; A · BUSY</td><td class="how">Record exists → BACKGROUND JOB. state == working → BUSY.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="log"><td class="f">detail<small>Last thing it said</small></td><td class="t">String<small class="srcs">jobs/*/state.json</small></td><td class="inst">none</td><td class="where">Log line on PRINT TEXT</td><td class="how">Private text: log file only.</td><td><span class="pill avail">Text log only</span></td></tr><tr data-s="panel"><td class="f">name<small>Human task name</small></td><td class="t">String<small class="srcs">jobs/*/state.json</small></td><td class="inst">PencilStrip</td><td class="where">A · under the session number</td><td class="how">Pre-fill once, first 12 characters. Full name to the log.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">backend<small>Observed: daemon</small></td><td class="t">Enum<small class="srcs">jobs/*/state.json</small></td><td class="inst">LampWindow · white</td><td class="where">B · KIND · DETACHED</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">G</span> Events, pushed by hooks</h2><p class="note">Moments, not states: each lights a window until something clears it or its TTL runs out. A relay clunk accompanies every change.</p><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">Notification<small>Wants permission, or idle waiting</small></td><td class="t">Event<small class="srcs">claude.waiting</small></td><td class="inst">LampWindow · red, alarm</td><td class="where">A · WAITING FOR OPERATOR</td><td class="how">Flash + buzzer. Cleared by UserPromptSubmit or a 30 min TTL.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">Stop<small>Main agent finished its turn</small></td><td class="t">Event<small class="srcs">claude.done</small></td><td class="inst">LampWindow · green</td><td class="where">A · TURN DONE</td><td class="how">Also drops BUSY at once. Cleared by UserPromptSubmit or TTL.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">SubagentStop<small>A subagent finished</small></td><td class="t">Event<small class="srcs">claude.agent</small></td><td class="inst">LampWindow · white</td><td class="where">A · AGENT DONE</td><td class="how">Cleared by UserPromptSubmit or a 10 min TTL.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">UserPromptSubmit<small>You answered</small></td><td class="t">Event<small class="srcs">clear</small></td><td class="inst">none (acts on three windows)</td><td class="where">A · clears WAIT, DONE, AGENT for that slot</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">PreToolUse / PostToolUse<small>Tool name and input</small></td><td class="t">Event + String<small class="srcs">not bound</small></td><td class="inst">NixieReadout</td><td class="where">B · TOOL CALLS</td><td class="how">PostToolUse may add 1 live. Tool name goes to the log only.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">SessionStart / SessionEnd</td><td class="t">Event<small class="srcs">not bound</small></td><td class="inst">LampWindow · white</td><td class="where">A · RUNNING</td><td class="how">Takes or frees the slot immediately instead of waiting for the next poll.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">PreCompact<small>Context about to be squeezed</small></td><td class="t">Event<small class="srcs">not bound</small></td><td class="inst">LampWindow · amber, ×2</td><td class="where">A · COMPACTING; B · WARNINGS · PRE-COMPACT</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">H</span> Not available</h2><p class="note">Cut-outs are left in the steel so these can be fitted later without new metalwork.</p><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="reserved"><td class="f">quota.fiveHour</td><td class="t">Fraction 0–1<small class="srcs">not cached on disk</small></td><td class="inst">Blanking plate</td><td class="where">B · RESERVED · QUOTA 5 H</td><td class="how">Future: MovingCoilMeter.</td><td><span class="pill gone">Reserved</span></td></tr><tr data-s="reserved"><td class="f">quota.weekly</td><td class="t">Fraction 0–1<small class="srcs">not cached on disk</small></td><td class="inst">Blanking plate</td><td class="where">B · RESERVED · QUOTA WEEK · RESET</td><td class="how">Future: MovingCoilMeter.</td><td><span class="pill gone">Reserved</span></td></tr><tr data-s="reserved"><td class="f">quota.resetsAt</td><td class="t">Timestamp<small class="srcs">not cached on disk</small></td><td class="inst">Blanking plate (shared with weekly)</td><td class="where">B · RESERVED</td><td class="how">Future: NixieReadout 00:00.</td><td><span class="pill gone">Reserved</span></td></tr><tr data-s="hidden"><td class="f">cost.live<small>Cost right now</small></td><td class="t">Money<small class="srcs">checkpoints only</small></td><td class="inst">none</td><td class="where"></td><td class="how">The cost readout is labelled LAST CHECKPOINT instead.</td><td><span class="pill gone">Not shown</span></td></tr><tr data-s="hidden"><td class="f">stats.allTime<small>Totals across every session</small></td><td class="t">Map<small class="srcs">stats-cache.json, stale</small></td><td class="inst">none</td><td class="where"></td><td class="how">The drum counters are the console’s own persisted totals.</td><td><span class="pill gone">Not shown</span></td></tr><tr data-s="never"><td class="f">ide.authToken</td><td class="t">String (secret)<small class="srcs">never surface this</small></td><td class="inst">none</td><td class="where"></td><td class="how">Never read, stored, logged or displayed.</td><td><span class="pill never">Off limits</span></td></tr></tbody></table></div></section>
+<section><h2><span class="idx">I</span> Signals the console makes itself</h2><p class="note">Not from Claude Code: the operator, the Mac and the app.</p><div class="scroller"><table><thead><tr><th>Field</th><th>Type · source</th><th>Component</th><th>Where on the console</th><th>How it is shown</th><th>Status</th></tr></thead><tbody><tr data-s="panel"><td class="f">selected slot<small>Operator</small></td><td class="t">Integer 1–4<small class="srcs">RotarySelector</small></td><td class="inst">RotarySelector + NixieReadout XL ×2 + NixieReadout</td><td class="where">B · SESSION SELECTOR, SELECTED; C and B · COMMAND GOES TO SESSION</td><td class="how">Persisted. Changing it re-feeds every panel B instrument.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">alarm state<small>Per window: off, on, flash, test; acknowledged</small></td><td class="t">State machine<small class="srcs">console model</small></td><td class="inst">Annunciator + buzzer + PushButton ×3</td><td class="where">A · SILENCE, ACKNOWLEDGE, LAMP TEST</td><td class="how">See the Annunciator guideline for the table of transitions.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">data stale<small>A source missed its TTL</small></td><td class="t">Boolean<small class="srcs">console model</small></td><td class="inst">LampWindow · red, alarm</td><td class="where">B · WARNINGS · DATA STALE</td><td class="how">For the selected slot. The slot’s other windows go dark.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">battery level</td><td class="t">Fraction 0–1<small class="srcs">IOKit power sources</small></td><td class="inst">EdgewiseMeter · red under 20%</td><td class="where">D · BATTERY %</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">power source</td><td class="t">Enum + Boolean<small class="srcs">IOKit power sources</small></td><td class="inst">LampWindow ×4 · green, amber, white, red alarm</td><td class="where">D · ON MAINS / ON BATTERY / CHARGING / BATT LOW</td><td class="how">BATT LOW joins the alarm logic.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">sleep / display state</td><td class="t">Boolean ×2<small class="srcs">macOS</small></td><td class="inst">RoundPushButton with ON / OFF LampLens</td><td class="where">D · SLEEP MODE, TURN OFF MONITOR</td><td class="how">Both lenses dark while waiting for the Mac to confirm.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">FC1, FC2<small>To be defined</small></td><td class="t">Boolean ×2<small class="srcs">to be defined</small></td><td class="inst">RoundPushButton with ON / OFF LampLens</td><td class="where">D</td><td class="how"></td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">F1 … F7<small>Routine commands, to be named</small></td><td class="t">Command<small class="srcs">to be defined</small></td><td class="inst">PushButton</td><td class="where">C · acts on the selected slot</td><td class="how">Lamp lights on confirmation only; 3 s no-answer blink.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">F8, F9, F10<small>Disruptive commands, to be named</small></td><td class="t">Command<small class="srcs">to be defined</small></td><td class="inst">GuardedButton (F10 with key)</td><td class="where">B · last row</td><td class="how">Guard, (key,) hold 2 s. Every lift, key turn and fire goes to the safety log.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">app running time</td><td class="t">Duration<small class="srcs">app</small></td><td class="inst">DrumCounter · 6</td><td class="where">E · HOURS IN SERVICE</td><td class="how">Persisted.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">mains<small>Console on / off</small></td><td class="t">Boolean<small class="srcs">operator</small></td><td class="inst">ToggleSwitch + LampWindow · green</td><td class="where">E · MAINS, POWER ON</td><td class="how">Off stops polling and darkens the desk; it does not quit the app.</td><td><span class="pill wired">On the panel</span></td></tr><tr data-s="panel"><td class="f">subsystem health<small>Six checks</small></td><td class="t">Boolean ×6<small class="srcs">app</small></td><td class="inst">Fuse holders (static art)</td><td class="where">E · FUSES</td><td class="how">Decorative in version 1.</td><td><span class="pill wired">On the panel</span></td></tr></tbody></table></div></section>
+
+  <section><h2><span class="idx">&middot;</span> Rules that apply to every row</h2>
+  <p class="note">One LampWindow size (96&times;46). Unknown enum values light the OTHER window of their group where one exists, never leave a wrong window lit. Every reading carries a time-to-live: a source that stops reporting darkens its instruments and raises DATA STALE. A missing or renamed field costs one instrument, never the console. Join keys and the auth token are never displayed. Numbers on nixies are fixed width with leading zeros and show all nines on overflow. Drum counters only move forward and are persisted by the app.</p></section>
+  <p class="foot">Built from the telemetry inventory verified against Claude Code 2.1.273 on 19 September 2026.</p>
+</div>
+<script>
+(function () {
+  var rows = [].slice.call(document.querySelectorAll("tbody tr[data-s]")), buttons = [].slice.call(document.querySelectorAll(".filter button"));
+  function kind(r) { var s = r.getAttribute("data-s"); return s === "panel" || s === "log" ? s : "rest"; }
+  function count(k) { return rows.filter(function (r) { return kind(r) === k; }).length; }
+  document.getElementById("n-panel").textContent = count("panel"); document.getElementById("n-log").textContent = count("log"); document.getElementById("n-rest").textContent = count("rest");
+  function apply(k) {
+    rows.forEach(function (r) { r.hidden = k !== "all" && kind(r) !== k; });
+    [].forEach.call(document.querySelectorAll("section"), function (s) { var t = s.querySelectorAll("tbody tr"); if (!t.length) return; s.hidden = ![].some.call(t, function (r) { return !r.hidden; }); });
+  }
+  buttons.forEach(function (b) { b.addEventListener("click", function () { buttons.forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); }); apply(b.getAttribute("data-f")); }); });
+})();
+</script>
+</body></html>

@@ -1,0 +1,22 @@
+<!-- @dsCard group="Indicators" height=224 subtitle="Round lens, used in pairs on panel D" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>LampLens — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click a lens to toggle it.');
+  [['On','green','on'],['Off','white','off'],['Alarm','red','flash'],['Warn','amber','off']].forEach(function (d) {
+    var l = P.LampLens({ label: d[0], color: d[1], state: d[2] }); l.lens.style.cursor = 'pointer';
+    l.lens.addEventListener('click', function () { P.lamp(l.lens, l.lens.getAttribute('data-state') === 'off' ? 'on' : 'off'); });
+    stage.appendChild(l);
+  });
+
+})();
+</script>
+</body>
+</html>

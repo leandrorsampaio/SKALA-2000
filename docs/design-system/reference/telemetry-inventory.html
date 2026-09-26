@@ -1,0 +1,986 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Claude Code Telemetry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground: #eef1ec;
+    --surface: #ffffff;
+    --surface-2: #f6f8f4;
+    --ink: #1b1f19;
+    --ink-2: #4d5548;
+    --muted: #767f70;
+    --line: #d5dbd0;
+    --line-soft: #e4e9e0;
+    --accent: #a8560f;
+    --wired: #2f6d3a;
+    --wired-bg: #e2eee3;
+    --avail: #9a6208;
+    --avail-bg: #f5ead6;
+    --gone: #6f776b;
+    --gone-bg: #e6e9e3;
+    --never: #9d2f24;
+    --never-bg: #f6e2df;
+
+    --display: "Barlow Condensed", "DIN Condensed", "Arial Narrow", sans-serif;
+    --body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #12150f;
+      --surface: #1a1e16;
+      --surface-2: #20251c;
+      --ink: #e7ebe2;
+      --ink-2: #b3bcab;
+      --muted: #8b9484;
+      --line: #2e3429;
+      --line-soft: #262c22;
+      --accent: #e08b3c;
+      --wired: #78c185;
+      --wired-bg: #1d2c1f;
+      --avail: #e0aa54;
+      --avail-bg: #2e2617;
+      --gone: #8b9484;
+      --gone-bg: #23271f;
+      --never: #e08272;
+      --never-bg: #2e1d1a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #12150f;
+    --surface: #1a1e16;
+    --surface-2: #20251c;
+    --ink: #e7ebe2;
+    --ink-2: #b3bcab;
+    --muted: #8b9484;
+    --line: #2e3429;
+    --line-soft: #262c22;
+    --accent: #e08b3c;
+    --wired: #78c185;
+    --wired-bg: #1d2c1f;
+    --avail: #e0aa54;
+    --avail-bg: #2e2617;
+    --gone: #8b9484;
+    --gone-bg: #23271f;
+    --never: #e08272;
+    --never-bg: #2e1d1a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.55;
+    padding-inline: 20px;
+    padding-block: 0;
+  }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-block: 44px 72px;
+  }
+
+  /* ---------- Masthead ---------- */
+
+  .eyebrow {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(38px, 7vw, 58px);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+    margin: 0 0 16px;
+  }
+
+  .lede {
+    max-width: 62ch;
+    color: var(--ink-2);
+    margin: 0 0 8px;
+  }
+
+  .verified {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin: 20px 0 0;
+  }
+
+  /* ---------- Tally ---------- */
+
+  .tally {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 32px 0 40px;
+  }
+
+  .tally div {
+    background: var(--surface);
+    padding: 16px 18px;
+  }
+
+  .tally .n {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    display: block;
+  }
+
+  .tally .k {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-top: 8px;
+  }
+
+  .tally .wired .n { color: var(--wired); }
+  .tally .avail .n { color: var(--avail); }
+  .tally .gone .n  { color: var(--gone); }
+
+  /* ---------- Filter ---------- */
+
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    background: var(--ground);
+    padding-block: 12px;
+    margin-bottom: 8px;
+    z-index: 5;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .filter span {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+
+  .filter button {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 13px;
+    cursor: pointer;
+  }
+
+  .filter button:hover { border-color: var(--muted); }
+
+  .filter button[aria-pressed="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--ground);
+  }
+
+  .filter button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Sections ---------- */
+
+  section { margin-top: 44px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  h2 .idx {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .note {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 16px;
+    max-width: 68ch;
+  }
+
+  .scroller {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 720px;
+  }
+
+  thead th {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    vertical-align: top;
+    font-size: 14px;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+
+  tbody tr:hover td { background: var(--surface-2); }
+
+  .f {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .f small {
+    display: block;
+    font-family: var(--body);
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--muted);
+    white-space: normal;
+    margin-top: 3px;
+    max-width: 30ch;
+  }
+
+  .t {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  .src {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .inst { color: var(--ink-2); white-space: nowrap; font-size: 13.5px; }
+
+  .pill {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 2px;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .pill.wired { background: var(--wired-bg); color: var(--wired); }
+  .pill.avail { background: var(--avail-bg); color: var(--avail); }
+  .pill.gone  { background: var(--gone-bg);  color: var(--gone); }
+  .pill.never { background: var(--never-bg); color: var(--never); }
+
+  /* ---------- Footnotes ---------- */
+
+  .foot {
+    margin-top: 56px;
+    border-top: 2px solid var(--ink);
+    padding-top: 20px;
+  }
+
+  .foot h3 {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+
+  .foot ol { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 13.5px; }
+  .foot li { margin-bottom: 9px; max-width: 74ch; }
+  .foot code, .note code, .lede code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 2px;
+    padding: 1px 4px;
+  }
+
+  sup { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+
+  @media (max-width: 560px) {
+    .wrap { padding-block: 30px 56px; }
+    body { padding-inline: 16px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Mac Command Center &middot; signal inventory</p>
+  <h1>Claude Code Telemetry</h1>
+  <p class="lede">
+    Every reading the panel can pull from Claude Code &mdash; what is wired up today, what is
+    sitting there unused, and what simply is not available. Each row names the value, its type,
+    and the instrument it suits.
+  </p>
+  <p class="lede">
+    Nothing here is a published API except <code>claude agents --json</code>. The rest is read
+    from files Claude Code writes for its own use, so every reading is defensive: a changed
+    field costs one signal, never the panel.
+  </p>
+
+  <div class="tally">
+    <div class="wired"><span class="n" id="n-wired">0</span><span class="k">Wired up</span></div>
+    <div class="avail"><span class="n" id="n-avail">0</span><span class="k">Available, unused</span></div>
+    <div class="gone"><span class="n" id="n-gone">0</span><span class="k">Not available</span></div>
+  </div>
+
+  <div class="filter">
+    <span>Show</span>
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="wired" aria-pressed="false">Wired</button>
+    <button type="button" data-f="avail" aria-pressed="false">Available</button>
+    <button type="button" data-f="gone" aria-pressed="false">Missing</button>
+  </div>
+
+  <!-- ============ A ============ -->
+  <section>
+    <h2><span class="idx">A</span> Session identity &amp; presence</h2>
+    <p class="note">
+      One record per <em>running</em> session. <code>claude agents --json</code> is the supported
+      surface; <code>~/.claude/sessions/&lt;pid&gt;.json</code> carries the same data plus build
+      details. A session that is not running has no record at all.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Instrument</th><th>Source</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="wired">
+            <td class="f">name<small>Derived label, e.g. maccommandcenter-13</small></td>
+            <td class="t">String</td><td class="inst">Readout, tape label</td>
+            <td class="src">agents --json</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">sessions.count<small>How many are running, and how many are busy</small></td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">derived</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">cwd<small>Working directory &mdash; the project, in practice</small></td>
+            <td class="t">String (path)</td><td class="inst">Readout, tape label</td>
+            <td class="src">agents --json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">project<small>Basename of cwd &mdash; what a human calls it</small></td>
+            <td class="t">String</td><td class="inst">Tape label</td>
+            <td class="src">derived</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">startedAt<small>Session start, epoch milliseconds</small></td>
+            <td class="t">Timestamp</td><td class="inst">Uptime counter</td>
+            <td class="src">agents --json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">kind</td>
+            <td class="t">Enum &middot; <code>interactive</code></td><td class="inst">Lamp</td>
+            <td class="src">agents --json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">sessionId</td>
+            <td class="t">String (UUID)</td><td class="inst">&mdash; join key</td>
+            <td class="src">agents --json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">pid</td>
+            <td class="t">Integer</td><td class="inst">&mdash; join key</td>
+            <td class="src">agents --json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">version<small>Claude Code build, e.g. 2.1.273</small></td>
+            <td class="t">String</td><td class="inst">Nameplate line</td>
+            <td class="src">sessions/*.json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">gitBranch<small>Branch each turn ran on</small></td>
+            <td class="t">String</td><td class="inst">Readout</td>
+            <td class="src">transcript</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ B ============ -->
+  <section>
+    <h2><span class="idx">B</span> What it is doing</h2>
+    <p class="note">
+      The states worth a lamp. <code>status</code> is the only one polled today; the rest sit in
+      the transcript, rewritten every turn.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Instrument</th><th>Source</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="wired">
+            <td class="f">status<small>Observed: busy. Idle values not yet confirmed<sup>1</sup></small></td>
+            <td class="t">Enum</td><td class="inst">Lamp</td>
+            <td class="src">agents --json</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">aiTitle<small>What the session is about, in its own words</small></td>
+            <td class="t">String</td><td class="inst">Readout line</td>
+            <td class="src">transcript &middot; ai-title</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">permissionMode</td>
+            <td class="t">Enum &middot; <code>auto</code>, <code>plan</code>&hellip;</td><td class="inst">Lamp</td>
+            <td class="src">transcript &middot; permission-mode</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">mode</td>
+            <td class="t">Enum &middot; <code>normal</code>&hellip;</td><td class="inst">Lamp</td>
+            <td class="src">transcript &middot; mode</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">queue.depth<small>Prompts stacked up waiting their turn</small></td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">transcript &middot; queue-operation</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">lastPrompt<small>Verbatim text &mdash; see note<sup>2</sup></small></td>
+            <td class="t">String</td><td class="inst">Readout line</td>
+            <td class="src">transcript &middot; last-prompt</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">tools.count<small>602 this session, 528 of them Bash</small></td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">derived</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">tools.mix<small>Calls per tool name</small></td>
+            <td class="t">Map&lt;String, Integer&gt;</td><td class="inst">Bar row</td>
+            <td class="src">derived</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">isSidechain<small>Whether a record belongs to a subagent</small></td>
+            <td class="t">Boolean</td><td class="inst">&mdash; filter</td>
+            <td class="src">transcript</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ C ============ -->
+  <section>
+    <h2><span class="idx">C</span> Context &amp; tokens</h2>
+    <p class="note">
+      All of this comes off the <code>usage</code> block on each assistant record. One API request
+      is written as several records that repeat the same usage, so cumulative figures must be
+      deduplicated by <code>requestId</code> &mdash; counting per record inflates them 2.4&times;.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Instrument</th><th>Source</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="wired">
+            <td class="f">context.left<small>Room remaining, not room used</small></td>
+            <td class="t">Fraction 0&ndash;1</td><td class="inst">Gauge</td>
+            <td class="src">derived</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">context.used<small>input + cache_creation + cache_read</small></td>
+            <td class="t">Integer (tokens)</td><td class="inst">Counter</td>
+            <td class="src">usage</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">context.window<small>1M or 200K, read off the billed model id<sup>3</sup></small></td>
+            <td class="t">Integer</td><td class="inst">Scale label</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">tokens.output<small>Cumulative, deduplicated</small></td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">usage</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">tokens.input<small>Fresh tokens only, cache reads excluded</small></td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">usage</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">tokens.thinking</td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">usage &middot; output_tokens_details</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">tokens.cacheRead<small>261M this session &mdash; the cache is doing the work</small></td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">usage</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">tokens.cacheCreation</td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">usage</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">model<small>The id actually answering</small></td>
+            <td class="t">String</td><td class="inst">Nameplate line</td>
+            <td class="src">transcript, cost-state</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">serviceTier</td>
+            <td class="t">Enum &middot; <code>standard</code></td><td class="inst">Label</td>
+            <td class="src">usage</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">compacted<small>The moment context was squeezed and reset</small></td>
+            <td class="t">Event + Timestamp</td><td class="inst">Lamp, flash</td>
+            <td class="src">system &middot; compact_boundary</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ D ============ -->
+  <section>
+    <h2><span class="idx">D</span> Cost &amp; effort</h2>
+    <p class="note">
+      <code>cost-state</code> is a <em>checkpoint</em> record, written at session start, on
+      compaction and on exit &mdash; four times in a 26&nbsp;MB transcript. The dollar figure is
+      the newest one on disk, not the figure this second.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Instrument</th><th>Source</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="wired">
+            <td class="f">totalCostUSD<small>Session spend at last checkpoint</small></td>
+            <td class="t">Money (Float)</td><td class="inst">Counter</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">modelUsage<small>Tokens and cost broken out per model</small></td>
+            <td class="t">Map&lt;String, Object&gt;</td><td class="inst">Table, bar row</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">effort<small>Reasoning effort, per session and per turn</small></td>
+            <td class="t">Enum &middot; <code>xhigh</code>&hellip;</td><td class="inst">Lamp, label</td>
+            <td class="src">transcript</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">linesAdded / linesRemoved<small>1366 added, 31 removed this session</small></td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">hasUnknownModelCost<small>True when a model had no price table</small></td>
+            <td class="t">Boolean</td><td class="inst">Lamp</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ E ============ -->
+  <section>
+    <h2><span class="idx">E</span> Timing</h2>
+    <p class="note">
+      The most panel-shaped numbers here. This session logged 37 turns &mdash; median
+      2&nbsp;min&nbsp;5&nbsp;s, longest 12&nbsp;min&nbsp;29&nbsp;s.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Instrument</th><th>Source</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="avail">
+            <td class="f">turn.durationMs<small>Per completed turn</small></td>
+            <td class="t">Duration (ms)</td><td class="inst">Counter, sparkline</td>
+            <td class="src">system &middot; turn_duration</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">turn.messageCount</td>
+            <td class="t">Integer</td><td class="inst">Counter</td>
+            <td class="src">system &middot; turn_duration</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">totalDuration<small>Wall clock since the session began</small></td>
+            <td class="t">Duration (ms)</td><td class="inst">Counter</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">totalAPIDuration<small>Also available without retries</small></td>
+            <td class="t">Duration (ms)</td><td class="inst">Gauge, share of total</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">totalToolDuration<small>Time spent in tools rather than thinking</small></td>
+            <td class="t">Duration (ms)</td><td class="inst">Gauge, share of total</td>
+            <td class="src">cost-state</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ F ============ -->
+  <section>
+    <h2><span class="idx">F</span> Background agents</h2>
+    <p class="note">
+      Detached sessions, tracked in <code>~/.claude/jobs/*/state.json</code>. These carry
+      something no interactive session does: a machine-readable stuck flag <em>and</em> a plain
+      English reason. Highest-value block on this page &mdash; a background agent has no terminal
+      you would notice.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Instrument</th><th>Source</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="avail">
+            <td class="f">tempo<small>Observed: blocked</small></td>
+            <td class="t">Enum</td><td class="inst">Lamp &mdash; alarm</td>
+            <td class="src">jobs/*/state.json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">needs<small>&ldquo;send a prompt to start&rdquo;</small></td>
+            <td class="t">String</td><td class="inst">Readout line</td>
+            <td class="src">jobs/*/state.json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">state<small>Observed: working</small></td>
+            <td class="t">Enum</td><td class="inst">Lamp</td>
+            <td class="src">jobs/*/state.json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">detail<small>Last thing it said, truncated</small></td>
+            <td class="t">String</td><td class="inst">Readout line</td>
+            <td class="src">jobs/*/state.json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">name<small>Human task name, e.g. &ldquo;Review root project markdown files&rdquo;</small></td>
+            <td class="t">String</td><td class="inst">Tape label</td>
+            <td class="src">jobs/*/state.json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">backend<small>Observed: daemon</small></td>
+            <td class="t">Enum</td><td class="inst">Label</td>
+            <td class="src">jobs/*/state.json</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ G ============ -->
+  <section>
+    <h2><span class="idx">G</span> Events, pushed by hooks</h2>
+    <p class="note">
+      Some things leave no trace on disk: &ldquo;that just finished&rdquo; and &ldquo;this is
+      waiting for you&rdquo; are moments, not states. Hooks <code>curl</code> them into
+      <code>POST /v1/signals/{id}</code>. Every one carries a TTL, so a source that stops
+      reporting stops lighting its lamp.<sup>4</sup>
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Hook</th><th>Type</th><th>Instrument</th><th>Signal</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="wired">
+            <td class="f">Notification<small>Claude wants permission, or has been idle waiting</small></td>
+            <td class="t">Event</td><td class="inst">Lamp &mdash; alarm</td>
+            <td class="src">claude.waiting</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">Stop<small>The main agent finished its turn</small></td>
+            <td class="t">Event</td><td class="inst">Lamp</td>
+            <td class="src">claude.done</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">SubagentStop<small>A subagent finished</small></td>
+            <td class="t">Event</td><td class="inst">Lamp</td>
+            <td class="src">claude.agent</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="wired">
+            <td class="f">UserPromptSubmit<small>You answered &mdash; clears the two above</small></td>
+            <td class="t">Event</td><td class="inst">&mdash; reset</td>
+            <td class="src">clear</td>
+            <td><span class="pill wired">Wired</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">PreToolUse / PostToolUse<small>Carries the tool name and its input</small></td>
+            <td class="t">Event + String</td><td class="inst">Counter, readout</td>
+            <td class="src">not bound</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">SessionStart / SessionEnd</td>
+            <td class="t">Event</td><td class="inst">Lamp</td>
+            <td class="src">not bound</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+          <tr data-s="avail">
+            <td class="f">PreCompact<small>Context is about to be squeezed</small></td>
+            <td class="t">Event</td><td class="inst">Lamp, flash</td>
+            <td class="src">not bound</td>
+            <td><span class="pill avail">Available</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ H ============ -->
+  <section>
+    <h2><span class="idx">H</span> Not available</h2>
+    <p class="note">
+      Asked for, and not there. Worth knowing before designing an instrument around one of these.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Wanted</th><th>Type it would be</th><th>Instrument</th><th>Why not</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr data-s="gone">
+            <td class="f">quota.fiveHour<small>The number <code>/usage</code> shows</small></td>
+            <td class="t">Fraction 0&ndash;1</td><td class="inst">Gauge</td>
+            <td class="src">not cached on disk</td>
+            <td><span class="pill gone">Missing</span></td>
+          </tr>
+          <tr data-s="gone">
+            <td class="f">quota.weekly</td>
+            <td class="t">Fraction 0&ndash;1</td><td class="inst">Gauge</td>
+            <td class="src">not cached on disk</td>
+            <td><span class="pill gone">Missing</span></td>
+          </tr>
+          <tr data-s="gone">
+            <td class="f">quota.resetsAt</td>
+            <td class="t">Timestamp</td><td class="inst">Countdown</td>
+            <td class="src">not cached on disk</td>
+            <td><span class="pill gone">Missing</span></td>
+          </tr>
+          <tr data-s="gone">
+            <td class="f">cost.live<small>Cost right now, not at last checkpoint</small></td>
+            <td class="t">Money</td><td class="inst">Counter</td>
+            <td class="src">checkpoints only</td>
+            <td><span class="pill gone">Partial</span></td>
+          </tr>
+          <tr data-s="gone">
+            <td class="f">stats.allTime<small>Totals across every session</small></td>
+            <td class="t">Map</td><td class="inst">Table</td>
+            <td class="src">stats-cache.json, stale<sup>5</sup></td>
+            <td><span class="pill gone">Partial</span></td>
+          </tr>
+          <tr data-s="gone">
+            <td class="f">ide.authToken<small>Present in <code>~/.claude/ide/*.lock</code></small></td>
+            <td class="t">String (secret)</td><td class="inst">&mdash;</td>
+            <td class="src">never surface this</td>
+            <td><span class="pill never">Off limits</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="foot">
+    <h3>Notes</h3>
+    <ol>
+      <li>
+        Only <code>status: "busy"</code> has actually been observed. What an idle session reports
+        is unconfirmed, which matters for any rule that fires on <em>stopped working</em>. The
+        safe design leans on the <code>Stop</code> hook for the transition and the session list
+        for presence, so it holds either way.
+      </li>
+      <li>
+        <code>lastPrompt</code> and <code>detail</code> are verbatim text you typed or Claude
+        wrote. Fine on your own screen; think twice before putting either on a panel that floats
+        over a shared display.
+      </li>
+      <li>
+        The assistant record says <code>claude-opus-5</code>; only <code>cost-state</code> says
+        <code>claude-opus-5[1m]</code>. Sizing the window off the assistant record reads 200K when
+        it is really 1M &mdash; an 80% full gauge that should say 20%.
+      </li>
+      <li>
+        The four wired hooks ship in <code>scripts/install-claude-hooks.sh</code> and the endpoint
+        they call is tested, but the hooks are not installed here yet, so none has been observed
+        firing end to end.
+      </li>
+      <li>
+        <code>stats-cache.json</code> is only rewritten when you run <code>/stats</code>. The copy
+        on this machine is five months old. Not a live source.
+      </li>
+    </ol>
+  </div>
+
+  <p class="verified">
+    Verified against Claude Code 2.1.273 on 19 September 2026 &middot; one live session, 26&nbsp;MB
+    transcript, 1236 assistant records.
+  </p>
+
+</div>
+
+<script>
+  (function () {
+    var rows = Array.prototype.slice.call(document.querySelectorAll("tbody tr[data-s]"));
+    var buttons = Array.prototype.slice.call(document.querySelectorAll(".filter button"));
+
+    function count(kind) {
+      return rows.filter(function (r) { return r.getAttribute("data-s") === kind; }).length;
+    }
+
+    document.getElementById("n-wired").textContent = count("wired");
+    document.getElementById("n-avail").textContent = count("avail");
+    document.getElementById("n-gone").textContent = count("gone");
+
+    function apply(kind) {
+      rows.forEach(function (row) {
+        row.hidden = kind !== "all" && row.getAttribute("data-s") !== kind;
+      });
+      // A section with nothing left to show is noise.
+      Array.prototype.forEach.call(document.querySelectorAll("section"), function (section) {
+        var visible = Array.prototype.some.call(
+          section.querySelectorAll("tbody tr[data-s]"),
+          function (row) { return !row.hidden; }
+        );
+        section.hidden = !visible;
+      });
+      buttons.forEach(function (button) {
+        button.setAttribute("aria-pressed", String(button.getAttribute("data-f") === kind));
+      });
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        apply(button.getAttribute("data-f"));
+      });
+    });
+  })();
+</script>
+
+</body></html>

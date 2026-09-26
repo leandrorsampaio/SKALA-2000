@@ -1,0 +1,20 @@
+<!-- @dsCard group="Controls" height=344 subtitle="Bakelite button with separate ON / OFF lenses" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>RoundPushButton — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Press: both lenses go dark while the machine is asked, then the new state lights.');
+  stage.appendChild(P.RoundPushButton({ cap: 'SLP', label: 'Sleep mode' }));
+  stage.appendChild(P.RoundPushButton({ cap: 'MON', label: 'Turn off monitor' }));
+  stage.appendChild(P.RoundPushButton({ cap: 'FC1', label: '[FC1 · TBD]', on: true }));
+
+})();
+</script>
+</body>
+</html>

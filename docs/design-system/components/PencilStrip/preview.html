@@ -1,0 +1,18 @@
+<!-- @dsCard group="Chassis" height=208 subtitle="Write-on strip under each session number" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PencilStrip — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Type a project name. It is pencil on a matte strip: erasable, never validated.');
+  ['familyhub', 'tax', '', ''].forEach(function (v) { stage.appendChild(P.PencilStrip({ value: v })); });
+
+})();
+</script>
+</body>
+</html>

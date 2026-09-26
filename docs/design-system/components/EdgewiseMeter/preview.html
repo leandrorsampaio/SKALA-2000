@@ -1,0 +1,21 @@
+<!-- @dsCard group="Indicators" height=434 subtitle="Click to change the battery level" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>EdgewiseMeter — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click the meter to change the level.');
+  var m = P.EdgewiseMeter({ label: 'Battery %', value: 0.86 }); m.style.cursor = 'pointer';
+  var w = P.LampWindow({ label: 'Battery low', color: 'red' });
+  m.addEventListener('click', function () { var v = Math.random(); P.edge(m, v); P.lamp(w, v < 0.2 ? 'flash' : 'off'); });
+  stage.appendChild(m); stage.appendChild(w);
+
+})();
+</script>
+</body>
+</html>

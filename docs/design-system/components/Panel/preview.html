@@ -1,0 +1,23 @@
+<!-- @dsCard group="Chassis" height=496 width=1400 subtitle="Sub-panel plate, screws, plates, tags" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Panel — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('The three finishes side by side. The switch above sets the finish for every preview in this system.');
+  [['hammer', 'A · Finish 1 — grey-green'], ['ivory', 'B · Finish 2 — ivory enamel'], ['graphite', 'C · Finish 3 — matte graphite']].forEach(function (f) {
+    var note = P.h('div', { 'class': 'pk-note', text: 'Lamp lights on confirmation, not on press' });
+    var blank = P.h('div', { 'class': 'pk-blank', text: 'Reserved · quota 5 h' }); blank.style.cssText = 'height:56px';
+    var row = P.h('div', { 'class': 'pk-row' }, [P.plate('Permission mode'), P.tag('HL'), P.tag('SB'), P.LampWindow({ label: 'Auto', color: 'amber', state: 'on', code: false }), P.LampWindow({ label: 'Plan', color: 'white', code: false })]);
+    var unit = P.h('div', { 'class': 'pk-unit', text: 'Text painted on the enamel · 1 2 3 4' });
+    stage.appendChild(P.Panel({ title: f[1], width: 430, finish: f[0] }, [row, unit, blank, note]));
+  });
+})();
+</script>
+</body>
+</html>

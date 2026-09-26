@@ -1,0 +1,19 @@
+<!-- @dsCard group="Indicators" height=354 subtitle="Click a meter: the needle overshoots and settles" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>MovingCoilMeter — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click a meter to move its needle. It overshoots once and settles.');
+  var a = P.MovingCoilMeter({ label: 'Context remaining', value: 0.62, red: [0, 0.2] }), b = P.MovingCoilMeter({ label: 'API share of time', value: 0.55 });
+  [a, b].forEach(function (m) { m.style.cursor = 'pointer'; m.addEventListener('click', function () { P.meter(m, Math.random()); }); stage.appendChild(m); });
+
+})();
+</script>
+</body>
+</html>

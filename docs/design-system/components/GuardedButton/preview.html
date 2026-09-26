@@ -1,0 +1,20 @@
+<!-- @dsCard group="Controls" height=395 subtitle="Lift the guard, (turn the key,) hold 2 s" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>GuardedButton — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+
+  hint('Click the red guard to lift it; click the lifted guard to drop it (it also drops by itself after 5 s idle). F10 also needs the key turned. Then press and HOLD the red button for 2 s: nothing shows while you hold; a relay clunks at 2 s and the cap lights on confirmation.');
+  var a = P.GuardedButton({ cap: 'F8', label: '[Function 8]' }), b = P.GuardedButton({ cap: 'F10', label: '[Function 10]', key: true });
+  a.style.marginTop = b.style.marginTop = '48px'; stage.appendChild(a);
+  stage.appendChild(b);
+
+})();
+</script>
+</body>
+</html>

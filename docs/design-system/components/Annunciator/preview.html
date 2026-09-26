@@ -1,0 +1,31 @@
+<!-- @dsCard group="Patterns" height=585 width=900 subtitle="Raise alarms, then SILENCE, ACKNOWLEDGE, LAMP TEST" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Annunciator — preview</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Caveat&family=Dosis:wght@600&family=Nixie+One&family=Permanent+Marker&display=swap"></head>
+<body class="pk-stage">
+<script>
+(function () {
+  var P = window.PK4, stage = document.body;
+  stage.appendChild(P.finishSwitch());
+  function hint(t) { stage.appendChild(P.h('div', { 'class': 'pk-hint', text: t })); }
+ 
+  hint('Raise an event, then use the three buttons. New alarm: flash + buzzer. SILENCE stops the sound only. ACKNOWLEDGE makes it steady. Clear removes it.');
+  var A = P.Annunciator({ sessions: 4, rows: [
+    { id: 'run', label: 'Running', cap: 'Run', color: 'white' }, { id: 'busy', label: 'Busy', cap: 'Busy', color: 'green' },
+    { id: 'wait', label: 'Waiting for operator', cap: 'Wait', color: 'red', alarm: true }, { id: 'block', label: 'Blocked', cap: 'Block', color: 'red', alarm: true }] });
+  [1, 2, 3].forEach(function (s) { A.set('run', s, true); }); A.set('busy', 1, true);
+  var left = P.h('div', { 'class': 'pk-col' }, [A.el]); stage.appendChild(left);
+  function act(cap, label, fn, tone) { var b = P.PushButton({ cap: cap, label: label, tone: tone, momentary: true, confirmAfter: 60, onConfirm: fn }); return b; }
+  var test = P.PushButton({ cap: 'TEST', label: 'Lamp test (hold)', momentary: true, confirmAfter: 60 });
+  test.button.addEventListener('pointerdown', function () { A.lampTest(true); }); ['pointerup', 'pointerleave'].forEach(function (e) { test.button.addEventListener(e, function () { A.lampTest(false); }); });
+  var s = 1;
+  stage.appendChild(P.h('div', { 'class': 'pk-row' }, [
+    P.h('div', { 'class': 'pk-col' }, [A.grille, P.plate('Buzzer'), P.tag('HA')]),
+    act('SIL', 'Silence', A.silence), act('ACK', 'Acknowledge', A.acknowledge, 'amber'), test,
+    act('+', 'Demo: raise alarm', function () { s = s % 4 + 1; A.set(s % 2 ? 'wait' : 'block', s, true); }),
+    act('−', 'Demo: clear all', function () { [1, 2, 3, 4].forEach(function (k) { A.set('wait', k, false); A.set('block', k, false); }); })]));
+
+})();
+</script>
+</body>
+</html>

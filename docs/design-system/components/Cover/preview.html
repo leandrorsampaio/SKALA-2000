@@ -1,0 +1,63 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PK-4 Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Dosis:wght@600&display=swap">
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--enamel-panel); color:var(--ink); font-family:var(--font-label); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .slab { fill:var(--bakelite); rx:var(--radius-panel); }
+  .glass { fill:var(--nixie-glass); rx:var(--radius-window); }
+  .hazard { fill:var(--lamp-amber-on); rx:var(--radius-window); }
+  .tile { rx:var(--radius-window); }
+  .w-off { fill:var(--lamp-white-off); } .w-on { fill:var(--lamp-white-on); }
+  .g-off { fill:var(--lamp-green-off); } .g-on { fill:var(--lamp-green-on); }
+  .r-on { fill:var(--lamp-red-on); }
+  .a-off { fill:var(--lamp-amber-off); } .a-on { fill:var(--lamp-amber-on); }
+  .words { position:absolute; left:var(--space-6); bottom:var(--space-6); max-width:440px; }
+  .name { margin:0; font-size:100px; line-height:.95; font-weight:700; letter-spacing:.02em; text-transform:none; color:var(--ink); }
+  .tag { margin:var(--space-2) 0 0 2px; font:600 14px/20px var(--font-engraved); letter-spacing:.06em; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      bakelite slab 144 wide bleeding off top, bottom and right · nixie-glass window-w × 112 · lamp-amber-on window-w × 120 (the hazard and warning hue, the one colour the desk is known by) · lamp-red-on kept to one window tile (it only ever means "act now")
+  arrangement one tall bakelite slab on the right with two stacked satellites beside it, space-2 gutters, everything on the window-h + space-2 row pitch
+  pattern     tiles cut by the radius tokens, from "lamps bolted into steel plates": window-w × window-h annunciator windows at a space-2 gap, two columns on the ground in unlit glass with three lit, one column cut into the slab in amber glass with one lit
+  scales      window-w 92, window-h 40, pitch 48 = window-h + space-2; margins space-6; corners radius-window, slab radius-panel
+-->
+<rect class="slab" x="344" y="-16" width="160" height="320" rx="4"/>
+<rect class="glass" x="232" y="24" width="92" height="112" rx="3"/>
+<rect class="hazard" x="232" y="144" width="92" height="120" rx="3"/>
+<rect class="tile w-on" x="24" y="24" width="92" height="40" rx="3"/>
+<rect class="tile g-on" x="24" y="72" width="92" height="40" rx="3"/>
+<rect class="tile w-off" x="24" y="120" width="92" height="40" rx="3"/>
+<rect class="tile g-off" x="24" y="168" width="92" height="40" rx="3"/>
+<rect class="tile w-off" x="24" y="216" width="92" height="40" rx="3"/>
+<rect class="tile g-off" x="124" y="24" width="92" height="40" rx="3"/>
+<rect class="tile w-off" x="124" y="72" width="92" height="40" rx="3"/>
+<rect class="tile r-on" x="124" y="120" width="92" height="40" rx="3"/>
+<rect class="tile w-off" x="124" y="168" width="92" height="40" rx="3"/>
+<rect class="tile g-off" x="124" y="216" width="92" height="40" rx="3"/>
+<rect class="tile a-off" x="360" y="24" width="92" height="40" rx="3"/>
+<rect class="tile a-off" x="360" y="72" width="92" height="40" rx="3"/>
+<rect class="tile a-off" x="360" y="120" width="92" height="40" rx="3"/>
+<rect class="tile a-on" x="360" y="168" width="92" height="40" rx="3"/>
+<rect class="tile a-off" x="360" y="216" width="92" height="40" rx="3"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">PK-4<br>Console</h1>
+<p class="tag">Instruments for watching four thinking machines at once.</p>
+</div>
+</div>
+</body>
+</html>
