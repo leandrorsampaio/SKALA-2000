@@ -6978,7 +6978,7 @@
   },
   {
     "h" : 46,
-    "id" : "",
+    "id" : "d.power.mains",
     "info" : {
       "code" : "HL59",
       "color" : "green",
@@ -7015,7 +7015,7 @@
   },
   {
     "h" : 46,
-    "id" : "",
+    "id" : "d.power.battery",
     "info" : {
       "code" : "HL60",
       "color" : "amber",
@@ -7052,7 +7052,7 @@
   },
   {
     "h" : 46,
-    "id" : "",
+    "id" : "d.power.charging",
     "info" : {
       "code" : "HL61",
       "color" : "white",
@@ -7089,7 +7089,7 @@
   },
   {
     "h" : 46,
-    "id" : "",
+    "id" : "d.power.battlow",
     "info" : {
       "code" : "HL62",
       "color" : "red",

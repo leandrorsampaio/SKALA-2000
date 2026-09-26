@@ -22,7 +22,10 @@ public final class ArtSet: @unchecked Sendable {
 
     public struct Cap: @unchecked Sendable {
         public let face: Sprite
+        /// The face sunk into its hole: no shadows, darker, a dimmer bevel.
+        public let faceDown: Sprite?
         public let lit: Sprite?
+        public let litDown: Sprite?
         public let bright: Sprite
         public let shadow: Sprite
         public let glow: Sprite?
@@ -35,14 +38,18 @@ public final class ArtSet: @unchecked Sendable {
         public let hinge: Sprite
     }
 
+    /// Every sprite by name, as rendered or as read back from the disk cache; the typed
+    /// views below are indexed from it.
+    public private(set) var sprites: [String: Sprite] = [:]
+
     public private(set) var lamps: [InstrumentID: Sprite] = [:]
     public private(set) var caps: [InstrumentID: Cap] = [:]
     public private(set) var guards: [InstrumentID: Guard] = [:]
     public private(set) var keySlots: [InstrumentID: Sprite] = [:]
-    /// Nixie glyphs by character, for regular and XL tubes, drawn in a cell with room for
-    /// their halo: `nixieCell` is where the tube's own cell sits inside the image.
+    /// Nixie glyphs by character, for regular and XL tubes, drawn in the tube's cell with
+    /// `nixieGlyphMargin` round it for the halo.
     public private(set) var nixieGlyphs: [Bool: [Character: Picture]] = [:]
-    public private(set) var nixieGlyphMargin: CGFloat = 0
+    public let nixieGlyphMargin: CGFloat = 24
     public private(set) var nixieGlass: [InstrumentID: Sprite] = [:]
     public private(set) var drumStrip: Sprite?
     public private(set) var drumGlass: [InstrumentID: Sprite] = [:]
@@ -56,23 +63,60 @@ public final class ArtSet: @unchecked Sendable {
 
     /// Every byte of every picture, for the memory log.
     public var bytes: Int {
-        var total = background.bytes
-        let sprites: [Sprite?] =
-            Array(lamps.values) + Array(keySlots.values) + Array(nixieGlass.values)
-            + Array(drumGlass.values) + Array(meterGlass.values)
-            + [drumStrip, needle, pointer, knob, knobHighlight, lever, buzzer]
-        total += sprites.compactMap { $0?.picture.bytes }.reduce(0, +)
-        for cap in caps.values {
-            total += [cap.face, cap.lit, cap.bright, cap.shadow, cap.glow, cap.hole].compactMap {
-                $0?.picture.bytes
+        background.bytes + sprites.values.map(\.picture.bytes).reduce(0, +)
+    }
+
+    /// Builds the typed views from `sprites`.
+    func index() {
+        func id(_ name: String, _ prefix: String) -> InstrumentID? {
+            name.hasPrefix(prefix) ? InstrumentID(String(name.dropFirst(prefix.count))) : nil
+        }
+        var glyphs: [Bool: [Character: Picture]] = [false: [:], true: [:]]
+        for (name, sprite) in sprites {
+            if let lamp = id(name, "lamp:") { lamps[lamp] = sprite }
+            if let key = id(name, "key:") { keySlots[key] = sprite }
+            if let nixie = id(name, "nixieGlass:") { nixieGlass[nixie] = sprite }
+            if let drum = id(name, "drumGlass:") { drumGlass[drum] = sprite }
+            if let meter = id(name, "meterGlass:") { meterGlass[meter] = sprite }
+            if name.hasPrefix("glyph:"), let character = name.last {
+                glyphs[name.hasPrefix("glyph:xl:")]?[character] = sprite.picture
             }
-            .reduce(0, +)
         }
-        for g in guards.values {
-            total += g.flap.picture.bytes + g.shadow.picture.bytes + g.hinge.picture.bytes
+        nixieGlyphs = glyphs
+        for element in DeskLayout.all("cap") + DeskLayout.all("roundCap") {
+            let key = element.id
+            guard let face = sprites["cap.face:\(key)"], let shadow = sprites["cap.shadow:\(key)"]
+            else { continue }
+            caps[InstrumentID(key)] = Cap(
+                face: face, faceDown: sprites["cap.faceDown:\(key)"],
+                lit: sprites["cap.lit:\(key)"],
+                litDown: sprites["cap.litDown:\(key)"],
+                bright: sprites["cap.bright:\(key)"] ?? face,
+                shadow: shadow, glow: sprites["cap.glow:\(key)"], hole: sprites["cap.hole:\(key)"])
         }
-        for glyphs in nixieGlyphs.values { total += glyphs.values.map(\.bytes).reduce(0, +) }
-        return total
+        for element in DeskLayout.all("guard") {
+            let key = element.id
+            guard let flap = sprites["guard.flap:\(key)"],
+                let shadow = sprites["guard.shadow:\(key)"],
+                let hinge = sprites["guard.hinge:\(key)"]
+            else { continue }
+            guards[InstrumentID(key)] = Guard(flap: flap, shadow: shadow, hinge: hinge)
+        }
+        drumStrip = sprites["drumStrip"]
+        needle = sprites["needle"]
+        pointer = sprites["pointer"]
+        knob = sprites["knob"]
+        knobHighlight = sprites["knobHighlight"]
+        lever = sprites["lever"]
+        buzzer = sprites["buzzer"]
+    }
+
+    init(style: ArtStyle, scale: CGFloat, background: Picture, sprites: [String: Sprite]) {
+        self.style = style
+        self.scale = scale
+        self.background = background
+        self.sprites = sprites
+        index()
     }
 
     /// How long the render took, for the performance log.
@@ -87,6 +131,9 @@ public final class ArtSet: @unchecked Sendable {
         self.background = background
     }
 
+    /// Sets how long the render took; for sets read back from disk, how long reading took.
+    func took(_ seconds: Double) { renderSeconds = seconds }
+
     // MARK: - Rendering
 
     /// Renders the whole set. Thread-safe and synchronous: call it off the main thread.
@@ -95,12 +142,10 @@ public final class ArtSet: @unchecked Sendable {
         defer { signposts.endInterval("render art", state) }
         let started = Date()
         DeskFonts.register()
-        let background = picture(frame: CGRect(origin: .zero, size: DeskLayout.size), scale: scale)
-        { pen in
-            StaticPainter.paint(into: pen.ctx, scale: scale, style: style)
-        }!
+        let background = backgroundPicture(style: style, scale: scale)
         let set = ArtSet(style: style, scale: scale, background: background)
         set.renderSprites()
+        set.index()
         set.renderSeconds = Date().timeIntervalSince(started)
         return set
     }
@@ -108,9 +153,31 @@ public final class ArtSet: @unchecked Sendable {
     /// Only the static art, for comparisons.
     public static func renderBackground(style: ArtStyle, scale: CGFloat) -> CGImage {
         DeskFonts.register()
-        return picture(frame: CGRect(origin: .zero, size: DeskLayout.size), scale: scale) { pen in
-            StaticPainter.paint(into: pen.ctx, scale: scale, style: style)
-        }!.image()!
+        return backgroundPicture(style: style, scale: scale).image()!
+    }
+
+    /// For the tools: how many bands, or `nil` for one per core up to eight.
+    public nonisolated(unsafe) static var bandCount: Int?
+
+    /// The static art, drawn in bands on every core. Each band draws the whole desk clipped
+    /// to its rows, so where bands meet the pixels are the same as one drawing would give.
+    static func backgroundPicture(style: ArtStyle, scale: CGFloat) -> Picture {
+        let width = Int((DeskLayout.size.width * scale).rounded())
+        let height = Int((DeskLayout.size.height * scale).rounded())
+        let bands = bandCount ?? min(8, max(2, ProcessInfo.processInfo.activeProcessorCount))
+        return Picture(
+            width: width, height: height, bands: bands, margin: Int((48 * scale).rounded(.up))
+        ) {
+            ctx, top, rows in
+            // The band's context has its own origin: row `top` of the whole picture is its
+            // top row, so the desk's transform is shifted to match.
+            ctx.translateBy(x: 0, y: CGFloat(rows + top))
+            ctx.scaleBy(x: scale, y: -scale)
+            ctx.setAllowsFontSmoothing(true)
+            ctx.setShouldSmoothFonts(true)
+            ctx.interpolationQuality = .high
+            StaticPainter.paint(into: ctx, scale: scale, style: style)
+        }!
     }
 
     /// `frame` snapped outward to whole device pixels.
@@ -172,20 +239,60 @@ public final class ArtSet: @unchecked Sendable {
         sprite(frame) { pen in pen.translate(origin.x, origin.y) { draw(pen) } }
     }
 
+    /// One sprite to draw: its name, its frame, and how.
+    private struct Job {
+        let name: String
+        let frame: CGRect
+        let snapped: Bool
+        let draw: (Pen) -> Void
+    }
+
+    private var pending: [Job] = []
+
+    private func job(
+        _ name: String, _ frame: CGRect, snapped: Bool = true, _ draw: @escaping (Pen) -> Void
+    ) {
+        pending.append(Job(name: name, frame: frame, snapped: snapped, draw: draw))
+    }
+
+    private func job(
+        _ name: String, _ frame: CGRect, origin: CGPoint, _ draw: @escaping (Pen) -> Void
+    ) {
+        job(name, frame) { pen in pen.translate(origin.x, origin.y) { draw(pen) } }
+    }
+
+    /// Draws every sprite, on every core: each is independent of the others.
     private func renderSprites() {
+        pending = []
+        collect()
+        let jobs = pending
+        pending = []
+        let lock = NSLock()
+        var done: [String: Sprite] = [:]
+        DispatchQueue.concurrentPerform(iterations: jobs.count) { index in
+            let job = jobs[index]
+            let frame = job.snapped ? snap(job.frame) : job.frame
+            guard let picture = ArtSet.picture(frame: frame, scale: scale, job.draw) else { return }
+            lock.lock()
+            done[job.name] = Sprite(picture: picture, frame: frame)
+            lock.unlock()
+        }
+        sprites = done
+    }
+
+    /// Lists every sprite the desk needs.
+    private func collect() {
         let palette = style.palette
         let style = self.style
 
         for element in DeskLayout.all("lamp") where !element.id.isEmpty {
-            lamps[InstrumentID(element.id)] = sprite(element.rect.insetBy(dx: -40, dy: -40)) {
-                pen in
+            job("lamp:\(element.id)", element.rect.insetBy(dx: -40, dy: -40)) { pen in
                 SpritePainters.lampLit(pen, element: element, style: style)
             }
         }
         for element in DeskLayout.all("lens") where !element.id.isEmpty {
             let color = LampColor(rawValue: element.text("color")) ?? .white
-            lamps[InstrumentID(element.id)] = sprite(element.rect.insetBy(dx: -40, dy: -40)) {
-                pen in
+            job("lamp:\(element.id)", element.rect.insetBy(dx: -40, dy: -40)) { pen in
                 SpritePainters.lensLit(pen, rect: element.rect, color: color, palette: palette)
             }
         }
@@ -199,29 +306,42 @@ public final class ArtSet: @unchecked Sendable {
                 .offsetBy(dx: -face.minX, dy: -face.minY)
             // A test button's cap never lights in the machine's colour: it burns while its
             // test shows, which is the same lit face.
-            caps[id] = Cap(
-                face: sprite(face, origin: face.origin) { pen in
-                    SpritePainters.capFace(
-                        pen, text: text, tone: tone, lit: false, bright: false, style: style,
-                        textRect: textMark)
-                },
-                lit: sprite(face, origin: face.origin) { pen in
-                    SpritePainters.capFace(
-                        pen, text: text, tone: tone, lit: true, bright: false, style: style,
-                        textRect: textMark)
-                },
-                bright: sprite(face, origin: face.origin) { pen in
-                    SpritePainters.capFace(
-                        pen, text: text, tone: tone, lit: false, bright: true, style: style,
-                        textRect: textMark)
-                },
-                shadow: sprite(face.insetBy(dx: -12, dy: -12), origin: face.origin) { pen in
-                    SpritePainters.capShadow(pen)
-                },
-                glow: sprite(face.insetBy(dx: -44, dy: -44), origin: face.origin) { pen in
-                    SpritePainters.capGlow(pen, tone: tone, palette: palette)
-                },
-                hole: sprite(face, origin: face.origin) { pen in SpritePainters.holeShadow(pen) })
+            let key = element.id
+            job("cap.face:\(key)", face, origin: face.origin) { pen in
+                SpritePainters.capFace(
+                    pen, text: text, tone: tone, lit: false, bright: false, style: style,
+                    textRect: textMark)
+            }
+            job("cap.faceDown:\(key)", face, origin: face.origin) { pen in
+                SpritePainters.capFace(
+                    pen, text: text, tone: tone, lit: false, bright: false, down: true,
+                    style: style,
+                    textRect: textMark)
+            }
+            job("cap.litDown:\(key)", face, origin: face.origin) { pen in
+                SpritePainters.capFace(
+                    pen, text: text, tone: tone, lit: true, bright: false, down: true, style: style,
+                    textRect: textMark)
+            }
+            job("cap.lit:\(key)", face, origin: face.origin) { pen in
+                SpritePainters.capFace(
+                    pen, text: text, tone: tone, lit: true, bright: false, style: style,
+                    textRect: textMark)
+            }
+            job("cap.bright:\(key)", face, origin: face.origin) { pen in
+                SpritePainters.capFace(
+                    pen, text: text, tone: tone, lit: false, bright: true, style: style,
+                    textRect: textMark)
+            }
+            job("cap.shadow:\(key)", face.insetBy(dx: -12, dy: -12), origin: face.origin) { pen in
+                SpritePainters.capShadow(pen)
+            }
+            job("cap.glow:\(key)", face.insetBy(dx: -44, dy: -44), origin: face.origin) { pen in
+                SpritePainters.capGlow(pen, tone: tone, palette: palette)
+            }
+            job("cap.hole:\(key)", face, origin: face.origin) { pen in
+                SpritePainters.holeShadow(pen)
+            }
         }
         for element in DeskLayout.all("roundCap") {
             let id = InstrumentID(element.id)
@@ -229,63 +349,65 @@ public final class ArtSet: @unchecked Sendable {
             let text = element.text()
             let textMark = DeskLayout.all("roundCapText", in: element.rect).first?.rect
                 .offsetBy(dx: -face.minX, dy: -face.minY)
-            let faceSprite = sprite(face, origin: face.origin) { pen in
+            job("cap.face:\(element.id)", face, origin: face.origin) { pen in
                 SpritePainters.roundFace(pen, text: text, style: style, textRect: textMark)
             }
-            caps[id] = Cap(
-                face: faceSprite, lit: nil, bright: faceSprite,
-                shadow: sprite(face.insetBy(dx: -12, dy: -12), origin: face.origin) { pen in
-                    SpritePainters.roundShadow(pen)
-                }, glow: nil, hole: nil)
+            job("cap.faceDown:\(element.id)", face, origin: face.origin) { pen in
+                SpritePainters.roundFace(
+                    pen, text: text, style: style, textRect: textMark, down: true)
+            }
+            job("cap.shadow:\(element.id)", face.insetBy(dx: -12, dy: -12), origin: face.origin) {
+                pen in SpritePainters.roundShadow(pen)
+            }
         }
 
         for element in DeskLayout.all("guard") {
             let collar = element.rect
             let flapRect = collar.insetBy(dx: 6, dy: 6)
             let size = flapRect.size
-            guards[InstrumentID(element.id)] = Guard(
-                flap: sprite(flapRect, origin: flapRect.origin) { pen in
-                    SpritePainters.flap(pen, size: size)
-                },
-                shadow: sprite(flapRect.insetBy(dx: -12, dy: -12), origin: flapRect.origin) { pen in
-                    SpritePainters.flapShadow(pen, size: size, raised: false)
-                },
-                hinge: sprite(
-                    CGRect(x: collar.minX, y: collar.minY - 1, width: collar.width, height: 7)
-                        .insetBy(dx: -4, dy: -4),
-                    origin: CGPoint(x: collar.minX, y: collar.minY - 1)
-                ) { pen in SpritePainters.hinge(pen, width: collar.width) })
+            job("guard.flap:\(element.id)", flapRect, origin: flapRect.origin) { pen in
+                SpritePainters.flap(pen, size: size)
+            }
+            job(
+                "guard.shadow:\(element.id)", flapRect.insetBy(dx: -12, dy: -12),
+                origin: flapRect.origin
+            ) {
+                pen in SpritePainters.flapShadow(pen, size: size, raised: false)
+            }
+            job(
+                "guard.hinge:\(element.id)",
+                CGRect(x: collar.minX, y: collar.minY - 1, width: collar.width, height: 7).insetBy(
+                    dx: -4, dy: -4),
+                origin: CGPoint(x: collar.minX, y: collar.minY - 1)
+            ) { pen in SpritePainters.hinge(pen, width: collar.width) }
         }
         for element in DeskLayout.all("key") {
             let slot = CGRect(
                 x: element.rect.midX - 2, y: element.rect.midY - 11, width: 4, height: 22)
-            keySlots[InstrumentID(element.id)] = sprite(slot, origin: slot.origin) { pen in
+            job("key:\(element.id)", slot, origin: slot.origin) { pen in
                 SpritePainters.keySlot(pen)
             }
         }
 
         // Nixie glyphs: one image per character and size, drawn in the tube's cell with a
         // margin for the halo.
-        let margin: CGFloat = 24
-        nixieGlyphMargin = margin
+        let margin = nixieGlyphMargin
         for xl in [false, true] {
             let cell = xl ? CGSize(width: 54, height: 84) : CGSize(width: 28, height: 48)
-            var glyphs: [Character: Picture] = [:]
             for character in "0123456789:." {
                 let size = character.isNumber ? cell : CGSize(width: 10, height: cell.height)
                 let frame = CGRect(
                     x: -margin, y: -margin, width: size.width + 2 * margin,
                     height: size.height + 2 * margin)
-                glyphs[character] = ArtSet.picture(frame: frame, scale: scale) { pen in
+                job("glyph:\(xl ? "xl" : "regular"):\(character)", frame, snapped: false) { pen in
                     SpritePainters.nixieGlyph(
                         pen, character: character, xl: xl, size: size, palette: palette)
                 }
             }
-            nixieGlyphs[xl] = glyphs
         }
         for element in DeskLayout.all("nixie") where !element.id.isEmpty {
             let pane = element.rect.insetBy(dx: 4, dy: 4)
-            nixieGlass[InstrumentID(element.id)] = sprite(pane) { pen in
+            job("nixieGlass:\(element.id)", pane) { pen in
                 SpritePainters.nixieGlass(pen, pane: pane)
             }
         }
@@ -293,7 +415,7 @@ public final class ArtSet: @unchecked Sendable {
         if let wheel = DeskLayout.all("wheel").first {
             let size = wheel.rect.size
             let cells = CGFloat(SpritePainters.stripCells)
-            drumStrip = sprite(CGRect(x: 0, y: 0, width: size.width, height: size.height * cells)) {
+            job("drumStrip", CGRect(x: 0, y: 0, width: size.width, height: size.height * cells)) {
                 pen in
                 SpritePainters.drumStrip(pen, wheel: size, palette: palette)
             }
@@ -301,27 +423,27 @@ public final class ArtSet: @unchecked Sendable {
         for element in DeskLayout.all("drum") where !element.id.isEmpty {
             let window = element.rect.insetBy(dx: 4, dy: 4)
             let wheels = DeskLayout.all("wheel").filter { $0.id == element.id }.map(\.rect)
-            drumGlass[InstrumentID(element.id)] = sprite(window) { pen in
+            job("drumGlass:\(element.id)", window) { pen in
                 SpritePainters.drumGlass(pen, window: window, wheels: wheels)
             }
         }
 
-        needle = sprite(CGRect(x: 0, y: 0, width: 2.5, height: 84)) { pen in
+        job("needle", CGRect(x: 0, y: 0, width: 2.5, height: 84)) { pen in
             SpritePainters.needle(pen)
         }
         for element in DeskLayout.all("dial") where !element.id.isEmpty {
             let dial = element.rect
-            meterGlass[InstrumentID(element.id)] = sprite(dial, origin: dial.origin) { pen in
+            job("meterGlass:\(element.id)", dial, origin: dial.origin) { pen in
                 SpritePainters.pivot(pen)
                 SpritePainters.meterGlass(pen, size: dial.size, radius: 6)
             }
         }
-        pointer = sprite(CGRect(x: 10, y: -7, width: 32, height: 14)) { pen in
+        job("pointer", CGRect(x: 10, y: -7, width: 32, height: 14)) { pen in
             SpritePainters.pointer(pen)
         }
         for element in DeskLayout.all("edgeDial") where !element.id.isEmpty {
             let dial = element.rect
-            meterGlass[InstrumentID(element.id)] = sprite(dial, origin: dial.origin) { pen in
+            job("meterGlass:\(element.id)", dial, origin: dial.origin) { pen in
                 SpritePainters.meterGlass(pen, size: dial.size, radius: 3)
             }
         }
@@ -338,17 +460,17 @@ public final class ArtSet: @unchecked Sendable {
                     }
                 }
             }
-            knob = sprite(rect, scaled(SelectorArt.knob))
-            knobHighlight = sprite(rect, scaled(SelectorArt.highlight))
+            job("knob", rect, scaled(SelectorArt.knob))
+            job("knobHighlight", rect, scaled(SelectorArt.highlight))
         }
         if let toggle = DeskLayout.all("toggle").first {
-            lever = sprite(toggle.rect.insetBy(dx: -12, dy: -12), origin: toggle.rect.origin) {
+            job("lever", toggle.rect.insetBy(dx: -12, dy: -12), origin: toggle.rect.origin) {
                 pen in
                 SpritePainters.lever(pen)
             }
         }
         if let element = DeskLayout.all("buzzer").first {
-            buzzer = sprite(element.rect.insetBy(dx: -12, dy: -12), origin: element.rect.origin) {
+            job("buzzer", element.rect.insetBy(dx: -12, dy: -12), origin: element.rect.origin) {
                 pen in
                 SpritePainters.buzzer(pen, palette: palette)
             }

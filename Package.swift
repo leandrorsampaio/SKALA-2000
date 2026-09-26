@@ -46,7 +46,7 @@ let package = Package(
         // the layout table and the golden renders. See Sources/DeskReference/main.swift.
         .executableTarget(
             name: "DeskReference",
-            dependencies: ["ConsoleKit", "FakeSources", "TelemetryKit", "DeskArt"],
+            dependencies: ["ConsoleKit", "FakeSources", "TelemetryKit", "DeskArt", "DeskView"],
             swiftSettings: settings),
 
         .testTarget(name: "TelemetryKitTests", dependencies: ["TelemetryKit"], swiftSettings: settings),

@@ -1,6 +1,7 @@
 import AppKit
 import ConsoleKit
 import DeskArt
+import DeskView
 import Foundation
 
 /// Paints the new renderer's static art and measures it against the reference's goldens,
@@ -230,5 +231,53 @@ extension Compare {
                     + parts.joined(separator: "  "))
         }
         ArtCalibration.setShadowFactor(1)
+    }
+}
+
+extension Compare {
+    /// The whole live desk, sprites and all, rendered by the real layer tree and set against
+    /// the reference in the same states.
+    @MainActor
+    static func live(goldens: URL, out: URL, scale: CGFloat) throws {
+        try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        let (model, clock) = Reference.model(atHour: 1.1)
+        var cases: [(String, ConsoleSnapshot, ArtStyle)] = []
+        cases.append(("day", model.snapshot, ArtStyle(night: false)))
+        cases.append(("night", model.snapshot, ArtStyle(night: true)))
+        model.send(.press(PK4.lampTest))
+        cases.append(("lamp-test-day", model.snapshot, ArtStyle(night: false)))
+        cases.append(("lamp-test-night", model.snapshot, ArtStyle(night: true)))
+        model.send(.release(PK4.lampTest))
+        clock.advance(by: 2)
+        model.advance()
+        model.send(.mains(false))
+        cases.append(("mains-off", model.snapshot, ArtStyle(night: false)))
+        for (name, snapshot, style) in cases {
+            guard let mine = DeskPrinter.image(snapshot, style: style, scale: scale) else {
+                print("\(name): render failed")
+                continue
+            }
+            try write(mine, out.appendingPathComponent("\(name)-mine.png"))
+            guard let golden = load(goldens.appendingPathComponent("\(name).png")) else { continue }
+            let a = Pixels(mine), b = Pixels(golden)
+            guard a.width == b.width, a.height == b.height else {
+                print("\(name): size mismatch \(a.width)×\(a.height) vs \(b.width)×\(b.height)")
+                continue
+            }
+            let whole = error(
+                a, b, CGRect(origin: .zero, size: DeskArt.DeskLayout.size), scale: scale)
+            var parts: [String] = []
+            for kind in [
+                "lamp", "lens", "cap", "roundCap", "nixie", "drum", "dial", "edgeDial", "selector",
+                "toggle", "guard", "key", "buzzer", "pencil", "programCard",
+            ] {
+                let errors = DeskArt.DeskLayout.all(kind).map { error(a, b, $0.rect, scale: scale) }
+                parts.append(
+                    String(
+                        format: "%@ %.1f", kind, errors.reduce(0, +) / Double(max(1, errors.count)))
+                )
+            }
+            print(String(format: "%@: mean %.2f  ", name, whole) + parts.joined(separator: "  "))
+        }
     }
 }

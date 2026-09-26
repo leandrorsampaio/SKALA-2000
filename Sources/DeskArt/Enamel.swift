@@ -105,6 +105,9 @@ extension Pen {
         clip(Pen.rect(rect, radius: radius)) {
             fill(rect, paint.ground)
             ctx.saveGState()
+            // The grain casts no shadow: in the reference it is a blended image, and a
+            // shadow of it would darken the whole sheet.
+            ctx.setShadow(offset: .zero, blur: 0, color: nil)
             ctx.setBlendMode(.overlay)
             ctx.interpolationQuality = .low
             // Tiles from the sheet's own corner, one texel a unit, top row at the top as

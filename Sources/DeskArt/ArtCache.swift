@@ -18,7 +18,14 @@ public final class ArtCache: @unchecked Sendable {
             return hit
         }
         lock.unlock()
-        let art = ArtSet.render(style: style, scale: scale)
+        let art: ArtSet
+        if let saved = ArtDiskCache.read(style: style, scale: scale) {
+            art = saved
+        } else {
+            art = ArtSet.render(style: style, scale: scale)
+            // Written in the background: the view is waiting for this set, not for the disk.
+            DispatchQueue.global(qos: .utility).async { ArtDiskCache.write(art) }
+        }
         lock.lock()
         recent = [art]
         lock.unlock()

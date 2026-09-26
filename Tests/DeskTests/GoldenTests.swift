@@ -1,0 +1,140 @@
+import AppKit
+import ConsoleKit
+import DeskArt
+import FakeSources
+import Foundation
+import Metal
+import Testing
+
+@testable import DeskView
+
+/// The whole desk, drawn by the real layer tree, against the reference SwiftUI desk in the
+/// same states: the scripted day at 09:05, both themes, under LAMP TEST and with MAINS off.
+///
+/// The goldens are half-size JPEGs written by `swift run DeskReference test-goldens`.
+/// The tolerance is a mean difference in 255 levels: sub-pixel antialiasing and the JPEG
+/// cost about 3 over the whole desk; a painter that goes wrong costs far more in its own
+/// instruments, and the per-instrument check catches it.
+@MainActor
+@Suite(.enabled(if: MTLCreateSystemDefaultDevice() != nil))
+struct GoldenTests {
+
+    static let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .appendingPathComponent("Goldens")
+
+    static func scriptedDay() -> (ConsoleModel, ManualClock) {
+        let clock = ManualClock()
+        let model = ConsoleModel(clock: clock, store: MemoryConsoleStore(), log: MemoryConsoleLog())
+        var day = FakeDay(start: clock.now)
+        while day.elapsed < 1.1 * 3600 {
+            let readings = day.step()
+            clock.now = day.now
+            model.ingest(readings)
+            model.advance()
+        }
+        clock.advance(by: 1)
+        model.advance()
+        return (model, clock)
+    }
+
+    struct Pixels {
+        let width: Int
+        let height: Int
+        var data: [UInt8]
+
+        init(_ image: CGImage) {
+            width = image.width
+            height = image.height
+            data = [UInt8](repeating: 0, count: width * height * 4)
+            let ctx = CGContext(
+                data: &data, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            ctx.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
+
+        /// The smallest mean difference over `rect` with this image moved up to one pixel
+        /// either way: the reference rounds its layout to whole pixels, the table to halves.
+        func shiftedError(against other: Pixels, in rect: CGRect, scale: CGFloat) -> Double {
+            var best = Double.infinity
+            for dx in -1...1 {
+                for dy in -1...1 {
+                    best = min(best, error(against: other, in: rect, scale: scale, dx: dx, dy: dy))
+                }
+            }
+            return best
+        }
+
+        /// Mean absolute difference per channel over `rect` (desk units).
+        func error(
+            against other: Pixels, in rect: CGRect, scale: CGFloat, dx: Int = 0, dy: Int = 0
+        ) -> Double {
+            let x0 = max(0, Int(rect.minX * scale))
+            let y0 = max(0, Int(rect.minY * scale))
+            let x1 = min(width, Int(rect.maxX * scale))
+            let y1 = min(height, Int(rect.maxY * scale))
+            guard x1 > x0, y1 > y0 else { return 0 }
+            var total = 0
+            for y in y0..<y1 {
+                for x in x0..<x1 {
+                    let sx = min(width - 1, max(0, x + dx))
+                    let sy = min(height - 1, max(0, y + dy))
+                    let i = (sy * width + sx) * 4
+                    let j = (y * width + x) * 4
+                    for c in 0..<3 { total += abs(Int(data[i + c]) - Int(other.data[j + c])) }
+                }
+            }
+            return Double(total) / Double((x1 - x0) * (y1 - y0) * 3)
+        }
+    }
+
+    func compare(_ name: String, _ snapshot: ConsoleSnapshot, night: Bool) throws {
+        // Drawn at full size and averaged down, as the goldens were.
+        let scale: CGFloat = 0.5
+        let url = Self.folder.appendingPathComponent("\(name).jpg")
+        let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+        let golden = Pixels(try #require(CGImageSourceCreateImageAtIndex(source, 0, nil)))
+        let full = try #require(
+            DeskPrinter.image(snapshot, style: ArtStyle(night: night), scale: 1))
+        let mine = Pixels(try #require(DeskImages.halved(full)))
+        #expect(mine.width == golden.width && mine.height == golden.height)
+
+        let whole = mine.error(
+            against: golden, in: CGRect(origin: .zero, size: DeskLayout.size), scale: scale)
+        #expect(whole < 5, "\(name): the desk differs from the reference by \(whole)")
+        for kind in [
+            "panel", "lamp", "lens", "cap", "roundCap", "nixie", "drum", "meter", "guard", "plate",
+        ] {
+            // A flashing lamp is at whatever point of its flash each render caught it.
+            for element in DeskLayout.all(kind)
+            where snapshot.lamp(InstrumentID(element.id)) != .flash {
+                let error = mine.shiftedError(against: golden, in: element.rect, scale: scale)
+                // Bright lettering on black bakelite turns half a unit of placement into a
+                // large difference; everything else must match closely.
+                let limit: Double = kind == "plate" ? 30 : 16
+                #expect(
+                    error < limit,
+                    "\(name): \(kind) \(element.id) \(element.text()) differs by \(error)")
+            }
+        }
+    }
+
+    @Test func theScriptedDayByDayAndByNight() throws {
+        let (model, _) = Self.scriptedDay()
+        try compare("day", model.snapshot, night: false)
+        try compare("night", model.snapshot, night: true)
+    }
+
+    @Test func lampTestAndMainsOff() throws {
+        let (model, clock) = Self.scriptedDay()
+        model.send(.press(PK4.lampTest))
+        try compare("lamp-test-day", model.snapshot, night: false)
+        try compare("lamp-test-night", model.snapshot, night: true)
+        model.send(.release(PK4.lampTest))
+        clock.advance(by: 2)
+        model.advance()
+        model.send(.mains(false))
+        try compare("mains-off", model.snapshot, night: false)
+    }
+}

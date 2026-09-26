@@ -24,7 +24,9 @@ final class DeskLayers {
         let face = CALayer()
         let lit = CALayer()
         let bright = CALayer()
-        let darken = CALayer()
+        /// The face and its lit glass sunk into the hole, shown while the cap is down.
+        let faceDown = CALayer()
+        let litDown = CALayer()
         let hole = CALayer()
         var down = false
         var isLit: Bool = false
@@ -148,16 +150,14 @@ final class DeskLayers {
             cap.hole.opacity = 0
             cap.body.frame = cap.faceRect
             cap.body.actions = DeskLayers.noActions
-            for layer in [cap.face, cap.lit, cap.bright, cap.darken] {
+            for layer in [cap.face, cap.lit, cap.bright, cap.faceDown, cap.litDown] {
                 layer.actions = DeskLayers.noActions
                 cap.body.addSublayer(layer)
             }
             cap.lit.opacity = 0
             cap.bright.opacity = 0
-            cap.darken.opacity = 0
-            cap.darken.backgroundColor = CGColor(gray: 0, alpha: 0.2)
-            cap.darken.frame = CGRect(origin: .zero, size: cap.faceRect.size)
-            cap.darken.cornerRadius = cap.round ? cap.faceRect.width / 2 : 6
+            cap.faceDown.opacity = 0
+            cap.litDown.opacity = 0
         }
 
         for element in DeskLayout.all("key") {
@@ -291,6 +291,8 @@ final class DeskLayers {
             place(cap.glow, sprites.glow)
             placeInside(cap.face, sprites.face, origin: cap.faceRect.origin)
             placeInside(cap.lit, sprites.lit, origin: cap.faceRect.origin)
+            placeInside(cap.faceDown, sprites.faceDown, origin: cap.faceRect.origin)
+            placeInside(cap.litDown, sprites.litDown, origin: cap.faceRect.origin)
             placeInside(cap.bright, sprites.bright, origin: cap.faceRect.origin)
             place(cap.hole, sprites.hole)
         }
@@ -640,8 +642,46 @@ final class DeskLayers {
 
     private func setCap(_ cap: Cap, face: ButtonFace, animate: Bool) {
         let down = face.capDown || held.contains(cap.id)
-        if down != cap.down {
-            cap.down = down
+        let lit = !cap.round && (face.lamp == .on || face.lamp == .test)
+        let wasDown = cap.down
+        let wasLit = cap.isLit
+        guard down != wasDown || lit != wasLit || face.phase != cap.phase else { return }
+        cap.down = down
+        cap.isLit = lit
+
+        // Every layer that shows, and how opaque it should be now.
+        let targets: [(CALayer, Float, CFTimeInterval, CAMediaTimingFunction)] = [
+            (cap.face, down ? 0 : 1, Motion.cap, Motion.linear),
+            (cap.faceDown, down ? 1 : 0, Motion.cap, Motion.linear),
+            (
+                cap.lit, lit && !down ? 1 : 0,
+                lit != wasLit ? (lit ? Motion.lampOn : Motion.lampOff) : Motion.cap,
+                lit != wasLit ? (lit ? Motion.easeIn : Motion.easeOut) : Motion.linear
+            ),
+            (
+                cap.litDown, lit && down ? 1 : 0,
+                lit != wasLit ? (lit ? Motion.lampOn : Motion.lampOff) : Motion.cap,
+                lit != wasLit ? (lit ? Motion.easeIn : Motion.easeOut) : Motion.linear
+            ),
+            (
+                cap.glow, lit ? 1 : 0, lit ? Motion.lampOn : Motion.lampOff,
+                lit ? Motion.easeIn : Motion.easeOut
+            ),
+            (cap.hole, down ? 1 : 0, Motion.cap, Motion.linear),
+            (cap.shadow, down ? 0 : 1, Motion.cap, Motion.linear),
+        ]
+        for (layer, target, duration, curve) in targets where layer.opacity != target {
+            if animate {
+                let fade = CABasicAnimation(keyPath: "opacity")
+                fade.fromValue = layer.presentation()?.opacity ?? layer.opacity
+                fade.toValue = target
+                fade.duration = duration
+                fade.timingFunction = curve
+                layer.add(fade, forKey: "fade")
+            }
+            layer.opacity = target
+        }
+        if down != wasDown {
             let scale: CGFloat = down ? 0.89 : 1
             if animate {
                 let press = CABasicAnimation(keyPath: "transform.scale")
@@ -652,34 +692,8 @@ final class DeskLayers {
                 press.duration = Motion.cap
                 press.timingFunction = Motion.linear
                 cap.body.add(press, forKey: "press")
-                for (layer, target) in [(cap.darken, down), (cap.hole, down), (cap.shadow, !down)] {
-                    let fade = CABasicAnimation(keyPath: "opacity")
-                    fade.fromValue = layer.presentation()?.opacity ?? (target ? 0 : 1)
-                    fade.toValue = target ? 1 : 0
-                    fade.duration = Motion.cap
-                    layer.add(fade, forKey: "press")
-                }
             }
             cap.body.setAffineTransform(CGAffineTransform(scaleX: scale, y: scale))
-            cap.darken.opacity = down ? 1 : 0
-            cap.hole.opacity = down ? 1 : 0
-            cap.shadow.opacity = down ? 0 : 1
-        }
-        let lit = face.lamp == .on || face.lamp == .test
-        if lit != cap.isLit, !cap.round {
-            cap.isLit = lit
-            for layer in [cap.lit, cap.glow] {
-                let current = layer.presentation()?.opacity ?? layer.opacity
-                layer.opacity = lit ? 1 : 0
-                if animate {
-                    let fade = CABasicAnimation(keyPath: "opacity")
-                    fade.fromValue = current
-                    fade.toValue = layer.opacity
-                    fade.duration = lit ? Motion.lampOn : Motion.lampOff
-                    fade.timingFunction = lit ? Motion.easeIn : Motion.easeOut
-                    layer.add(fade, forKey: "fade")
-                }
-            }
         }
         if face.phase != cap.phase {
             cap.phase = face.phase

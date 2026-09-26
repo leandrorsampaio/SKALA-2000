@@ -725,7 +725,7 @@ private struct PanelD: View {
     private func window(
         _ label: String, _ color: LampColor, _ id: InstrumentID, _ code: String
     ) -> some View {
-        LampWindow(label: label, color: color, state: s.lamp(id), code: code)
+        LampWindow(label: label, color: color, state: s.lamp(id), code: code, id: id.rawValue)
             .equatable()
             .accessibilityElement()
             .accessibilityLabel(label)

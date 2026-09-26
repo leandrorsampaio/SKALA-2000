@@ -107,12 +107,19 @@ public struct StaticPainter {
     }
 
     /// One painted steel plate screwed into the desk.
+    ///
+    /// SwiftUI's `.shadow` on a container shadows each thing inside it separately, and the
+    /// reference relies on that throughout: here the light falloff and the bevel each cast
+    /// the panel's shadow across the sheet as well as the sheet casting it on the desk.
+    /// Core Graphics shadows each drawing operation separately too, so the port keeps it.
     func panel(_ rect: CGRect) {
         let shape = Pen.rect(rect, radius: 4)
-        pen.shadow(black(0.4), radius: 3, y: 2) { pen.fill(shape, paint.ground) }
-        pen.enamel(rect, radius: 4, finish: style.finish, palette: palette)
-        pen.strokeBorder(rect, radius: 4, paint.edge, width: 1)
-        pen.bevel(rect, radius: 4, light: 0.4, dark: 0.35)
+        pen.shadow(black(0.4), radius: 3, y: 2) {
+            pen.fill(shape, paint.ground)
+            pen.enamel(rect, radius: 4, finish: style.finish, palette: palette)
+            pen.strokeBorder(rect, radius: 4, paint.edge, width: 1)
+            pen.bevel(rect, radius: 4, light: 0.4, dark: 0.35)
+        }
     }
 
     /// A domed slotted screw in a dark countersink, its slot at an angle of its own.
@@ -159,13 +166,13 @@ public struct StaticPainter {
         let kind = element.text("style")
         let size: CGFloat = kind == "title" ? 20 : kind == "row" ? 14 : 13
         if kind != "bare" {
-            let shape = Pen.rect(rect, radius: 2)
-            pen.shadow(black(0.45), radius: 1.5, y: 2) { pen.fill(shape, palette.bakelite) }
-            pen.linear(
-                rect, radius: 2,
-                [(rgb(0x31312E), 0), (palette.bakelite, 0.55), (rgb(0x0E0E0D), 1)], from: .top,
-                to: .bottom)
-            pen.bevel(rect, radius: 2, light: 0.28, dark: 0.7)
+            pen.shadow(black(0.45), radius: 1.5, y: 2) {
+                pen.linear(
+                    rect, radius: 2,
+                    [(rgb(0x31312E), 0), (palette.bakelite, 0.55), (rgb(0x0E0E0D), 1)], from: .top,
+                    to: .bottom)
+                pen.bevel(rect, radius: 2, light: 0.28, dark: 0.7)
+            }
         }
         stamped(
             element.text().uppercased(), engraved(size, tracking: size * 0.09, palette.engraving),
@@ -177,12 +184,11 @@ public struct StaticPainter {
     func tag(_ element: DeskLayout.Element) {
         let rect = element.rect
         pen.shadow(black(0.45), radius: 1, y: 1) {
-            pen.fill(Pen.rect(rect, radius: 1), palette.tag)
+            pen.linear(
+                rect, radius: 1, [(rgb(0xECEEE8), 0), (palette.tag, 0.6), (rgb(0xAEB1A8), 1)],
+                from: .top, to: .bottom)
+            pen.strokeBorder(rect, radius: 1, black(0.45), width: 1)
         }
-        pen.linear(
-            rect, radius: 1, [(rgb(0xECEEE8), 0), (palette.tag, 0.6), (rgb(0xAEB1A8), 1)],
-            from: .top, to: .bottom)
-        pen.strokeBorder(rect, radius: 1, black(0.45), width: 1)
         stamped(
             element.text(), engraved(11, tracking: 0.44, palette.tagInk),
             in: rect.insetBy(dx: 4, dy: 1), shadows: [(white(0.6), 1)])
@@ -192,9 +198,12 @@ public struct StaticPainter {
     func instruction(_ element: DeskLayout.Element) {
         let rect = element.rect
         let shape = Pen.rect(rect, radius: 2)
-        pen.shadow(black(0.45), radius: 1.5, y: 2) { pen.fill(shape, palette.instruction) }
-        pen.linear(rect, radius: 2, [(white(0.22), 0), (black(0.06), 1)], from: .top, to: .bottom)
-        pen.strokeBorder(rect, radius: 2, palette.bezel, width: 1)
+        pen.shadow(black(0.45), radius: 1.5, y: 2) {
+            pen.fill(shape, palette.instruction)
+            pen.linear(
+                rect, radius: 2, [(white(0.22), 0), (black(0.06), 1)], from: .top, to: .bottom)
+            pen.strokeBorder(rect, radius: 2, palette.bezel, width: 1)
+        }
         for rivet in DeskLayout.all("rivet", in: rect) { self.rivet(rivet.rect) }
         if let text = DeskLayout.all("instructionText", in: rect).first {
             pen.text(
@@ -216,10 +225,10 @@ public struct StaticPainter {
         let rect = element.rect
         pen.shadow(black(0.45), radius: 1.5, y: 1) {
             pen.fill(Pen.rect(rect, radius: 3), paint.ground)
+            pen.enamel(rect, radius: 3, finish: style.finish, palette: palette, falloff: false)
+            pen.strokeBorder(rect, radius: 3, paint.edge, width: 1)
+            pen.bevel(rect, radius: 3, light: 0.4, dark: 0.35)
         }
-        pen.enamel(rect, radius: 3, finish: style.finish, palette: palette, falloff: false)
-        pen.strokeBorder(rect, radius: 3, paint.edge, width: 1)
-        pen.bevel(rect, radius: 3, light: 0.4, dark: 0.35)
         pen.text(
             element.text().uppercased(), engraved(13, tracking: 1.17, paint.ink),
             in: rect.insetBy(dx: 6, dy: 6), wrap: true)
@@ -253,13 +262,12 @@ public struct StaticPainter {
         if let plate = all("nameplate").first {
             let rect = plate.rect
             pen.shadow(black(0.45), radius: 1.5, y: 2) {
-                pen.fill(Pen.rect(rect, radius: 2), palette.aluminium)
+                pen.linear(
+                    rect, radius: 2,
+                    [(rgb(0xECEEE8), 0), (palette.aluminium, 0.6), (rgb(0xA4A79F), 1)],
+                    from: .top, to: .bottom)
+                pen.strokeBorder(rect, radius: 2, black(0.55), width: 1)
             }
-            pen.linear(
-                rect, radius: 2,
-                [(rgb(0xECEEE8), 0), (palette.aluminium, 0.6), (rgb(0xA4A79F), 1)],
-                from: .top, to: .bottom)
-            pen.strokeBorder(rect, radius: 2, black(0.55), width: 1)
             for line in all("nameplateLine") {
                 stamped(
                     line.text().uppercased(), engraved(12, tracking: 1.08, palette.tagInk),
@@ -333,7 +341,8 @@ public struct StaticPainter {
     func lensStatic(_ rect: CGRect, color: LampColor) {
         let glass = palette.glass(color)
         let collar = Pen.circle(rect)
-        pen.shadow(black(0.55), radius: 1.5, y: 2, group: rect) {
+        // The collar and its dark rim each cast the shadow: the rim's falls inside the collar.
+        pen.shadow(black(0.55), radius: 1.5, y: 2) {
             pen.angular(collar, Self.chrome, center: .center, in: rect, degrees: 125)
             pen.strokeBorderCircle(rect, palette.bezel, width: 1.5)
         }
@@ -353,7 +362,7 @@ public struct StaticPainter {
     /// A square button's dark frame and the black hole its cap sinks into.
     func capWell(_ rect: CGRect) {
         let frame = Pen.rect(rect, radius: 10)
-        pen.shadow(white(0.4), radius: 0, y: 1, group: rect) {
+        pen.shadow(white(0.4), radius: 0, y: 1) {
             pen.linear(
                 frame, Pen.even([rgb(0x55554F), rgb(0x121211)]), from: .topLeading,
                 to: .bottomTrailing, in: rect)
@@ -364,7 +373,7 @@ public struct StaticPainter {
 
     /// A round button's chrome collar and its hole.
     func roundWell(_ rect: CGRect) {
-        pen.shadow(black(0.55), radius: 1.5, y: 2, group: rect) {
+        pen.shadow(black(0.55), radius: 1.5, y: 2) {
             pen.angular(Pen.circle(rect), Self.chrome, center: .center, in: rect, degrees: 125)
             pen.strokeBorderCircle(rect, palette.bezel, width: 1.5)
         }
@@ -380,10 +389,10 @@ public struct StaticPainter {
             pen.linear(
                 shape, Pen.even([rgb(0xE4604A), rgb(0xD24431), rgb(0xA3281A), rgb(0x7C1B0F)]),
                 from: .topLeading, to: .bottomTrailing, in: collar)
+            pen.strokeBorder(
+                collar, radius: 7, CGColor(srgbRed: 0.16, green: 0.02, blue: 0.01, alpha: 0.8),
+                width: 1)
         }
-        pen.strokeBorder(
-            collar, radius: 7, CGColor(srgbRed: 0.16, green: 0.02, blue: 0.01, alpha: 0.8), width: 1
-        )
 
         let well = collar.insetBy(dx: 5, dy: 5)
         pen.clip(Pen.rect(well, radius: 3)) {
@@ -455,11 +464,12 @@ public struct StaticPainter {
 
     func housing(_ rect: CGRect) {
         let shape = Pen.rect(rect, radius: 6)
-        pen.shadow(black(0.5), radius: 2.5, y: 3) { pen.fill(shape, palette.bakelite) }
-        pen.linear(
-            shape, [(rgb(0x3A3A36), 0), (palette.bakelite, 0.4), (rgb(0x0B0B0A), 1)],
-            from: CGPoint(x: 0.35, y: 0), to: CGPoint(x: 0.65, y: 1), in: rect)
-        pen.bevel(rect, radius: 6, light: 0.3, dark: 0.8)
+        pen.shadow(black(0.5), radius: 2.5, y: 3) {
+            pen.linear(
+                shape, [(rgb(0x3A3A36), 0), (palette.bakelite, 0.4), (rgb(0x0B0B0A), 1)],
+                from: CGPoint(x: 0.35, y: 0), to: CGPoint(x: 0.65, y: 1), in: rect)
+            pen.bevel(rect, radius: 6, light: 0.3, dark: 0.8)
+        }
     }
 
     /// A moving-coil meter's yellowed dial: a 120° arc, 0 / 50 / 100, an optional red
@@ -587,11 +597,12 @@ public struct StaticPainter {
     /// A paper strip in its aluminium card holder; the pencil on it is a layer.
     func pencilHolder(_ rect: CGRect) {
         let holder = Pen.rect(rect, radius: 3)
-        pen.shadow(black(0.45), radius: 1.5, y: 2) { pen.fill(holder, rgb(0x9A9D95)) }
-        pen.linear(
-            holder, Pen.even([rgb(0xF4F5F0), rgb(0xDFE0D9), rgb(0x9A9D95), rgb(0x74776F)]),
-            from: .topLeading, to: .bottomTrailing, in: rect)
-        pen.strokeBorder(rect, radius: 3, black(0.55), width: 1)
+        pen.shadow(black(0.45), radius: 1.5, y: 2) {
+            pen.linear(
+                holder, Pen.even([rgb(0xF4F5F0), rgb(0xDFE0D9), rgb(0x9A9D95), rgb(0x74776F)]),
+                from: .topLeading, to: .bottomTrailing, in: rect)
+            pen.strokeBorder(rect, radius: 3, black(0.55), width: 1)
+        }
         let paper = rect.insetBy(dx: 4, dy: 4)
         pen.fill(paper, palette.paper)
         pen.linear(

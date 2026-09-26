@@ -19,7 +19,7 @@ which is where the Claude Code feed spends its time (`claude agents --json`).
 | Hidden, no feed | ≤ 0.3% | **0.02%** | |
 | Live resize, 1280 wide to the widest the screen allows | no dropped frames; ≤ 2 ms main thread per frame | **0 of 272 frames missed**; DeskView **0.04 ms** per frame (max 0.12) | the whole `NSWindow.setFrame` step is 2.2 ms, of which an *empty* AppKit window takes 1.44 ms (p95 4.4 ms) |
 | Click → cap visibly down | next frame | cap transform set inside `mouseDown`, committed with that turn of the run loop | see "Input" |
-| Launch → interactive desk | ≤ 0.5 s warm, ≤ 1.5 s cold | **0.63–0.68 s warm**, 3.2 s first launch after a build | 0.24 s of it is rendering the art; the disk cache (phase 2) removes that |
+| Launch → interactive desk | ≤ 0.5 s warm, ≤ 1.5 s cold | **0.40–0.42 s warm**, **1.17 s** first launch after a build | from `exec` to the art on screen; the art comes from the disk cache in 12 ms |
 | Memory, 5K full screen | ≤ 250 MB | **161 MB** | was 346 MB before the art moved into IOSurfaces |
 
 The reference app as it runs on this Mac right now (Mac Command Center, console window
@@ -64,9 +64,38 @@ art is re-rendered at the new pixel size off the main thread when the resize end
 then the GPU scales the old bitmap. The remaining main-thread time in a resize step is
 AppKit's own window resize, and an empty window costs about the same.
 
+### Drawing the art
+
+The art is drawn off the main thread, then swapped in: the whole static desk and 272
+sprites for one style at one pixel size.
+
+| Pixels per desk unit | Where | Background | Whole set | Memory |
+| --- | --- | --- | --- | --- |
+| 1.024 | 1280-point window | 91 ms | 80 ms | 33 MB |
+| 1.28 | 1600-point window | 89 ms | 98 ms | 52 MB |
+| 1.6 | 5K full screen | 132 ms | 145 ms | 76 MB |
+| 2.048 | 2560 points wide at 2× | 218 ms | 243 ms | 125 MB |
+
+The background is drawn in eight horizontal bands at once, each a context over the same
+IOSurface that reaches 48 units past its band but is clipped to it, so shapes just outside
+still cast their shadows in (without the margin every band edge had a seam). The sprites
+are independent jobs on every core. Before this, the 5K set took 686 ms on one core.
+
+Installing a set on the main thread takes **6.3 ms** (28 ms when the art was `CGImage`s,
+which Core Animation copied during the commit), so a resize ending or the Mac switching
+to Dark costs no dropped frame. The last four sets are kept on disk in
+`~/Library/Caches/SKALA-2000/`, keyed by build, layout, style and size; a launch reads its
+set back in 12 ms instead of drawing it.
+
+### Fidelity
+
+`GoldenTests` renders the real layer tree offscreen (`DeskPrinter`, Core Animation into a
+Metal texture) and compares it with the reference SwiftUI desk in the scripted day by day
+and night, under LAMP TEST and with MAINS off: a mean difference of about 3.4 levels in
+255 over the whole desk, mostly antialiasing, with every lamp, cap, tube, drum, meter and
+guard checked on its own.
+
 ### Open items
 
-- Installing a freshly rendered art set takes 28 ms on the main thread, once at launch and
-  once after each resize or theme change: one dropped frame. Instruments' Animation
-  Hitches also shows single-frame hitches during the power-up sequence at launch, while
-  every sprite is shown for the first time. Both are addressed in the art-fidelity phase.
+- Instruments' Animation Hitches shows single-frame hitches during the power-up sequence
+  at launch, while every sprite is shown for the first time.

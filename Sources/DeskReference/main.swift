@@ -1,5 +1,7 @@
 import AppKit
 import ConsoleKit
+import DeskArt
+import DeskView
 import FakeSources
 import Foundation
 import SwiftUI
@@ -219,6 +221,69 @@ MainActor.assumeIsolated {
             let goldens = URL(fileURLWithPath: arguments.dropFirst().first ?? "renders/goldens")
             let scale = arguments.dropFirst(2).first.flatMap { Double($0) }.map { CGFloat($0) } ?? 1
             try Compare.sweepShadows(goldens: goldens, scale: scale)
+        case "test-goldens":
+            // Half-size JPEGs of the reference, checked in for DeskTests' golden tests. Rendered
+            // at full size and averaged down two by two: rendered at half size, SwiftUI would
+            // snap its layout to a two-unit grid and the goldens would be off.
+            let folder = Reference.root.appendingPathComponent("Tests/DeskTests/Goldens")
+            let scratch = FileManager.default.temporaryDirectory.appendingPathComponent(
+                "skala-goldens")
+            try Reference.goldens(folder: scratch, scale: 1)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            for name in ["day", "night", "lamp-test-day", "lamp-test-night", "mains-off"] {
+                guard let full = Compare.load(scratch.appendingPathComponent("\(name).png")),
+                    let image = DeskImages.halved(full)
+                else { continue }
+                let rep = NSBitmapImageRep(cgImage: image)
+                let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.92])!
+                try jpeg.write(to: folder.appendingPathComponent("\(name).jpg"))
+                print("wrote \(name).jpg \(jpeg.count / 1024) KB")
+            }
+        case "live":
+            let goldens = URL(fileURLWithPath: arguments.dropFirst().first ?? "renders/goldens")
+            let out = URL(fileURLWithPath: arguments.dropFirst(2).first ?? "renders/live")
+            let scale = arguments.dropFirst(3).first.flatMap { Double($0) }.map { CGFloat($0) } ?? 1
+            try Compare.live(goldens: goldens, out: out, scale: scale)
+        case "seams":
+            ArtSet.bandCount = 1
+            let one = Compare.Pixels(ArtSet.renderBackground(style: ArtStyle(), scale: 1))
+            ArtSet.bandCount = 8
+            let eight = Compare.Pixels(ArtSet.renderBackground(style: ArtStyle(), scale: 1))
+            var rows: [Int: Int] = [:]
+            for y in 0..<one.height {
+                for x in 0..<one.width {
+                    let p = one.at(x, y), q = eight.at(x, y)
+                    let d = abs(p.0 - q.0) + abs(p.1 - q.1) + abs(p.2 - q.2)
+                    if d > 6 { rows[y, default: 0] += 1 }
+                }
+            }
+            var columns: [Int: Int] = [:]
+            for y in [260, 300, 500, 900, 1400] {
+                for x in 0..<one.width {
+                    let p = one.at(x, y), q = eight.at(x, y)
+                    if abs(p.0 - q.0) + abs(p.1 - q.1) + abs(p.2 - q.2) > 6 {
+                        columns[x, default: 0] += 1
+                    }
+                }
+            }
+            print("columns that differ:", columns.keys.sorted())
+            print(
+                "rows that differ:",
+                rows.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(
+                    separator: " "))
+        case "timing":
+            for scale in [1.024, 1.28, 1.6, 2.048] as [CGFloat] {
+                let started = Date()
+                let background = ArtSet.renderBackground(style: ArtStyle(), scale: scale)
+                let middle = Date()
+                let art = ArtSet.render(style: ArtStyle(night: true), scale: scale)
+                print(
+                    String(
+                        format:
+                            "scale %.3f: background %.0f ms, whole set %.0f ms, %d sprites, %.0f MB",
+                        scale, middle.timeIntervalSince(started) * 1000, art.renderSeconds * 1000,
+                        art.sprites.count, Double(art.bytes) / 1_048_576), background.width)
+            }
         case "probe":
             Probe.run()
         default:

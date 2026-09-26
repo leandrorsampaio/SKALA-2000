@@ -66,6 +66,14 @@ struct Pen {
         ctx.restoreGState()
     }
 
+    /// Draws `body` with no shadow, inside a scope that has one.
+    func unshadowed(_ body: () -> Void) {
+        ctx.saveGState()
+        ctx.setShadow(offset: .zero, blur: 0, color: nil)
+        body()
+        ctx.restoreGState()
+    }
+
     /// Several shadows applied in turn, the first innermost, as chained SwiftUI modifiers.
     /// Each outer shadow is cast by everything inside it, so they are grouped in `bounds`.
     func shadows(

@@ -98,53 +98,75 @@ enum SpritePainters {
     }
 
     /// The cap's face in its hole: 52 units square inside the 64-unit frame, drawn at its
-    /// own origin. `lit` is the machine's answer; `bright` the no-answer blink.
+    /// own origin. `lit` is the machine's answer; `bright` the no-answer blink; `down` the
+    /// cap sunk into its hole.
+    ///
+    /// In the reference the cap's shadow modifier shadows each thing on the cap on its
+    /// own, so the lettering and the sheen throw soft shadows across the face: drawn here
+    /// with the shadow in force for every layer of the face. The part that falls outside,
+    /// into the hole, is `capShadow`. Sunk, the cap casts no shadow at all, its bevel
+    /// catches less light and the whole face is 0.2 darker, subtracted as SwiftUI's
+    /// `brightness(-0.2)` does, not multiplied.
     static func capFace(
-        _ pen: Pen, text: String, tone: CapTone, lit: Bool, bright: Bool, style: ArtStyle,
-        textRect: CGRect?
+        _ pen: Pen, text: String, tone: CapTone, lit: Bool, bright: Bool, down: Bool = false,
+        style: ArtStyle, textRect: CGRect?
     ) {
         let palette = style.palette
         let glass = glass(tone, palette)
         let face = CGRect(x: 0, y: 0, width: 52, height: 52)
         let shape = Pen.rect(face, radius: 6)
+        let letters = Pen.Style(
+            font: DeskFonts.barlowBold, size: 15, tracking: 0.9,
+            color: lit ? glass.inkOn : glass.inkOff)
+        let rect = textRect ?? face
+        let shadow = black(down ? 0 : 0.65)
         func body() {
-            pen.fill(shape, tone == .red ? glass.on : (lit ? glass.on : glass.off))
-            if lit {
-                pen.radial(
-                    shape, [(glass.hot, 0), (glass.hot.opacity(0), 1)], center: .center, in: face,
-                    endRadius: 32)
+            pen.shadow(shadow, radius: 2, y: 3) {
+                pen.fill(shape, tone == .red ? glass.on : (lit ? glass.on : glass.off))
+                if lit {
+                    pen.radial(
+                        shape, [(glass.hot, 0), (glass.hot.opacity(0), 1)], center: .center,
+                        in: face,
+                        endRadius: 32)
+                }
+                pen.linear(
+                    shape, [(white(0.34), 0), (white(0), 0.38), (black(0.2), 1)], from: .top,
+                    to: .bottom, in: face)
+                pen.text(text.uppercased(), letters, in: rect)
             }
-            pen.linear(
-                shape, [(white(0.34), 0), (white(0), 0.38), (black(0.2), 1)], from: .top,
-                to: .bottom,
-                in: face)
-            let letters = Pen.Style(
-                font: DeskFonts.barlowBold, size: 15, tracking: 0.9,
-                color: lit ? glass.inkOn : glass.inkOff)
-            let rect = textRect ?? face
             if lit && glass.lightInk {
+                // Light ink on lit glass carries a halo.
                 pen.shadow(white(0.55), radius: 2.5, group: face) {
                     pen.text(text.uppercased(), letters, in: rect)
                 }
-            } else {
-                pen.text(text.uppercased(), letters, in: rect)
             }
         }
-        if bright {
-            // SwiftUI's `.brightness(0.25)`: a quarter added to every channel.
+        func brightness(_ amount: CGFloat, _ draw: () -> Void) {
             pen.save {
                 pen.ctx.beginTransparencyLayer(auxiliaryInfo: nil)
-                body()
-                pen.ctx.setBlendMode(.plusLighter)
+                draw()
                 pen.clip(shape) {
-                    pen.fill(face, CGColor(srgbRed: 0.25, green: 0.25, blue: 0.25, alpha: 1))
+                    if amount > 0 {
+                        pen.ctx.setBlendMode(.plusLighter)
+                        pen.fill(
+                            face, CGColor(srgbRed: amount, green: amount, blue: amount, alpha: 1))
+                    } else {
+                        // plusDarker: result = destination + source − 1.
+                        pen.ctx.setBlendMode(.plusDarker)
+                        let v = 1 + amount
+                        pen.fill(face, CGColor(srgbRed: v, green: v, blue: v, alpha: 1))
+                    }
                 }
                 pen.ctx.endTransparencyLayer()
             }
-        } else {
-            body()
         }
-        pen.bevel(face, radius: 6, light: 0.65, dark: 0.28)
+        func whole() {
+            if bright { brightness(0.25, body) } else { body() }
+            pen.shadow(shadow, radius: 2, y: 3) {
+                pen.bevel(face, radius: 6, light: down ? 0.3 : 0.65, dark: 0.28)
+            }
+        }
+        if down { brightness(-0.2, whole) } else { whole() }
     }
 
     /// The soft shadow a raised cap throws into its hole.
@@ -185,17 +207,36 @@ enum SpritePainters {
     // MARK: - Round cap
 
     /// Black bakelite, never lit: 48 units inside its 64-unit collar.
-    static func roundFace(_ pen: Pen, text: String, style: ArtStyle, textRect: CGRect?) {
+    /// Black bakelite, never lit: 48 units inside its 64-unit collar. Sunk, its lettering
+    /// casts no shadow and the whole cap is 0.2 darker.
+    static func roundFace(
+        _ pen: Pen, text: String, style: ArtStyle, textRect: CGRect?, down: Bool = false
+    ) {
         let face = CGRect(x: 0, y: 0, width: 48, height: 48)
-        pen.radial(
-            Pen.circle(face), [(rgb(0x66665F), 0), (rgb(0x2A2A27), 0.38), (rgb(0x0C0C0B), 1)],
-            center: CGPoint(x: 0.38, y: 0.28), in: face, endRadius: 30)
-        pen.text(
-            text.uppercased(),
-            Pen.Style(
-                font: DeskFonts.barlowBold, size: 14, tracking: 0.84, color: style.palette.engraving
-            ),
-            in: textRect ?? face)
+        func draw() {
+            pen.radial(
+                Pen.circle(face), [(rgb(0x66665F), 0), (rgb(0x2A2A27), 0.38), (rgb(0x0C0C0B), 1)],
+                center: CGPoint(x: 0.38, y: 0.28), in: face, endRadius: 30)
+            // The lettering throws its own shadow, as everything in the reference's cap does.
+            pen.shadow(black(down ? 0 : 0.7), radius: 2, y: 3) {
+                pen.text(
+                    text.uppercased(),
+                    Pen.Style(
+                        font: DeskFonts.barlowBold, size: 14, tracking: 0.84,
+                        color: style.palette.engraving),
+                    in: textRect ?? face)
+            }
+        }
+        guard down else { return draw() }
+        pen.save {
+            pen.ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+            draw()
+            pen.clip(Pen.circle(face)) {
+                pen.ctx.setBlendMode(.plusDarker)
+                pen.fill(face, CGColor(srgbRed: 0.8, green: 0.8, blue: 0.8, alpha: 1))
+            }
+            pen.ctx.endTransparencyLayer()
+        }
     }
 
     static func roundShadow(_ pen: Pen) {
@@ -213,16 +254,24 @@ enum SpritePainters {
     /// shorter than the collar it covers.
     static func flap(_ pen: Pen, size: CGSize) {
         let rect = CGRect(origin: .zero, size: size)
-        pen.fill(
-            Pen.rect(rect, radius: 4),
-            CGColor(srgbRed: 200 / 255, green: 50 / 255, blue: 31 / 255, alpha: 0.74))
-        pen.linear(
-            rect, radius: 4,
-            [(white(0.38), 0), (white(0), 0.28), (white(0), 0.62), (white(0.16), 1)],
-            from: CGPoint(x: 0.3, y: 0), to: CGPoint(x: 0.7, y: 1))
-        pen.strokeBorder(
-            rect, radius: 4, CGColor(srgbRed: 90 / 255, green: 12 / 255, blue: 4 / 255, alpha: 0.9),
-            width: 2)
+        // Each layer of the acrylic casts the flap's shadow, and through the translucent red
+        // the shadows show: the reference's flap is darker than its paint for it. The part
+        // that falls outside the flap is `flapShadow`.
+        pen.clip(Pen.rect(rect, radius: 4)) {
+            pen.shadow(black(0.5), radius: 2.5, y: 3) {
+                pen.fill(
+                    Pen.rect(rect, radius: 4),
+                    CGColor(srgbRed: 200 / 255, green: 50 / 255, blue: 31 / 255, alpha: 0.74))
+                pen.linear(
+                    rect, radius: 4,
+                    [(white(0.38), 0), (white(0), 0.28), (white(0), 0.62), (white(0.16), 1)],
+                    from: CGPoint(x: 0.3, y: 0), to: CGPoint(x: 0.7, y: 1))
+                pen.strokeBorder(
+                    rect, radius: 4,
+                    CGColor(srgbRed: 90 / 255, green: 12 / 255, blue: 4 / 255, alpha: 0.9), width: 2
+                )
+            }
+        }
     }
 
     /// The flap's shadow on the well when it is down.
