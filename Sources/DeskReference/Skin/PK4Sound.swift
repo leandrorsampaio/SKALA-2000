@@ -1,7 +1,6 @@
 import AVFoundation
 import AppKit
 import ConsoleKit
-import DeskArt
 import Foundation
 
 /// Four sounds, all short, all dry, mono, at the position of nothing in particular.
@@ -16,7 +15,7 @@ import Foundation
 /// Pre-rendered once into buffers and played through `AVAudioEngine`. The system mute is
 /// respected by the output itself; nothing about the console's alarms depends on sound.
 @MainActor
-public final class DeskSound {
+public final class PK4Sound {
 
     public enum Effect: CaseIterable, Sendable {
         case click, clunk, tick
@@ -157,7 +156,7 @@ public final class DeskSound {
         var x2 = 0.0
         var y1 = 0.0
         var y2 = 0.0
-        var random = Noise(seed: UInt64(frequency))
+        var random = SplitMix64(seed: UInt64(frequency))
         for index in 0..<Int(count) {
             let envelope = pow(1 - Double(index) / Double(count), 3)
             let x = (random.unit() * 2 - 1) * envelope
@@ -194,14 +193,14 @@ public final class DeskSound {
 /// log's window when PRINT TEXT asks for it. Buttons click by themselves; this is
 /// everything else.
 @MainActor
-public final class DeskDirector {
+public final class PK4Director {
 
-    private let sound: DeskSound
+    private let sound: PK4Sound
     private var previous: ConsoleSnapshot?
     public var announce: (String) -> Void = { _ in }
     public var openLog: () -> Void = {}
 
-    public init(sound: DeskSound) {
+    public init(sound: PK4Sound) {
         self.sound = sound
     }
 
@@ -217,14 +216,13 @@ public final class DeskDirector {
         if !changed.isEmpty { sound.play(.clunk) }
 
         for id in changed where snapshot.lamp(id) == .flash && old.lamp(id) != .flash {
-            if let words = DeskWords.alarm(id, selector: snapshot.selector) { announce(words) }
+            if let words = PK4Words.alarm(id, selector: snapshot.selector) { announce(words) }
         }
 
         for (id, face) in snapshot.buttons where face.phase != old.button(id).phase {
             if face.phase == .confirmed {
                 sound.play(.clunk)
-                NSHapticFeedbackManager.defaultPerformer.perform(
-                    .levelChange, performanceTime: .now)
+                Haptic.level()
             }
             if face.phase == .noAnswer { sound.play(.clunk) }
         }
@@ -232,7 +230,7 @@ public final class DeskDirector {
         let detents = abs(snapshot.selector - old.selector)
         if detents > 0 {
             sound.play(.clunk)
-            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+            Haptic.detent()
         }
 
         if snapshot.guardsOpen != old.guardsOpen {
@@ -267,19 +265,5 @@ public final class DeskDirector {
 extension String {
     func leftPadded(to width: Int) -> String {
         count >= width ? self : String(repeating: "0", count: width - count) + self
-    }
-}
-
-/// The same numbers every time, so a relay sounds the same relay.
-struct Noise {
-    private var state: UInt64
-    init(seed: UInt64) { state = seed }
-
-    mutating func unit() -> Double {
-        state &+= 0x9E37_79B9_7F4A_7C15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-        return Double((z ^ (z >> 31)) >> 11) / Double(1 << 53)
     }
 }

@@ -28,7 +28,7 @@ let package = Package(
         // Claude Code hook events over a Unix domain socket, and the hook installer.
         .target(name: "HookServer", swiftSettings: settings),
         // The relays, the buzzer and the director that plays them from snapshots.
-        .target(name: "DeskSound", dependencies: ["ConsoleKit"], swiftSettings: settings),
+        .target(name: "DeskSound", dependencies: ["ConsoleKit", "DeskArt"], swiftSettings: settings),
         // Tokens, fonts, the layout table and the Core Graphics painters.
         .target(name: "DeskArt", dependencies: ["ConsoleKit"], swiftSettings: settings),
         // The layer tree that renders a snapshot, and takes the operator's input.
@@ -40,6 +40,13 @@ let package = Package(
                 "TelemetryKit", "ConsoleKit", "ConsoleRuntime", "FakeSources", "KeepAwake",
                 "HookServer", "DeskSound", "DeskArt", "DeskView",
             ],
+            swiftSettings: settings),
+
+        // Development only, never shipped: the reference SwiftUI desk, tagged, which exports
+        // the layout table and the golden renders. See Sources/DeskReference/main.swift.
+        .executableTarget(
+            name: "DeskReference",
+            dependencies: ["ConsoleKit", "FakeSources", "TelemetryKit", "DeskArt"],
             swiftSettings: settings),
 
         .testTarget(name: "TelemetryKitTests", dependencies: ["TelemetryKit"], swiftSettings: settings),
