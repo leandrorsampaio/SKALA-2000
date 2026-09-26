@@ -14,7 +14,7 @@ final class DeskLayers {
     let desk = CALayer()
     private let background = CALayer()
 
-    private final class Cap {
+    final class Cap {
         let id: InstrumentID
         let round: Bool
         let faceRect: CGRect
@@ -39,7 +39,7 @@ final class DeskLayers {
         }
     }
 
-    private final class Guard {
+    final class Guard {
         let collar: CGRect
         let shadow = CALayer()
         let flap = CALayer()
@@ -48,7 +48,7 @@ final class DeskLayers {
         init(collar: CGRect) { self.collar = collar }
     }
 
-    private final class Tube {
+    final class Tube {
         let cell: CGRect
         let xl: Bool
         let separator: Bool
@@ -62,7 +62,7 @@ final class DeskLayers {
         }
     }
 
-    private final class Wheel {
+    final class Wheel {
         let rect: CGRect
         let clip = CALayer()
         let strip = CALayer()
@@ -70,23 +70,23 @@ final class DeskLayers {
         init(rect: CGRect) { self.rect = rect }
     }
 
-    private var lamps: [InstrumentID: CALayer] = [:]
+    private(set) var lamps: [InstrumentID: CALayer] = [:]
     private var lampStates: [InstrumentID: LampState] = [:]
-    private var caps: [InstrumentID: Cap] = [:]
-    private var guards: [InstrumentID: Guard] = [:]
-    private var keys: [InstrumentID: CALayer] = [:]
-    private var tubes: [InstrumentID: [Tube]] = [:]
+    private(set) var caps: [InstrumentID: Cap] = [:]
+    private(set) var guards: [InstrumentID: Guard] = [:]
+    private(set) var keys: [InstrumentID: CALayer] = [:]
+    private(set) var tubes: [InstrumentID: [Tube]] = [:]
     private var nixieGlass: [InstrumentID: CALayer] = [:]
-    private var wheels: [InstrumentID: [Wheel]] = [:]
+    private(set) var wheels: [InstrumentID: [Wheel]] = [:]
     private var drumGlass: [InstrumentID: CALayer] = [:]
-    private var needles: [InstrumentID: CALayer] = [:]
+    private(set) var needles: [InstrumentID: CALayer] = [:]
     private var meterGlass: [InstrumentID: CALayer] = [:]
-    private let pointer = CALayer()
-    private let knob = CALayer()
+    let pointer = CALayer()
+    let knob = CALayer()
     private let knobHighlight = CALayer()
-    private let lever = CALayer()
-    private let buzzer = CALayer()
-    private var pencils: [Int: CALayer] = [:]
+    let lever = CALayer()
+    let buzzer = CALayer()
+    private(set) var pencils: [Int: CALayer] = [:]
     private var pencilText: [Int: String] = [:]
     private let program = CALayer()
     private var programText: String?

@@ -271,6 +271,31 @@ MainActor.assumeIsolated {
                 "rows that differ:",
                 rows.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(
                     separator: " "))
+        case "states":
+            // End states the reference cannot show (its guards lift by animation), drawn by
+            // the real layer tree for a look.
+            let out = URL(fileURLWithPath: arguments.dropFirst().first ?? "renders/states")
+            try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+            let (model, clock) = Reference.model(atHour: 1.1)
+            model.send(.guard(PK4.f10, open: true))
+            model.send(.guard(PK4.f8, open: true))
+            model.send(.key(PK4.f10, armed: true))
+            model.send(.press(PK4.f10))
+            for _ in 0..<2 { model.send(.selectorStep(1)) }
+            clock.advance(by: 0.5)
+            model.advance()
+            var s = model.snapshot
+            s.pencils[2] = "Review root"
+            let image = DeskPrinter.image(s, style: ArtStyle(), scale: 1)!
+            try Compare.write(image, out.appendingPathComponent("guards-up.png"))
+            model.send(.release(PK4.f10))
+            model.send(.mains(false))
+            clock.advance(by: 1)
+            model.advance()
+            try Compare.write(
+                DeskPrinter.image(model.snapshot, style: ArtStyle(night: true), scale: 1)!,
+                out.appendingPathComponent("mains-off-night.png"))
+            print("wrote states")
         case "timing":
             for scale in [1.024, 1.28, 1.6, 2.048] as [CGFloat] {
                 let started = Date()
