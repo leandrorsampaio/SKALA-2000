@@ -15,13 +15,13 @@ import Testing
 /// The tolerance is a mean difference in 255 levels: sub-pixel antialiasing and the JPEG
 /// cost about 3 over the whole desk; a painter that goes wrong costs far more in its own
 /// instruments, and the per-instrument check catches it.
-@MainActor
 @Suite(.enabled(if: MTLCreateSystemDefaultDevice() != nil))
 struct GoldenTests {
 
     static let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         .appendingPathComponent("Goldens")
 
+    @MainActor
     static func scriptedDay() -> (ConsoleModel, ManualClock) {
         let clock = ManualClock()
         let model = ConsoleModel(clock: clock, store: MemoryConsoleStore(), log: MemoryConsoleLog())
@@ -37,7 +37,7 @@ struct GoldenTests {
         return (model, clock)
     }
 
-    struct Pixels {
+    struct Pixels: Sendable {
         let width: Int
         let height: Int
         var data: [UInt8]
@@ -76,27 +76,37 @@ struct GoldenTests {
             let y1 = min(height, Int(rect.maxY * scale))
             guard x1 > x0, y1 > y0 else { return 0 }
             var total = 0
-            for y in y0..<y1 {
-                for x in x0..<x1 {
-                    let sx = min(width - 1, max(0, x + dx))
-                    let sy = min(height - 1, max(0, y + dy))
-                    let i = (sy * width + sx) * 4
-                    let j = (y * width + x) * 4
-                    for c in 0..<3 { total += abs(Int(data[i + c]) - Int(other.data[j + c])) }
+            data.withUnsafeBufferPointer { mine in
+                other.data.withUnsafeBufferPointer { theirs in
+                    for y in y0..<y1 {
+                        let sy = min(height - 1, max(0, y + dy))
+                        for x in x0..<x1 {
+                            let sx = min(width - 1, max(0, x + dx))
+                            let i = (sy * width + sx) * 4
+                            let j = (y * width + x) * 4
+                            total += abs(Int(mine[i]) - Int(theirs[j]))
+                            total += abs(Int(mine[i + 1]) - Int(theirs[j + 1]))
+                            total += abs(Int(mine[i + 2]) - Int(theirs[j + 2]))
+                        }
+                    }
                 }
             }
             return Double(total) / Double((x1 - x0) * (y1 - y0) * 3)
         }
     }
 
-    func compare(_ name: String, _ snapshot: ConsoleSnapshot, night: Bool) throws {
+    /// Draws on the main actor, compares off it: the comparison is seconds of arithmetic,
+    /// and the main thread has other tests' timers to run.
+    func compare(_ name: String, _ snapshot: ConsoleSnapshot, night: Bool) async throws {
         // Drawn at full size and averaged down, as the goldens were.
         let scale: CGFloat = 0.5
         let url = Self.folder.appendingPathComponent("\(name).jpg")
         let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
         let golden = Pixels(try #require(CGImageSourceCreateImageAtIndex(source, 0, nil)))
-        let full = try #require(
-            DeskPrinter.image(snapshot, style: ArtStyle(night: night), scale: 1))
+        let drawn = await MainActor.run {
+            DeskPrinter.image(snapshot, style: ArtStyle(night: night), scale: 1)
+        }
+        let full = try #require(drawn)
         let mine = Pixels(try #require(DeskImages.halved(full)))
         #expect(mine.width == golden.width && mine.height == golden.height)
 
@@ -120,21 +130,25 @@ struct GoldenTests {
         }
     }
 
-    @Test func theScriptedDayByDayAndByNight() throws {
-        let (model, _) = Self.scriptedDay()
-        try compare("day", model.snapshot, night: false)
-        try compare("night", model.snapshot, night: true)
+    @Test func theScriptedDayByDayAndByNight() async throws {
+        let snapshot = await MainActor.run { Self.scriptedDay().0.snapshot }
+        try await compare("day", snapshot, night: false)
+        try await compare("night", snapshot, night: true)
     }
 
-    @Test func lampTestAndMainsOff() throws {
-        let (model, clock) = Self.scriptedDay()
-        model.send(.press(PK4.lampTest))
-        try compare("lamp-test-day", model.snapshot, night: false)
-        try compare("lamp-test-night", model.snapshot, night: true)
-        model.send(.release(PK4.lampTest))
-        clock.advance(by: 2)
-        model.advance()
-        model.send(.mains(false))
-        try compare("mains-off", model.snapshot, night: false)
+    @Test func lampTestAndMainsOff() async throws {
+        let (testing, off) = await MainActor.run {
+            let (model, clock) = Self.scriptedDay()
+            model.send(.press(PK4.lampTest))
+            let testing = model.snapshot
+            model.send(.release(PK4.lampTest))
+            clock.advance(by: 2)
+            model.advance()
+            model.send(.mains(false))
+            return (testing, model.snapshot)
+        }
+        try await compare("lamp-test-day", testing, night: false)
+        try await compare("lamp-test-night", testing, night: true)
+        try await compare("mains-off", off, night: false)
     }
 }
