@@ -22,13 +22,18 @@ import Testing
         var sawCompacting = false
     }
 
-    func replay(hours: Double = 10) -> Replay {
+    /// Seconds of main-actor work, so it yields as it goes: other suites' timers and tests
+    /// share the main thread, and a day replayed in one piece holds them all up.
+    func replay(hours: Double = 10) async -> Replay {
         let bench = Bench()
         var day = FakeDay(start: bench.now)
         var replay = Replay(bench: bench)
         var previous = bench.snap.drums
+        var steps = 0
 
         while !day.isOver, day.elapsed < hours * 3600 {
+            steps += 1
+            if steps % 100 == 0 { await Task.yield() }
             let readings = day.step()
             bench.clock.now = day.now
             bench.model.ingest(readings)
@@ -59,8 +64,8 @@ import Testing
         return replay
     }
 
-    @Test func theWholeDayRunsWithinTheRules() {
-        let replay = replay()
+    @Test func theWholeDayRunsWithinTheRules() async {
+        let replay = await replay()
         let log = replay.bench.log
 
         #expect(replay.maxSlots <= 4)
@@ -109,9 +114,9 @@ import Testing
         #expect(day.now == moment.addingTimeInterval(20))
     }
 
-    @Test func theDayIsTheSameEveryTime() {
-        let first = replay(hours: 2).bench.model.saved.totals
-        let second = replay(hours: 2).bench.model.saved.totals
+    @Test func theDayIsTheSameEveryTime() async {
+        let first = await replay(hours: 2).bench.model.saved.totals
+        let second = await replay(hours: 2).bench.model.saved.totals
         #expect(first.costUSD == second.costUSD)
         #expect(first.outputTokens == second.outputTokens)
     }

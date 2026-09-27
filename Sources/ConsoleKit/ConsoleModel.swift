@@ -330,10 +330,10 @@ public final class ConsoleModel {
         guard power != .off, let mark = serviceMark else { return }
         let elapsed = now.timeIntervalSince(mark)
         guard elapsed > 0 else { return }
-        let minuteBefore = Int(saved.serviceSeconds / 60)
+        let minuteBefore = NixieFormat.whole(saved.serviceSeconds / 60)
         saved.serviceSeconds += elapsed
         serviceMark = now
-        if Int(saved.serviceSeconds / 60) != minuteBefore { scheduleSave(now) }
+        if NixieFormat.whole(saved.serviceSeconds / 60) != minuteBefore { scheduleSave(now) }
     }
 
     // MARK: - Logging

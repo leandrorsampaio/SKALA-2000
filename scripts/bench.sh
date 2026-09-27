@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 #
 # Launches build/SKALA-2000.app in one bench scenario, measures its CPU and memory, quits.
+# A SKALA-2000 already running is quit first, and not started again.
 #
 #   scripts/bench.sh static|flash|demo|real [seconds=60] [warmup=10]
 #
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MODE="$1"; SECONDS_TO_SAMPLE="${2:-60}"; WARMUP="${3:-10}"
+MODE="${1:?usage: bench.sh static|flash|demo|real [seconds=60] [warmup=10]}"; SECONDS_TO_SAMPLE="${2:-60}"; WARMUP="${3:-10}"
 osascript -e 'quit app "SKALA-2000"' >/dev/null 2>&1 || true
 sleep 1
 open -n "$ROOT/build/SKALA-2000.app" --env SKALA_BENCH="$MODE" --env SKALA_BENCH_HIDE="${HIDE:-0}" --env SKALA_BENCH_FULLSCREEN="${FULLSCREEN:-0}"

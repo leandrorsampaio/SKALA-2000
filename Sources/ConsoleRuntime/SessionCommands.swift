@@ -14,11 +14,15 @@ public protocol SessionSystem: Sendable {
     /// `nil` when the process cannot be found.
     func isStopped(_ pid: Int32) -> Bool?
     /// That this process is the Claude Code session it is claimed to be: its session file
-    /// names that session. A pid from a stale reading could by now be anything.
+    /// names that session, and was written by this very process. A pid from a stale
+    /// reading could by now be anything.
     func isSession(_ pid: Int32, _ key: SessionKey) -> Bool
     /// Asks whoever is at the Mac to prove it is them, with the login password or Touch ID.
-    /// `reason` completes the system's "Mac Command Center is trying to …".
-    func authorize(_ reason: String, _ done: @escaping @Sendable (Bool) -> Void)
+    /// `reason` completes the system's "SKALA-2000 is trying to …". A prompt still open
+    /// after `timeout` is taken down and answers no.
+    func authorize(
+        _ reason: String, within timeout: TimeInterval,
+        _ done: @escaping @Sendable (Bool) -> Void)
 }
 
 public struct LiveSessionSystem: SessionSystem {
@@ -45,18 +49,69 @@ public struct LiveSessionSystem: SessionSystem {
         guard let data = try? Data(contentsOf: file),
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else { return false }
-        return json["sessionId"] as? String == key.rawValue
+        return Self.describes(json, key: key, processStartedAt: Self.processStart(pid))
     }
 
-    public func authorize(_ reason: String, _ done: @escaping @Sendable (Bool) -> Void) {
+    /// That a session file names `key` and was written by the process now running under its
+    /// pid. A session that crashed leaves its file behind, and its pid can be reused.
+    ///
+    /// Claude Code writes its process's start time into `procStart`, as `ps -o lstart`
+    /// prints it: in UTC on the Macs measured, so local time is accepted too. A file without
+    /// it has `startedAt`, which its process cannot have started after. A file with neither
+    /// proves nothing, and nothing is sent.
+    static func describes(_ json: [String: Any], key: SessionKey, processStartedAt: Date?) -> Bool {
+        guard json["sessionId"] as? String == key.rawValue, let started = processStartedAt else {
+            return false
+        }
+        if let text = json["procStart"] as? String {
+            let words = text.split(separator: " ").joined(separator: " ")
+            return [lstartUTC, lstartLocal].contains { format in
+                format.date(from: words).map { abs($0.timeIntervalSince(started)) < 2 } ?? false
+            }
+        }
+        if let milliseconds = json["startedAt"] as? Double {
+            return started.timeIntervalSince1970 <= milliseconds / 1000 + 5
+        }
+        return false
+    }
+
+    static func processStart(_ pid: Int32) -> Date? {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+        guard sysctl(&mib, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
+        let start = info.kp_proc.p_un.__p_starttime
+        return Date(
+            timeIntervalSince1970: TimeInterval(start.tv_sec) + TimeInterval(start.tv_usec) / 1e6)
+    }
+
+    private static func lstart(_ zone: TimeZone) -> DateFormatter {
+        let format = DateFormatter()
+        format.locale = Locale(identifier: "en_US_POSIX")
+        format.timeZone = zone
+        format.dateFormat = "EEE MMM d HH:mm:ss yyyy"
+        return format
+    }
+    static let lstartUTC = lstart(TimeZone(identifier: "UTC")!)
+    static let lstartLocal = lstart(.current)
+
+    public func authorize(
+        _ reason: String, within timeout: TimeInterval,
+        _ done: @escaping @Sendable (Bool) -> Void
+    ) {
         let context = LAContext()
         var unavailable: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &unavailable) else {
             return done(false)
         }
+        // By then the desk has shown no answer: the prompt is taken down, so a password
+        // typed later cannot end the session.
+        let expiry = DispatchWorkItem { context.invalidate() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: expiry)
         // The context is held by the closure until the answer comes back.
         context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { ok, _ in
             _ = context
+            expiry.cancel()
             done(ok)
         }
     }
@@ -83,7 +138,8 @@ public enum SessionCommands {
         details: @escaping @MainActor (SessionKey) -> SessionDetails?,
         system: SessionSystem = LiveSessionSystem(),
         home: ClaudeHome = ClaudeHome(),
-        safetyLog: URL
+        safetyLog: URL,
+        passwordTimeout: TimeInterval = SessionCommands.passwordTimeout
     ) -> [InstrumentID: CommandAction] {
         [
             PK4.function(1): CommandAction { request, reply in
@@ -125,8 +181,11 @@ public enum SessionCommands {
                 reply(true)
             },
             PK4.f10: process(
-                SIGTERM, details: details, system: system,
-                asking: { "end the Claude Code session in “\($0)”" }
+                SIGTERM, details: details, system: system, passwordTimeout: passwordTimeout,
+                asking: { place in
+                    place.map { "end the Claude Code session in “\($0)”" }
+                        ?? "end the selected Claude Code session"
+                }
             ) { pid in
                 system.isStopped(pid) == nil
             },
@@ -159,14 +218,18 @@ public enum SessionCommands {
     }
 
     /// Long enough to type a password; a prompt left open longer shows as no answer.
-    static let passwordTimeout: TimeInterval = 90
+    public static let passwordTimeout: TimeInterval = 90
 
     /// Sends one signal to the session's own process, then watches for up to 2.5 s for the
     /// state it should have produced. With `asking`, the Mac's password comes first: a
-    /// wrong one, or Cancel, sends nothing and shows as no answer.
+    /// wrong one, or Cancel, sends nothing and shows as no answer. So does one given after
+    /// `passwordTimeout`, when the desk has already shown no answer.
+    ///
+    /// The prompt names the session by its folder, or by its name; never by its id.
     private static func process(
         _ signal: Int32, details: @escaping @MainActor (SessionKey) -> SessionDetails?,
-        system: SessionSystem, asking: ((String) -> String)? = nil,
+        system: SessionSystem, passwordTimeout: TimeInterval = SessionCommands.passwordTimeout,
+        asking: ((String?) -> String)? = nil,
         reached: @escaping @Sendable (Int32) -> Bool
     ) -> CommandAction {
         let timeout = asking == nil ? ConsoleTiming.noAnswer : passwordTimeout + 3
@@ -179,11 +242,15 @@ public enum SessionCommands {
                 sendAndWatch(pid, key, signal, system: system, reached: reached, reply: reply)
             }
             guard let asking else { return send() }
-            let folder =
-                found.cwd.map { URL(fileURLWithPath: $0).lastPathComponent } ?? key.rawValue
-            system.authorize(asking(folder)) { allowed in
+            let place =
+                found.cwd.map { URL(fileURLWithPath: $0).lastPathComponent }
+                ?? found.name.flatMap { $0.isEmpty ? nil : $0 }
+            // The continuous clock counts a Mac asleep with the prompt open, as the desk does.
+            let asked = ContinuousClock.now
+            system.authorize(asking(place), within: passwordTimeout) { allowed in
+                let inTime = asked.duration(to: .now) <= .seconds(passwordTimeout)
                 DispatchQueue.main.async {
-                    MainActor.assumeIsolated { allowed ? send() : reply(false) }
+                    MainActor.assumeIsolated { allowed && inTime ? send() : reply(false) }
                 }
             }
         }

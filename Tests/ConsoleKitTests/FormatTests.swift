@@ -41,6 +41,15 @@ import Testing
         #expect(NixieFormat.cost(9999.994) == "9999.99")
         #expect(NixieFormat.cost(10_000) == "9999.99")
         #expect(NixieFormat.cost(-1) == "0000.00")
+        #expect(NixieFormat.cost(1e300) == "9999.99")
+        #expect(NixieFormat.cost(.nan) == "0000.00")
+    }
+
+    @Test func numbersTooLargeForAnIntOverflowToNines() {
+        #expect(NixieFormat.minutesSeconds(1e300) == "99:59")
+        #expect(NixieFormat.hoursMinutes(-1e300) == "00:00")
+        #expect(NixieFormat.whole(9.3e18) == .max)
+        #expect(NixieFormat.whole(41.9) == 41)
     }
 
     @Test func darkAndZeroKeepTheTemplatesLength() {

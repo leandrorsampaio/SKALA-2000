@@ -26,6 +26,12 @@ public final class MachineSource {
         self.deliver = deliver
     }
 
+    /// IOKit holds this object unretained: should an owner forget `stop()`, its source must
+    /// not call into freed memory.
+    deinit {
+        if let runLoopSource { CFRunLoopSourceInvalidate(runLoopSource) }
+    }
+
     public func start() {
         guard timer == nil else { return }
         displayAsleep = CGDisplayIsAsleep(CGMainDisplayID()) != 0

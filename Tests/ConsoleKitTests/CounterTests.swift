@@ -103,4 +103,31 @@ import Testing
         #expect(saved.finish == .greyGreen)
         #expect(saved.pencils == ["", "", "", ""])
     }
+
+    @Test func oneMistypedTotalLeavesTheOthers() throws {
+        let json = #"{"totals":{"costUSD":"418.5","outputTokens":3914000,"linesAdded":1366}}"#
+        let saved = try JSONDecoder().decode(PersistedConsole.self, from: Data(json.utf8))
+        #expect(saved.totals.costUSD == 0)
+        #expect(saved.totals.outputTokens == 3_914_000)
+        #expect(saved.totals.linesAdded == 1366)
+    }
+
+    @Test func anAbsurdFigureIsNotCounted() {
+        let bench = Bench()
+        bench.feed([bench.reading("a", .costUSD, .amount(12))])
+        bench.feed([bench.reading("a", .costUSD, .amount(1e300))])
+        #expect(bench.model.saved.totals.costUSD == 12)
+        #expect(bench.snap.drum(PK4.totalCost) == 12)
+    }
+
+    @Test func hugeStoredFiguresShowWithoutStoppingTheApp() {
+        var saved = PersistedConsole()
+        saved.totals.costUSD = 1e300
+        saved.totals.outputTokens = 1e20
+        saved.serviceSeconds = 1e300
+        let bench = Bench(saved: saved)
+        bench.run(for: 61)
+        #expect((0..<1_000_000).contains(bench.snap.drum(PK4.totalCost)))
+        #expect((0..<1_000_000).contains(bench.snap.drum(PK4.hoursInService)))
+    }
 }

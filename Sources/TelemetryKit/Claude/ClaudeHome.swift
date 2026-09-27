@@ -76,7 +76,12 @@ public struct ProcessRunner: CommandRunning {
         let timedOut = exited.wait(timeout: .now() + timeout) == .timedOut
         if timedOut {
             process.terminate()
-            _ = exited.wait(timeout: .now() + 1)
+            // One that ignores SIGTERM is killed: until it exits its pipe stays open, and
+            // the reader above waits on it, a thread lost at every timeout.
+            if exited.wait(timeout: .now() + 1) == .timedOut {
+                kill(process.processIdentifier, SIGKILL)
+                _ = exited.wait(timeout: .now() + 1)
+            }
         }
         _ = drained.wait(timeout: .now() + 1)
         return CommandOutput(

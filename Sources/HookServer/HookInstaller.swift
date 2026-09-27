@@ -109,18 +109,22 @@ public struct HookInstaller: Sendable {
             root["hooks"] = merged
         }
 
-        let folder = settings.deletingLastPathComponent()
+        // A settings file kept with someone's dotfiles and linked from ~/.claude is written
+        // where it lives, and backed up as a file: the link stays a link.
+        let file = settings.resolvingSymlinksInPath()
         do {
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            if FileManager.default.fileExists(atPath: settings.path) {
+            try FileManager.default.createDirectory(
+                at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: file.path) {
                 try? FileManager.default.removeItem(at: backup)
-                try FileManager.default.copyItem(at: settings, to: backup)
+                try FileManager.default.copyItem(at: file, to: backup)
             }
             var data = try JSONSerialization.data(
                 withJSONObject: root,
                 options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
             data.append(0x0A)
-            try data.write(to: settings, options: .atomic)
+            // Atomic, and the file keeps its permissions.
+            try data.write(to: file, options: .atomic)
         } catch {
             throw Failure.writeFailed(error.localizedDescription)
         }

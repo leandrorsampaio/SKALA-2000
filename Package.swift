@@ -64,6 +64,8 @@ let package = Package(
                 "DeskArt", "DeskView", "DeskSound", "ConsoleKit", "FakeSources", "TelemetryKit",
                 "KeepAwake", "HookServer",
             ],
+            // Read from the source tree by path, not bundled.
+            exclude: ["Goldens"],
             swiftSettings: settings),
     ]
 )

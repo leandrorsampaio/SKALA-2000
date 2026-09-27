@@ -134,12 +134,39 @@ struct HookServerTests {
 
     @Test func aDeadInstancesSocketIsReplacedAndALiveOneIsNot() throws {
         let url = Self.socketURL()
-        FileManager.default.createFile(atPath: url.path, contents: Data())
+        // What a crash leaves: a socket file nobody listens on.
+        let dead = socket(AF_UNIX, SOCK_STREAM, 0)
+        var address = sockaddr_un()
+        address.sun_family = sa_family_t(AF_UNIX)
+        withUnsafeMutableBytes(of: &address.sun_path) { $0.copyBytes(from: url.path.utf8) }
+        let bound = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                bind(dead, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
+            }
+        }
+        close(dead)
+        #expect(bound == 0)
         let first = HookServer(socketURL: url) { _ in }
         try first.start()
         defer { first.stop() }
         let second = HookServer(socketURL: url) { _ in }
         #expect(throws: HookServer.Failure.anotherServerIsListening) { try second.start() }
+    }
+
+    /// A dangling link where the socket goes is cleared; a file that is not a socket is
+    /// not the receiver's to delete.
+    @Test func onlyASocketOrALinkIsClearedFromThePath() throws {
+        let url = Self.socketURL()
+        try FileManager.default.createSymbolicLink(
+            atPath: url.path, withDestinationPath: "/tmp/skala-nowhere-\(getpid())")
+        let server = HookServer(socketURL: url) { _ in }
+        try server.start()
+        server.stop()
+
+        try Data("mine".utf8).write(to: url)
+        defer { unlink(url.path) }
+        #expect(throws: HookServer.Failure.pathTaken) { try server.start() }
+        #expect(try Data(contentsOf: url) == Data("mine".utf8))
     }
 
     @Test func garbageCostsAConnectionAndNothingElse() throws {
@@ -183,6 +210,30 @@ struct HookInstallerTests {
 
     func read(_ url: URL) throws -> [String: Any] {
         try #require(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+    }
+
+    /// Settings kept with someone's dotfiles, linked from ~/.claude: the link stays a link,
+    /// the file it points at gets the hooks, and the backup is a copy, not another link.
+    @Test func aLinkedSettingsFileStaysLinked() throws {
+        let url = try scratch()
+        let dotfiles = url.deletingLastPathComponent().appendingPathComponent("dotfiles.json")
+        try Data(#"{"model": "opus"}"#.utf8).write(to: dotfiles)
+        try FileManager.default.createSymbolicLink(at: url, withDestinationURL: dotfiles)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o600], ofItemAtPath: dotfiles.path)
+
+        let installer = HookInstaller(settings: url, events: Self.events)
+        try installer.install()
+        #expect(installer.status() == .installed)
+        let link = try FileManager.default.destinationOfSymbolicLink(atPath: url.path)
+        #expect(link == dotfiles.path)
+        #expect(try read(dotfiles)["hooks"] != nil)
+        let mode = try FileManager.default.attributesOfItem(atPath: dotfiles.path)[
+            .posixPermissions]
+        #expect((mode as? NSNumber)?.intValue == 0o600)
+        let backup = try FileManager.default.attributesOfItem(atPath: installer.backup.path)
+        #expect(backup[.type] as? FileAttributeType == .typeRegular)
+        #expect(try read(installer.backup)["hooks"] == nil)
     }
 
     /// Mac Command Center's hooks and the owner's own stay exactly where they are.

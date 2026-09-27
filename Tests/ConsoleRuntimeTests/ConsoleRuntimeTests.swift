@@ -158,7 +158,12 @@ final class FakePmset: CommandRunning, @unchecked Sendable {
         defer { console.shutDown() }
         #expect(console.model.snapshot.nixie(PK4.selected) == " ")
 
-        try await Task.sleep(for: .seconds(2.2))
+        // About two seconds, waited for rather than slept: other suites share the main
+        // thread, and a busy one delays the timer, not the outcome.
+        let deadline = Date().addingTimeInterval(10)
+        while console.model.snapshot.lamp(PK4.powerOn) != .on, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(100))
+        }
         #expect(console.model.snapshot.nixie(PK4.selected) == "1")
         #expect(console.model.snapshot.lamp(PK4.powerOn) == .on)
     }

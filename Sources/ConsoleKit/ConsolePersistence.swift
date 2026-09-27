@@ -28,6 +28,10 @@ public struct DrumTotals: Codable, Equatable, Sendable {
 
     public init() {}
 
+    /// More than any session could report: a trillion dollars, tokens or lines. A figure
+    /// above it is a damaged record, and counting it would ruin the totals for good.
+    static let plausible: Double = 1e12
+
     /// Counts what `value` adds for this session. Returns whether any total moved.
     ///
     /// The first figure ever seen from a session counts in full: nothing of it has been
@@ -36,7 +40,7 @@ public struct DrumTotals: Codable, Equatable, Sendable {
     mutating func record(
         _ figure: Figure, value: Double, for key: SessionKey, at moment: Date
     ) -> Bool {
-        guard value.isFinite, value >= 0 else { return false }
+        guard value.isFinite, value >= 0, value <= Self.plausible else { return false }
         var seen = lastSeen[key.rawValue] ?? Seen(figures: [:], at: moment)
         let previous = seen.figures[figure.rawValue] ?? 0
         let delta = value - previous
@@ -59,12 +63,16 @@ public struct DrumTotals: Codable, Equatable, Sendable {
         lastSeen = lastSeen.filter { $0.value.at >= moment }
     }
 
+    /// Field by field, like `PersistedConsole`: one mistyped total must not zero the others.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        costUSD = try container.decodeIfPresent(Double.self, forKey: .costUSD) ?? 0
-        outputTokens = try container.decodeIfPresent(Double.self, forKey: .outputTokens) ?? 0
-        linesAdded = try container.decodeIfPresent(Double.self, forKey: .linesAdded) ?? 0
-        linesRemoved = try container.decodeIfPresent(Double.self, forKey: .linesRemoved) ?? 0
+        func total(_ key: CodingKeys) -> Double {
+            (try? container.decodeIfPresent(Double.self, forKey: key)) ?? 0
+        }
+        costUSD = total(.costUSD)
+        outputTokens = total(.outputTokens)
+        linesAdded = total(.linesAdded)
+        linesRemoved = total(.linesRemoved)
         lastSeen = (try? container.decodeIfPresent([String: Seen].self, forKey: .lastSeen)) ?? [:]
     }
 }

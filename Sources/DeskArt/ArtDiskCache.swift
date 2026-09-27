@@ -59,11 +59,22 @@ enum ArtDiskCache {
 
     // MARK: - Reading
 
+    /// The set, or nil. A file that does not hold together is deleted, so it is drawn and
+    /// written again rather than tried at every launch.
     static func read(style: ArtStyle, scale: CGFloat) -> ArtSet? {
         let url = url(style: style, scale: scale)
-        guard let data = try? Data(contentsOf: url, options: .alwaysMapped), data.count > 4 else {
+        guard let data = try? Data(contentsOf: url, options: .alwaysMapped) else { return nil }
+        guard let set = decode(data, style: style, scale: scale) else {
+            try? FileManager.default.removeItem(at: url)
             return nil
         }
+        // Touched, so the oldest set is the one pruned.
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
+        return set
+    }
+
+    static func decode(_ data: Data, style: ArtStyle, scale: CGFloat) -> ArtSet? {
+        guard data.count > 4 else { return nil }
         let started = Date()
         let headerLength = Int(data.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self) })
         guard data.count >= 4 + headerLength,
@@ -73,8 +84,13 @@ enum ArtDiskCache {
         let body = 4 + headerLength
 
         func picture(_ entry: Entry) -> Picture? {
-            let bytes = entry.width * entry.height * 4
-            guard body + entry.offset + bytes <= data.count else { return nil }
+            // Every number checked before any is trusted: a damaged file fails here rather
+            // than copying from outside itself.
+            let (pixels, tooMany) = entry.width.multipliedReportingOverflow(by: entry.height)
+            let (bytes, tooLarge) = pixels.multipliedReportingOverflow(by: 4)
+            guard entry.width > 0, entry.height > 0, entry.offset >= 0, !tooMany, !tooLarge,
+                entry.offset <= data.count - body, bytes <= data.count - body - entry.offset
+            else { return nil }
             return Picture(
                 width: entry.width, height: entry.height,
                 rows: { destination, bytesPerRow in
@@ -96,8 +112,6 @@ enum ArtDiskCache {
                 picture: picture,
                 frame: CGRect(x: entry.x, y: entry.y, width: entry.w, height: entry.h))
         }
-        // Touched, so the oldest set is the one pruned.
-        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
         let set = ArtSet(style: style, scale: scale, background: background, sprites: sprites)
         set.took(Date().timeIntervalSince(started))
         return set
@@ -106,6 +120,13 @@ enum ArtDiskCache {
     // MARK: - Writing
 
     static func write(_ set: ArtSet) {
+        guard let file = encode(set) else { return }
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try? file.write(to: url(style: set.style, scale: set.scale), options: .atomic)
+        prune()
+    }
+
+    static func encode(_ set: ArtSet) -> Data? {
         var body = Data()
         func entry(_ picture: Picture, _ frame: CGRect) -> Entry {
             let entry = Entry(
@@ -119,15 +140,13 @@ enum ArtDiskCache {
         for (name, sprite) in set.sprites { sprites[name] = entry(sprite.picture, sprite.frame) }
         guard
             let header = try? JSONEncoder().encode(Index(background: background, sprites: sprites))
-        else { return }
+        else { return nil }
         var file = Data()
         var length = UInt32(header.count)
         file.append(Data(bytes: &length, count: 4))
         file.append(header)
         file.append(body)
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        try? file.write(to: url(style: set.style, scale: set.scale), options: .atomic)
-        prune()
+        return file
     }
 
     /// Keeps the most recently used sets, and nothing from another build.

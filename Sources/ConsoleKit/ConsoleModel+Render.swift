@@ -313,9 +313,8 @@ extension ConsoleModel {
 
     func drums() -> [InstrumentID: Int] {
         func wheels(_ value: Double) -> Int {
-            guard value.isFinite, value > 0 else { return 0 }
             // Six wheels roll over like an odometer rather than stop.
-            return Int(value.rounded(.down)) % 1_000_000
+            NixieFormat.whole(value.truncatingRemainder(dividingBy: 1_000_000))
         }
         let totals = saved.totals
         return [

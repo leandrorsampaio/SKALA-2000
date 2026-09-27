@@ -34,7 +34,7 @@ enum MemoryImport {
         UserDefaults.standard.set(true, forKey: offeredKey)
         let alert = NSAlert()
         alert.messageText = "Carry on from the PK-4 desk?"
-        let hours = Int(memory.serviceSeconds / 3600)
+        let hours = NixieFormat.whole(memory.serviceSeconds / 3600)
         alert.informativeText = String(
             format:
                 "Mac Command Center's PK-4 console has counted $%.0f, %.0f thousand output tokens, %.0f lines added and %.0f removed, and %d hours in service. SKALA-2000 can start from there.\n\nThis copies the desk's memory once: the totals, the hours, the pencil strips, the selector, the paint and the buzzer setting. The safety and text logs stay where they are.",

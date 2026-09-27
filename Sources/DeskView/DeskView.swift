@@ -36,7 +36,8 @@ public final class DeskView: NSView {
     private let root = CALayer()
     private(set) var snapshot = ConsoleSnapshot()
     private var style = ArtStyle()
-    private var renderedScale: CGFloat = 0
+    /// The size and style of the art on screen, or of the render on its way there.
+    private var requested: (scale: CGFloat, style: ArtStyle)?
     private var generation = 0
     private var pendingRender: DispatchWorkItem?
     private static let renderQueue = DispatchQueue(label: "skala2000.art", qos: .userInitiated)
@@ -164,8 +165,6 @@ public final class DeskView: NSView {
     @objc private func accessibilityDisplayChanged() {
         layers.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         styleChanged()
-        // The flash's period depends on Reduce Motion.
-        layers.apply(snapshot, animated: false)
     }
 
     private static func isDark(_ appearance: NSAppearance) -> Bool {
@@ -179,7 +178,6 @@ public final class DeskView: NSView {
             lampCodes: lampCodes)
         guard next != style else { return }
         style = next
-        renderedScale = 0
         scheduleRender(after: 0)
     }
 
@@ -192,9 +190,11 @@ public final class DeskView: NSView {
         pendingRender?.cancel()
         guard let delay, window != nil else { return }
         let target = pixelScale
-        // Close enough: redrawing for a 1% change is work nobody would see.
-        if renderedScale > 0, abs(target - renderedScale) / renderedScale < 0.01,
-            layers.art?.style == style
+        // Close enough: redrawing for a 1% change is work nobody would see. Measured
+        // against the render still on its way too, not only the art installed: a size
+        // dragged back while one draws must not leave that one's size up.
+        if let requested, requested.style == style,
+            abs(target - requested.scale) / requested.scale < 0.01
         {
             return
         }
@@ -207,6 +207,7 @@ public final class DeskView: NSView {
         generation += 1
         let ticket = generation
         let style = self.style
+        requested = (scale, style)
         let first = layers.art == nil
         let styleSwap = layers.art.map { $0.style != style } ?? false
         Self.renderQueue.async {
@@ -230,7 +231,6 @@ public final class DeskView: NSView {
                 }
                 self.layers.install(art)
                 CATransaction.commit()
-                self.renderedScale = scale
                 if first { self.layers.apply(self.snapshot, animated: false) }
                 self.artRendered(art)
             }
@@ -241,9 +241,10 @@ public final class DeskView: NSView {
 
     /// Renders synchronously, for tests and the first frame of a warm launch.
     public func renderNow() {
+        generation += 1
         let art = ArtCache.shared.art(style: style, scale: pixelScale)
         layers.install(art)
-        renderedScale = art.scale
+        requested = (art.scale, style)
         layers.apply(snapshot, animated: false)
     }
 

@@ -68,6 +68,25 @@ struct DeskLayersTests {
         #expect(layers.lamps[PK4.warning(.stale)]?.animation(forKey: "flash")?.duration == 1.0)
     }
 
+    /// Turned on while lamps flash and the buzzer sounds, it reaches them at once.
+    @Test func reduceMotionReachesWhatIsAlreadyMoving() throws {
+        let layers = layers()
+        var s = ConsoleSnapshot()
+        s.lamps[PK4.warning(.stale)] = .flash
+        s.buzzer = true
+        layers.apply(s, animated: true)
+        let lamp = try #require(layers.lamps[PK4.warning(.stale)])
+        #expect(lamp.animation(forKey: "flash")?.duration == 0.5)
+
+        layers.reduceMotion = true
+        #expect(lamp.animation(forKey: "flash")?.duration == 1.0)
+        #expect(layers.buzzer.animation(forKey: "shake") == nil)
+
+        layers.reduceMotion = false
+        #expect(lamp.animation(forKey: "flash")?.duration == 0.5)
+        #expect(layers.buzzer.animation(forKey: "shake") != nil)
+    }
+
     @Test func aPressedCapSinksAndDarkensIn45Milliseconds() throws {
         let layers = layers()
         var s = ConsoleSnapshot()
@@ -231,7 +250,7 @@ struct DeskLayersTests {
 @MainActor
 struct LongRunTests {
 
-    @Test func aWholeDayLeavesTheLayerTreeAsItFoundIt() {
+    @Test func aWholeDayLeavesTheLayerTreeAsItFoundIt() async {
         let layers = DeskLayers()
         layers.install(DeskLayersTests.art)
         let clock = ManualClock()
@@ -249,7 +268,11 @@ struct LongRunTests {
         var applied = 0
         var peak = 0
         var last = model.snapshot
+        var steps = 0
         while !day.isOver {
+            // Seconds of main-actor work: yielding lets other suites' timers run meanwhile.
+            steps += 1
+            if steps % 100 == 0 { await Task.yield() }
             let readings = day.step()
             clock.now = day.now
             model.ingest(readings)

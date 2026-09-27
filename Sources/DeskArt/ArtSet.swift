@@ -298,7 +298,6 @@ public final class ArtSet: @unchecked Sendable {
         }
 
         for element in DeskLayout.all("cap") {
-            let id = InstrumentID(element.id)
             let tone = SpritePainters.CapTone(rawValue: element.text("tone")) ?? .cream
             let face = element.rect.insetBy(dx: 6, dy: 6)
             let text = element.text()
@@ -344,7 +343,6 @@ public final class ArtSet: @unchecked Sendable {
             }
         }
         for element in DeskLayout.all("roundCap") {
-            let id = InstrumentID(element.id)
             let face = element.rect.insetBy(dx: 8, dy: 8)
             let text = element.text()
             let textMark = DeskLayout.all("roundCapText", in: element.rect).first?.rect

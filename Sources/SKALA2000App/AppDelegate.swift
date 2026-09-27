@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DeskFonts.register()
+        ArtCache.shared.usesDisk = true
         NSApp.mainMenu = MainMenu.build(
             MainMenu.Actions(
                 showDesk: { [weak self] in self?.desk?.show() },

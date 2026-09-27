@@ -97,7 +97,10 @@ final class DeskLayers {
     /// Buttons held by the pointer or the keyboard right now, shown down whatever the
     /// model has said so far: the cap goes down in the frame the click lands in.
     var held: Set<InstrumentID> = []
-    var reduceMotion = false
+    /// Turned on or off while the desk runs, it reaches what is already moving too.
+    var reduceMotion = false {
+        didSet { if reduceMotion != oldValue { restartMotion() } }
+    }
 
     private var selectorPosition = 1
     private var mainsOn = true
@@ -579,16 +582,7 @@ final class DeskLayers {
         // The buzzer trembles while it sounds.
         if snapshot.buzzer != buzzing {
             buzzing = snapshot.buzzer
-            if buzzing && !reduceMotion {
-                let shake = CABasicAnimation(keyPath: "position.x")
-                shake.byValue = 0.6
-                shake.duration = 0.02
-                shake.autoreverses = true
-                shake.repeatCount = .infinity
-                buzzer.add(shake, forKey: "shake")
-            } else {
-                buzzer.removeAnimation(forKey: "shake")
-            }
+            shakeBuzzer()
         }
 
         // Paper.
@@ -784,6 +778,31 @@ final class DeskLayers {
         fade.beginTime = CACurrentMediaTime() + (open ? 0 : 0.2)
         fade.fillMode = .backwards
         g.shadow.add(fade, forKey: "fade")
+    }
+
+    private func shakeBuzzer() {
+        guard buzzing && !reduceMotion else {
+            buzzer.removeAnimation(forKey: "shake")
+            return
+        }
+        let shake = CABasicAnimation(keyPath: "position.x")
+        shake.byValue = 0.6
+        shake.duration = 0.02
+        shake.autoreverses = true
+        shake.repeatCount = .infinity
+        buzzer.add(shake, forKey: "shake")
+    }
+
+    /// What never stops by itself takes a new Reduce Motion at once: the flash's period,
+    /// the buzzer's tremble. What moves once is only ever started with the current one.
+    private func restartMotion() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for (id, layer) in lamps where lampStates[id] == .flash {
+            layer.add(Motion.flash(reduceMotion: reduceMotion), forKey: "flash")
+        }
+        shakeBuzzer()
+        CATransaction.commit()
     }
 
     /// The knob leans 6° on its stop pin and springs back, 90 + 170 ms.

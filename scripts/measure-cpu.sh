@@ -6,7 +6,7 @@
 #   scripts/measure-cpu.sh <pid> [seconds=60] [warmup=10]
 #
 set -euo pipefail
-PID="$1"; SECONDS_TO_SAMPLE="${2:-60}"; WARMUP="${3:-10}"
+PID="${1:?usage: measure-cpu.sh <pid> [seconds=60] [warmup=10]}"; SECONDS_TO_SAMPLE="${2:-60}"; WARMUP="${3:-10}"
 
 cputime() {
     # [[dd-]hh:]mm:ss.cc → seconds
@@ -22,4 +22,12 @@ t0=$(python3 -c 'import time; print(time.time())')
 sleep "$SECONDS_TO_SAMPLE"
 end=$(cputime)
 t1=$(python3 -c 'import time; print(time.time())')
-python3 -c "print(f'{100 * ($end - $start) / ($t1 - $t0):.2f}% of one core over {($t1 - $t0):.0f} s')"
+if [[ -z "$start" || -z "$end" ]]; then
+    echo "process $PID is not running" >&2
+    exit 1
+fi
+python3 - "$start" "$end" "$t0" "$t1" <<'PY'
+import sys
+start, end, t0, t1 = map(float, sys.argv[1:5])
+print(f"{100 * (end - start) / (t1 - t0):.2f}% of one core over {t1 - t0:.0f} s")
+PY

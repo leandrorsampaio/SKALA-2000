@@ -8,28 +8,53 @@ public final class ArtCache: @unchecked Sendable {
 
     private let lock = NSLock()
     private var recent: [ArtSet] = []
+    private var disk = false
+    /// One set drawn at a time. Each already uses every core, and a second view asking for
+    /// the set being drawn waits for it rather than drawing it again.
+    private let drawing = NSLock()
+
+    /// Whether sets are also kept in `~/Library/Caches/SKALA-2000/` for the next launch.
+    /// Only the app turns it on: the tests and the reference tool must neither read its
+    /// sets nor prune them as another build's.
+    public var usesDisk: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return disk
+        }
+        set {
+            lock.lock()
+            disk = newValue
+            lock.unlock()
+        }
+    }
 
     /// A set for `style` at `scale`, rendered now if need be. Thread-safe; call it off the
     /// main thread.
     public func art(style: ArtStyle, scale: CGFloat) -> ArtSet {
-        lock.lock()
-        if let hit = recent.first(where: { $0.style == style && abs($0.scale - scale) < 0.001 }) {
-            lock.unlock()
-            return hit
-        }
-        lock.unlock()
+        if let hit = cached(style, scale) { return hit }
+        drawing.lock()
+        defer { drawing.unlock() }
+        if let hit = cached(style, scale) { return hit }
+        let disk = usesDisk
         let art: ArtSet
-        if let saved = ArtDiskCache.read(style: style, scale: scale) {
+        if disk, let saved = ArtDiskCache.read(style: style, scale: scale) {
             art = saved
         } else {
             art = ArtSet.render(style: style, scale: scale)
             // Written in the background: the view is waiting for this set, not for the disk.
-            DispatchQueue.global(qos: .utility).async { ArtDiskCache.write(art) }
+            if disk { DispatchQueue.global(qos: .utility).async { ArtDiskCache.write(art) } }
         }
         lock.lock()
         recent = [art]
         lock.unlock()
         return art
+    }
+
+    private func cached(_ style: ArtStyle, _ scale: CGFloat) -> ArtSet? {
+        lock.lock()
+        defer { lock.unlock() }
+        return recent.first { $0.style == style && abs($0.scale - scale) < 0.001 }
     }
 
     public func removeAll() {

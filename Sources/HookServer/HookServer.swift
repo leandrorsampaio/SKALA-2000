@@ -21,10 +21,22 @@ public final class HookServer: @unchecked Sendable {
     public static let path = "/v1/events/claude"
     public static let maximumBody = 8 * 1024 * 1024
 
-    public enum Failure: Error, Equatable {
+    public enum Failure: Error, Equatable, CustomStringConvertible {
         case pathTooLong
         case socket(Int32)
         case anotherServerIsListening
+        /// Something that is not a socket, and not ours to delete, has the socket's name.
+        case pathTaken
+
+        /// As Settings shows it.
+        public var description: String {
+            switch self {
+            case .pathTooLong: "the socket's path is too long"
+            case .socket(let error): String(cString: strerror(error))
+            case .anotherServerIsListening: "another copy of SKALA-2000 is listening"
+            case .pathTaken: "hooks.sock is taken by a file that is not a socket"
+            }
+        }
     }
 
     public let socketURL: URL
@@ -50,28 +62,34 @@ public final class HookServer: @unchecked Sendable {
             throw Failure.pathTooLong
         }
         // A socket file left by an instance that died is removed; one that answers belongs
-        // to an instance that is running, and is left alone.
-        if FileManager.default.fileExists(atPath: path) {
-            if Self.answers(path) { throw Failure.anotherServerIsListening }
+        // to an instance that is running, and is left alone. Looked at without following a
+        // link, so a dangling one is seen; anything but a socket or a link is not ours.
+        var status = stat()
+        if lstat(path, &status) == 0 {
+            let type = status.st_mode & S_IFMT
+            guard type == S_IFSOCK || type == S_IFLNK else { throw Failure.pathTaken }
+            if type == S_IFSOCK, Self.answers(path) { throw Failure.anotherServerIsListening }
             unlink(path)
         }
 
         let fd = socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { throw Failure.socket(errno) }
         var address = Self.address(path)
-        // Created 0600 from the start: no moment in which another user could connect.
-        let previous = umask(0o177)
         let bound = withUnsafePointer(to: &address) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                 bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size))
             }
         }
-        umask(previous)
         guard bound == 0 else {
             let error = errno
             close(fd)
             throw Failure.socket(error)
         }
+        // 0600 straight after bind. Not by narrowing the umask around it: that is the whole
+        // process's, and a folder another thread made meanwhile came out 0600, unusable.
+        // Until the chmod the socket is as the umask leaves it, 0755 by default, and
+        // connecting takes write permission; it sits in ~/Library, which only its owner can
+        // enter; and every connection's peer is checked to be this user.
         chmod(path, 0o600)
         guard listen(fd, 16) == 0 else {
             let error = errno

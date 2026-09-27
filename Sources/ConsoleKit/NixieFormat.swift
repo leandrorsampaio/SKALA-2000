@@ -34,15 +34,22 @@ public enum NixieFormat {
         digits(max(0, value) / 1000, width: width)
     }
 
+    /// A reading as a whole number, towards zero: negative, not a number or too large for
+    /// an `Int` reads 0 or `Int.max`, where `Int(_:)` would stop the app.
+    public static func whole(_ value: Double) -> Int {
+        guard value.isFinite, value > 0 else { return 0 }
+        return value < 9e18 ? Int(value) : .max
+    }
+
     /// `mm:ss`, with as many minute tubes as asked for, capped at all nines and `:59`.
     public static func minutesSeconds(_ seconds: TimeInterval, leading: Int = 2) -> String {
-        let total = seconds.isFinite ? max(0, Int(seconds)) : 0
+        let total = whole(seconds)
         return clock(total / 60, total % 60, leading: leading)
     }
 
     /// `hh:mm`, with as many hour tubes as asked for, capped at all nines and `:59`.
     public static func hoursMinutes(_ seconds: TimeInterval, leading: Int = 2) -> String {
-        let minutes = seconds.isFinite ? max(0, Int(seconds / 60)) : 0
+        let minutes = whole(seconds / 60)
         return clock(minutes / 60, minutes % 60, leading: leading)
     }
 
@@ -54,9 +61,8 @@ public enum NixieFormat {
 
     /// `0000.00` dollars.
     public static func cost(_ dollars: Double) -> String {
-        guard dollars.isFinite else { return "0000.00" }
         // Rounded to the cent, not floored: 0.29 is 28.999… in binary.
-        let cents = max(0, Int((dollars * 100).rounded()))
+        let cents = whole((dollars * 100).rounded())
         guard cents < 1_000_000 else { return "9999.99" }
         return digits(cents / 100, width: 4) + "." + digits(cents % 100, width: 2)
     }

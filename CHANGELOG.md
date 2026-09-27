@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.1
+
+Fixes from two outside reviews.
+
+- **F10 is stricter.** A password typed after the desk has shown NO ANSWER ends nothing,
+  and the prompt closes itself at that point. The process must be the one that wrote the
+  session's file (Claude Code records its start time there), so a pid reused after a crash
+  is never signalled. The prompt names the session by its folder or name, never its id.
+- **Numbers too large for the tubes no longer stop the app.** A damaged figure in a
+  transcript is not counted, and one already in the desk's memory rolls the drum over
+  instead of stopping every launch. One mistyped total no longer zeroes the others.
+- **Reduce Motion**, turned on or off while lamps flash, reaches them at once.
+- **A resize dragged back** while art was drawing no longer leaves art of the wrong size.
+- **Hooks.** A `settings.json` linked from a dotfiles folder stays a link, and its backup is
+  a copy of the file. The script accepts an empty settings file, refuses one that is not
+  JSON, and writes atomically. The receiver clears a dangling link at its socket's path,
+  never deletes a file that is not a socket, and Settings says why it could not start. It
+  no longer narrows the process-wide umask while it binds, which left any folder another
+  thread made at that moment unusable.
+- **Robustness.** A transcript line written while it was being read is no longer read
+  twice. A `claude` run that ignores SIGTERM at its timeout is killed. A damaged art cache
+  file is refused and deleted instead of read out of bounds. The Mac's power source can no
+  longer call into a freed object. Two views asking for the same art at once draw it once.
+- **Tests** no longer read, write or prune the app's art cache, and the whole-day replays
+  give the main thread back as they go, so the real-time tests no longer wait 25 s behind
+  them: 217 tests in about 27 s, the power-up test no longer flaky.
+- `ClaudeSummary`, the old menu bar panel's summary, is gone: nothing used it.
+
 ## 0.1.0
 
 The first version: the PK-4 console from Mac Command Center, rebuilt as a standalone app

@@ -107,7 +107,9 @@ public final class TranscriptSource {
         while let data = try? handle.read(upToCount: Self.chunk), !data.isEmpty {
             consume(data)
         }
-        offset = size
+        // Where reading stopped, not the size measured before it: Claude Code may have
+        // written more meanwhile, and those lines must not be read twice.
+        offset = (try? handle.offset()) ?? size
     }
 
     private func consume(_ data: Data) {
