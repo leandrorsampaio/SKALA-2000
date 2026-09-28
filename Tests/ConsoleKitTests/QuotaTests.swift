@@ -33,17 +33,20 @@ import Testing
     @Test func theMetersShowTheShareUsedAndTheTubesTheTimeLeft() {
         let bench = Bench()
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == Needle.leftStop)
-        #expect(bench.snap.nixie(PK4.quotaResets(.session)) == "     ")
+        #expect(bench.snap.nixie(PK4.sessionResets) == "     ")
+        #expect(bench.snap.nixie(PK4.weekResetDays) == "  ")
 
         quota(bench, session: 0.06, week: 0.725)
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == 0.06)
         #expect(bench.snap.meter(PK4.quotaMeter(.week)) == 0.725)
-        #expect(bench.snap.nixie(PK4.quotaResets(.session)) == "01:10")
-        #expect(bench.snap.nixie(PK4.quotaResets(.week)) == "108:30")
+        #expect(bench.snap.nixie(PK4.sessionResets) == "01:10")
+        // 108 h 30 min, rounded up to 109 hours: 4 days 13 hours.
+        #expect(bench.snap.nixie(PK4.weekResetDays) == "04")
+        #expect(bench.snap.nixie(PK4.weekResetHours) == "13")
 
         // A minute on, the countdowns have turned over by themselves.
         bench.run(for: 61)
-        #expect(bench.snap.nixie(PK4.quotaResets(.session)) == "01:09")
+        #expect(bench.snap.nixie(PK4.sessionResets) == "01:09")
     }
 
     /// Past the reset, the old share is wrong: the meter drops to its stop.
@@ -53,7 +56,7 @@ import Testing
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == 0.5)
         bench.run(for: 31)
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == Needle.leftStop)
-        #expect(bench.snap.nixie(PK4.quotaResets(.session)) == "     ")
+        #expect(bench.snap.nixie(PK4.sessionResets) == "     ")
     }
 
     @Test func amberFromEightyRedFromNinetyFiveEachWithABeep() {

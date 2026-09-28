@@ -67,8 +67,6 @@ public struct StaticPainter {
         for selector in all("selector") { selectorPlate(selector.rect) }
         for toggle in all("toggle") { togglePlate(toggle.rect) }
         for pencil in all("pencil") { pencilHolder(pencil.rect) }
-        for bolt in all("groundBolt") { groundBolt(bolt.rect) }
-        for earth in all("earth") { self.earth(earth.rect) }
     }
 
     // MARK: - Type
@@ -634,50 +632,6 @@ public struct StaticPainter {
         pen.fill(paper, palette.paper)
         pen.linear(
             paper, [(black(0.06), 0), (black(0), 1)], from: .top, to: CGPoint(x: 0.5, y: 0.3))
-    }
-
-    // MARK: - Panel E hardware
-
-    /// The brass grounding bolt.
-    func groundBolt(_ rect: CGRect) {
-        pen.translate(rect.minX, rect.minY) {
-            let points: [(CGFloat, CGFloat)] = [
-                (32, 7), (53, 19), (53, 45), (32, 57), (11, 45), (11, 19),
-            ]
-            let hexagon = CGMutablePath()
-            hexagon.move(to: CGPoint(x: points[0].0, y: points[0].1))
-            for point in points.dropFirst() { hexagon.addLine(to: CGPoint(x: point.0, y: point.1)) }
-            hexagon.closeSubpath()
-            pen.translate(2, 3) { pen.fill(hexagon, black(0.4)) }
-            pen.fill(hexagon, palette.brass)
-            pen.stroke(hexagon, rgb(0x2A2A27), width: 1.5)
-            let face = CGMutablePath()
-            face.move(to: CGPoint(x: 32, y: 7))
-            face.addLine(to: CGPoint(x: 53, y: 19))
-            face.addLine(to: CGPoint(x: 32, y: 32))
-            face.addLine(to: CGPoint(x: 11, y: 19))
-            face.closeSubpath()
-            pen.fill(face, white(0.3))
-            let nut = Pen.circle(CGRect(x: 22, y: 22, width: 20, height: 20))
-            pen.fill(nut, rgb(0x8A7636))
-            pen.stroke(nut, rgb(0x2A2A27), width: 1.5)
-        }
-    }
-
-    /// The IEC earth symbol: the only pictogram on the desk.
-    func earth(_ rect: CGRect) {
-        pen.translate(rect.minX, rect.minY) {
-            let path = CGMutablePath()
-            path.move(to: CGPoint(x: 14, y: 2))
-            path.addLine(to: CGPoint(x: 14, y: 14))
-            path.move(to: CGPoint(x: 2, y: 14))
-            path.addLine(to: CGPoint(x: 26, y: 14))
-            path.move(to: CGPoint(x: 6, y: 19))
-            path.addLine(to: CGPoint(x: 22, y: 19))
-            path.move(to: CGPoint(x: 10, y: 24))
-            path.addLine(to: CGPoint(x: 18, y: 24))
-            pen.stroke(path, paint.ink, width: 2.2)
-        }
     }
 }
 

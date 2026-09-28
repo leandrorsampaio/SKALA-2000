@@ -43,7 +43,7 @@ struct LiveConsoleTests {
         print(
             "text log:",
             console.log.readText().split(separator: "\n").prefix(4).joined(separator: " | "))
-        #expect(snap.lamp(PK4.powerOn) == .on)
+        #expect(snap.mains && snap.nixie(PK4.selected) != " ")
         #expect(snap.lamp(PK4.onMains) == .on || snap.lamp(PK4.onBattery) == .on)
         #expect(FileConsoleStore(directory: scratch.url).load() != nil)
     }

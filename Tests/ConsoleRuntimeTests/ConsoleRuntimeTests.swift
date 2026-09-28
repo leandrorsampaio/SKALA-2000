@@ -160,15 +160,13 @@ final class FakePmset: CommandRunning, @unchecked Sendable {
 
         // About two seconds, waited for rather than slept: other suites share the main
         // thread, and a busy one delays the timer, not the outcome.
-        // The lamp and the nixie light at different steps of the sequence.
+        // SELECTED shows its slot only once the sequence is over and the desk is live.
         let deadline = Date().addingTimeInterval(10)
-        while console.model.snapshot.lamp(PK4.powerOn) != .on
-            || console.model.snapshot.nixie(PK4.selected) != "1", Date() < deadline
-        {
+        while console.model.snapshot.nixie(PK4.selected) != "1", Date() < deadline {
             try await Task.sleep(for: .milliseconds(100))
         }
         #expect(console.model.snapshot.nixie(PK4.selected) == "1")
-        #expect(console.model.snapshot.lamp(PK4.powerOn) == .on)
+        #expect(console.model.snapshot.mains)
     }
 
     @Test func mainsStartsAndStopsTheSources() {

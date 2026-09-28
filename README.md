@@ -73,7 +73,7 @@ swings and slows the flash to 1 Hz; Increase Contrast darkens unlit glass.
 | **B · Selected session** | The selector and SELECTED, context remaining, API and tool share of time (the needles drift a point or three now and then, as a moving coil does), token and cost nixies, permission mode, effort, model (Opus 200K and Opus 1M told apart by the session's context window), mode, kind, tier, warnings, drum totals, and the guarded F10–F12 (F12 ends the session after the key, a 2 s hold, and your password or Touch ID) |
 | **C · Control** | F1 open folder, F2 Terminal here, F3 copy the resume command, F4 safety log, F5 show transcript; F6 to F9 have no job yet |
 | **D · Computer controls** | Sleep, monitor off, Keep Awake with the display on (FC1) or off (FC2), battery, power source, and MAINS beside it |
-| **E · Power and service** | Your plan's usage: the five-hour window and the week, each on a horizontal edgewise meter, red from 80%, with the time to its reset on nixies, an amber NEAR LIMIT lamp from 80% and a red AT LIMIT from 95%, each beeping once as it comes on; POWER ON and the power-up sequence, hours in service |
+| **E · Power and service** | Your plan's usage, the five-hour window and the week side by side, each on a horizontal edgewise meter red from 80%, with the time to its reset on nixies (hours and minutes for the session, days and hours for the week) and, under them, an amber NEAR LIMIT lamp from 80% and a red AT LIMIT from 95%, each beeping once as it comes on; hours in service |
 
 A new alarm flashes until ACKNOWLEDGE turns it steady, and goes dark when its cause
 clears. The buzzer speaks once as each state begins: one buzz for DONE, two quick for

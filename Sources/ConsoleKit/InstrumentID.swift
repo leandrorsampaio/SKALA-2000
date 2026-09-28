@@ -168,7 +168,6 @@ public enum PK4 {
     // MARK: Panel E · power and service
 
     public static let mains: InstrumentID = "e.mains"
-    public static let powerOn: InstrumentID = "e.poweron"
     public static let hoursInService: InstrumentID = "e.drum.hours"
 
     /// The plan's two usage windows: the five hours of a session, and the week.
@@ -178,10 +177,11 @@ public enum PK4 {
     public static func quotaMeter(_ quota: Quota) -> InstrumentID {
         InstrumentID("e.quota.\(quota.rawValue)")
     }
-    /// Hours and minutes until the window resets.
-    public static func quotaResets(_ quota: Quota) -> InstrumentID {
-        InstrumentID("e.nixie.quota.\(quota.rawValue)")
-    }
+    /// Hours and minutes until the five-hour window resets.
+    public static let sessionResets: InstrumentID = "e.nixie.quota.session"
+    /// Days, and hours past them, until the week resets: two readouts, DD and HH.
+    public static let weekResetDays: InstrumentID = "e.nixie.quota.week.days"
+    public static let weekResetHours: InstrumentID = "e.nixie.quota.week.hours"
     /// Amber from 80% used.
     public static func quotaNear(_ quota: Quota) -> InstrumentID {
         InstrumentID("e.quota.\(quota.rawValue).near")
@@ -213,8 +213,8 @@ public enum PK4 {
         // The column beside the token rows: six tubes each, so all six line up with COST.
         queueDepth: "000000", toolCalls: "000000", lastTurn: "0000:00",
         turnMessages: "000000", uptime: "0000:00", cost: "0000.00",
-        // Hours and minutes to a reset: under five for a session, up to 168 for a week.
-        quotaResets(.session): "00:00", quotaResets(.week): "000:00",
+        // Hours and minutes to a session's reset; days and hours to the week's.
+        sessionResets: "00:00", weekResetDays: "00", weekResetHours: "00",
     ]
 
     /// Top to bottom as the desk is drawn, for the power-up strike. Readouts on the same
@@ -230,8 +230,8 @@ public enum PK4 {
         [cacheWritten, cost],
         [sessionsRunning, sessionsBusy],
         [targetB],
-        [quotaResets(.session)],
-        [quotaResets(.week)],
+        [sessionResets],
+        [weekResetDays, weekResetHours],
     ]
 
     /// Every lamp window and lens on the desk, which is what LAMP TEST lights.
@@ -249,7 +249,7 @@ public enum PK4 {
         lamps += Tier.allCases.map(tier)
         lamps += Warning.allCases.map(warning)
         lamps += round.flatMap { [lensOn($0), lensOff($0)] }
-        lamps += [onMains, onBattery, charging, batteryLow, powerOn]
+        lamps += [onMains, onBattery, charging, batteryLow]
         lamps += Quota.allCases.flatMap { [quotaNear($0), quotaLimit($0)] }
         return lamps
     }

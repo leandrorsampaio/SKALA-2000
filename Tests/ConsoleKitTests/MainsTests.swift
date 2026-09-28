@@ -46,10 +46,10 @@ import Testing
             bench.model.advance()
         }
 
+        // Power reaches the desk at 250 ms, and the first row strikes on all eights.
         at(0.2)
-        #expect(bench.lamp(PK4.powerOn) == .off)
+        #expect(bench.snap.nixie(PK4.targetC) == " ")
         at(0.26)
-        #expect(bench.lamp(PK4.powerOn) == .on)
         // The first row strikes on all eights; the next has not yet.
         #expect(bench.snap.nixie(PK4.targetC) == "8")
         #expect(bench.snap.nixie(PK4.selected) == " ")
@@ -73,7 +73,7 @@ import Testing
 
         at(schedule.liveAt.timeIntervalSince(start) + 0.01)
         #expect(bench.lamp(PK4.batteryLow) == .off)
-        #expect(bench.lamp(PK4.powerOn) == .on)
+        #expect(bench.snap.mains)
         #expect(bench.snap.nixie(PK4.selected) == "1")
         #expect(bench.snap.cues.chirp == 1)
     }

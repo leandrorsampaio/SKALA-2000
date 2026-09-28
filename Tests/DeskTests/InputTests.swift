@@ -336,7 +336,7 @@ struct AccessibilityTests {
         #expect(value("Total cost") == "27 dollars")
         #expect(value("Permission mode, bypass") == "dark")
         #expect(value("Session selector") == "Session 1")
-        // 73 lamps, 17 nixie rows, 6 meters, 5 drums, 31 controls, the buzzer, the build card.
+        // 72 lamps, 18 nixie rows, 6 meters, 5 drums, 31 controls, the buzzer, the build card.
         #expect(all.count == 134)
         _ = window
     }

@@ -83,8 +83,9 @@ final class DeskAccessibility {
             PK4.toolCalls: "Tool calls", PK4.lastTurn: "Last turn, minutes and seconds",
             PK4.turnMessages: "Turn messages", PK4.uptime: "Session uptime, hours and minutes",
             PK4.cost: "Cost, last checkpoint, dollars",
-            PK4.quotaResets(.session): "Quota, 5 hours, resets in hours and minutes",
-            PK4.quotaResets(.week): "Quota, week, resets in hours and minutes",
+            PK4.sessionResets: "Quota, 5 hours, resets in hours and minutes",
+            PK4.weekResetDays: "Quota, week, resets in days",
+            PK4.weekResetHours: "Quota, week, and hours",
         ]
         for nixie in DeskLayout.all("nixie") {
             let id = InstrumentID(nixie.id)

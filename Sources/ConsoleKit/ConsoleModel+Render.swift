@@ -30,7 +30,6 @@ extension ConsoleModel {
 
         case .poweringUp(let since, _):
             let schedule = PowerUp(since: since)
-            if now >= schedule.powerOnAt { out.lamps[PK4.powerOn] = .on }
             out.nixies = strike(schedule, at: now)
             if now >= schedule.strikeEnd { out.meters = meters(now) }
             if testing { PK4.allLamps.forEach { out.lamps[$0] = .test } }
@@ -101,13 +100,17 @@ extension ConsoleModel {
             out[PK4.sessionsBusy] = NixieFormat.digits(busy.count, width: 1)
         }
 
-        // Panel E: how long until each plan window resets, while one is known.
-        for quota in PK4.Quota.allCases {
-            if let left = quotaResets(quota, now) {
-                // Minutes rounded up, as a countdown reads: 01:10 until under 69 minutes.
-                out[PK4.quotaResets(quota)] = NixieFormat.hoursMinutes(
-                    (left / 60).rounded(.up) * 60, leading: quota == .session ? 2 : 3)
-            }
+        // Panel E: how long until each plan window resets, while one is known, rounded up
+        // as a countdown reads. The session in hours and minutes: 01:10 until under 69
+        // minutes. The week in days and hours: 74.2 hours reads 03 days 03 hours.
+        if let left = quotaResets(.session, now) {
+            out[PK4.sessionResets] = NixieFormat.hoursMinutes(
+                (left / 60).rounded(.up) * 60, leading: 2)
+        }
+        if let left = quotaResets(.week, now) {
+            let hours = NixieFormat.whole((left / 3600).rounded(.up))
+            out[PK4.weekResetDays] = NixieFormat.digits(hours / 24, width: 2)
+            out[PK4.weekResetHours] = NixieFormat.digits(hours % 24, width: 2)
         }
 
         let panelB: [InstrumentID] = [
@@ -275,8 +278,6 @@ extension ConsoleModel {
         light(PK4.onMains, mains == true)
         light(PK4.onBattery, mains == false)
         light(PK4.charging, machineFlag(.charging, at: now) == true)
-
-        light(PK4.powerOn, true)
         return out
     }
 

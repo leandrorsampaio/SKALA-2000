@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1
+
+Panel E, easier to read.
+
+- **The two plan windows stand side by side**, well apart, each a column: its meter, how
+  long until it resets, and its NEAR LIMIT and AT LIMIT lamps side by side beneath.
+- **The week's reset reads in days and hours**, on two readouts, `03 d 03 h`, rounded up
+  as a countdown reads; the session's stays in hours and minutes.
+- **POWER ON and the ground bolt are gone.** MAINS and the tubes striking already say the
+  desk has power. HOURS IN SERVICE sits beneath, without a unit the plate already gives.
+
 ## 0.3.0
 
 Your plan's usage on the desk.

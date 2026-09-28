@@ -387,6 +387,7 @@ enum Power: Equatable {
 struct PowerUp {
     let since: Date
 
+    /// When power reaches the desk and the first row of tubes strikes.
     var powerOnAt: Date { since.addingTimeInterval(ConsoleTiming.powerOnLamp) }
 
     func strikeStart(row: Int) -> Date {

@@ -740,56 +740,64 @@ private struct PanelE: View {
     @Environment(\.pk4) private var palette
 
     var body: some View {
-        PK4Panel(title: "E · Power and service", spacing: 10) {
-            quota(.session, "Quota · 5 h", codes: ("PA5", "HG18", "HL80", "HL81"))
-            quota(.week, "Quota · week", codes: ("PA6", "HG19", "HL82", "HL83"))
-            HStack(alignment: .center) {
-                LampWindow(
-                    label: "Power on", color: .green, state: s.lamp(PK4.powerOn), code: "HL58",
-                    id: PK4.powerOn.rawValue
-                )
-                .equatable()
-                .accessibilityElement()
-                .accessibilityLabel("Power on")
-                .accessibilityValue(PK4Words.lamp(s.lamp(PK4.powerOn)))
+        PK4Panel(title: "E · Power and service", spacing: 6) {
+            // The two plan windows side by side, well apart: each its meter, how long until
+            // it resets, and its two warning lamps under them.
+            HStack(alignment: .top, spacing: 0) {
+                quota(.session, "Quota · 5 h", meter: "PA5", lamps: ("HL80", "HL81")) {
+                    Labelled(label: "Resets in", tag: "HG18") {
+                        NixieReadout(
+                            template: PK4.nixies[PK4.sessionResets] ?? "",
+                            value: s.nixie(PK4.sessionResets), unit: "h:min",
+                            id: PK4.sessionResets.rawValue)
+                    }
+                }
                 Spacer()
-                DrumCounter(
-                    label: "Hours in service", value: s.drum(PK4.hoursInService), unit: "h",
-                    code: "PC5", id: PK4.hoursInService.rawValue)
-                Spacer()
-                Labelled(label: "Ground") { GroundBolt() }
+                quota(.week, "Quota · week", meter: "PA6", lamps: ("HL82", "HL83")) {
+                    Labelled(label: "Resets in", tag: "HG19") {
+                        HStack(spacing: 14) {
+                            NixieReadout(
+                                template: PK4.nixies[PK4.weekResetDays] ?? "",
+                                value: s.nixie(PK4.weekResetDays), unit: "d",
+                                id: PK4.weekResetDays.rawValue)
+                            NixieReadout(
+                                template: PK4.nixies[PK4.weekResetHours] ?? "",
+                                value: s.nixie(PK4.weekResetHours), unit: "h",
+                                id: PK4.weekResetHours.rawValue)
+                        }
+                    }
+                }
             }
-            // Apart from the quotas, and so that panel E keeps its height and A its own.
-            .padding(.top, 9)
+            // No unit under it: the plate says hours. The point above keeps panel E at its
+            // height, and A at its own.
+            DrumCounter(
+                label: "Hours in service", value: s.drum(PK4.hoursInService), code: "PC5",
+                id: PK4.hoursInService.rawValue
+            )
+            .padding(.top, 1)
         }
     }
 
-    /// One of the plan's usage windows: how much is used, how long until it resets, and
-    /// the lamps that warn at 80% and 95%.
-    private func quota(
-        _ quota: PK4.Quota, _ label: String, codes: (String, String, String, String)
+    /// One of the plan's usage windows, top to bottom: how much is used, how long until it
+    /// resets, and the lamps that warn at 80% and 95%, side by side.
+    private func quota<Readout: View>(
+        _ quota: PK4.Quota, _ label: String, meter: String, lamps: (String, String),
+        @ViewBuilder readout: () -> Readout
     ) -> some View {
-        HStack(alignment: .center, spacing: 14) {
+        VStack(spacing: 6) {
             HorizontalEdgewiseMeter(
-                label: label, value: s.meter(PK4.quotaMeter(quota)), code: codes.0,
+                label: label, value: s.meter(PK4.quotaMeter(quota)), code: meter,
                 id: PK4.quotaMeter(quota).rawValue
             )
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(label)
             .accessibilityValue(PK4Words.meter(s.meter(PK4.quotaMeter(quota))))
-            Labelled(label: "Resets in", tag: codes.1) {
-                NixieReadout(
-                    template: PK4.nixies[PK4.quotaResets(quota)] ?? "",
-                    value: s.nixie(PK4.quotaResets(quota)), id: PK4.quotaResets(quota).rawValue)
-            }
-            // The same width for both, so the two rows line up.
-            .frame(width: 190)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(label), resets in")
-            .accessibilityValue(PK4Words.digits(s.nixie(PK4.quotaResets(quota))))
-            VStack(spacing: 8) {
-                window("Near limit", .amber, PK4.quotaNear(quota), codes.2)
-                window("At limit", .red, PK4.quotaLimit(quota), codes.3)
+            readout()
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(label), resets in")
+            HStack(spacing: 8) {
+                window("Near limit", .amber, PK4.quotaNear(quota), lamps.0)
+                window("At limit", .red, PK4.quotaLimit(quota), lamps.1)
             }
         }
     }
@@ -802,59 +810,6 @@ private struct PanelE: View {
             .accessibilityElement()
             .accessibilityLabel(label)
             .accessibilityValue(PK4Words.lamp(s.lamp(id)))
-    }
-}
-
-/// The brass grounding bolt, beside its earth symbol.
-private struct GroundBolt: View {
-    @Environment(\.pk4) private var palette
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Canvas { context, _ in
-                var hexagon = Path()
-                let points = [
-                    (32.0, 7.0), (53.0, 19.0), (53.0, 45.0), (32.0, 57.0), (11.0, 45.0),
-                    (11.0, 19.0),
-                ]
-                hexagon.move(to: CGPoint(x: points[0].0, y: points[0].1))
-                for point in points.dropFirst() {
-                    hexagon.addLine(to: CGPoint(x: point.0, y: point.1))
-                }
-                hexagon.closeSubpath()
-                context.fill(hexagon.offsetBy(dx: 2, dy: 3), with: .color(.black.opacity(0.4)))
-                context.fill(hexagon, with: .color(palette.brass))
-                context.stroke(hexagon, with: .color(Color(hex: 0x2A2A27)), lineWidth: 1.5)
-                var face = Path()
-                face.move(to: CGPoint(x: 32, y: 7))
-                face.addLine(to: CGPoint(x: 53, y: 19))
-                face.addLine(to: CGPoint(x: 32, y: 32))
-                face.addLine(to: CGPoint(x: 11, y: 19))
-                face.closeSubpath()
-                context.fill(face, with: .color(.white.opacity(0.3)))
-                let nut = Path(ellipseIn: CGRect(x: 22, y: 22, width: 20, height: 20))
-                context.fill(nut, with: .color(Color(hex: 0x8A7636)))
-                context.stroke(nut, with: .color(Color(hex: 0x2A2A27)), lineWidth: 1.5)
-            }
-            .frame(width: 64, height: 64)
-            .mark("groundBolt")
-            // The IEC earth symbol: the only pictogram on the desk.
-            Canvas { context, _ in
-                var path = Path()
-                path.move(to: CGPoint(x: 14, y: 2))
-                path.addLine(to: CGPoint(x: 14, y: 14))
-                path.move(to: CGPoint(x: 2, y: 14))
-                path.addLine(to: CGPoint(x: 26, y: 14))
-                path.move(to: CGPoint(x: 6, y: 19))
-                path.addLine(to: CGPoint(x: 22, y: 19))
-                path.move(to: CGPoint(x: 10, y: 24))
-                path.addLine(to: CGPoint(x: 18, y: 24))
-                context.stroke(path, with: .foreground, lineWidth: 2.2)
-            }
-            .frame(width: 28, height: 28)
-            .mark("earth")
-        }
-        .accessibilityHidden(true)
     }
 }
 
