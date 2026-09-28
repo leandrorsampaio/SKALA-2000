@@ -4,7 +4,7 @@ Every interactive behaviour is demonstrated live in the component previews (clic
 
 ## What the pointer can do
 
-Only five things respond: pushbuttons, the guard flap and key, the rotary selector, the mains toggle, the pencil strips. Lamps, windows, readouts, counters and meters never respond to hover or click. The cursor stays an arrow everywhere; there are no hover states (a steel panel does not know a finger is near it).
+Only four things respond: pushbuttons, the guard flap and key, the rotary selector, the pencil strips. MAINS has no switch on the desk; it is in the Console menu. Lamps, windows, readouts, counters and meters never respond to hover or click. The cursor stays an arrow everywhere; there are no hover states (a steel panel does not know a finger is near it).
 
 Keyboard: Tab moves through the five kinds of control in panel order A to E; Space or Return presses a button (down on keydown, up on keyup); arrows turn the selector (it stops at 1 and 4). Guarded buttons are not focusable while their guard is closed. Focus ring: 3pt `lamp-amber-on`, offset 3pt.
 
@@ -40,7 +40,7 @@ Reduce Motion: needles, pointers, wheels, flap, key and knob jump to their targe
 
 ## Power-up sequence
 
-1. MAINS up: lever throw, loud clunk. 2. +250 ms POWER ON window. 3. Nixie rows strike top to bottom, 40 ms apart, each showing all eights for 120 ms. 4. All needles rise from the stop together. 5. Automatic lamp test for 1000 ms (every window, lens and button cap lit, buzzer chirps 80 ms). 6. Live data. Drum counters show their stored values from the first frame.
+1. MAINS on, from the Console menu: loud clunk. 2. +250 ms power reaches the desk. 3. Nixie rows strike top to bottom, 40 ms apart, each showing all eights for 120 ms. 4. All needles rise from the stop together. 5. Automatic lamp test for 1000 ms (every window, lens and button cap lit, buzzer chirps 80 ms). 6. Live data. Drum counters show their stored values from the first frame.
 
 ## Sound
 
@@ -48,7 +48,7 @@ Five sources, all short, all dry, mixed mono, played at the position of nothing 
 
 | Sound | When | Character |
 | --- | --- | --- |
-| `click` | button contact, down and up | 18 ms noise burst, band-pass 2.6 kHz |
+| `click` | button contact, down and up, by pointer, keyboard or VoiceOver | 30 ms noise burst, band-pass 1.8 kHz, near full gain: shorter or higher is not heard |
 | `clunk` | relay on every window change, confirm, selector detent, key, guard, toggle (loudest) | 70 ms burst, band-pass 320 Hz |
 | `tick` | each drum wheel that moves | 10 ms burst, 1.4 kHz, quiet |
 | `buzzer` | the signals below, once each as the state begins; continuous only while BUZZER TEST is held | 420 Hz square wave, low gain, 3 ms edges |

@@ -337,6 +337,8 @@ final class ControlElement: DeskElement {
         switch control.kind {
         case .button, .round:
             let id = control.id
+            // The contact clicks as it does under the pointer.
+            view.click()
             view.send(.press(id))
             if PK4.guarded.contains(id) {
                 // A guarded button fires only after 2 s held: VoiceOver's press holds it

@@ -32,7 +32,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 showSettings: { [weak self] in self?.settingsWindow.show() },
                 showTextLog: { [weak self] in self?.textLog.show() },
                 openSafetyLog: { [weak self] in self?.settings.openSafetyLog() },
-                openDataFolder: { [weak self] in self?.settings.openDataFolder() }))
+                openDataFolder: { [weak self] in self?.settings.openDataFolder() },
+                toggleMains: { [weak self] in
+                    guard let console = self?.host.console else { return }
+                    console.send(.mains(!console.model.snapshot.mains))
+                },
+                mainsOn: { [weak self] in self?.host.console?.model.snapshot.mains ?? false }))
         // Before the console opens: the model reads its memory when it starts.
         if host.bench == nil { MemoryImport.offerIfDue() }
         host.open()

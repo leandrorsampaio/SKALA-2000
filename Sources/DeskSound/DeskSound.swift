@@ -8,7 +8,7 @@ import Foundation
 ///
 /// | Sound  | When                                                   | Character            |
 /// | ------ | ------------------------------------------------------ | -------------------- |
-/// | click  | button contact, down and up                            | 18 ms, 2.6 kHz       |
+/// | click  | button contact, down and up                            | 30 ms, 1.8 kHz       |
 /// | clunk  | a relay: window change, confirm, detent, key, guard    | 70 ms, 320 Hz        |
 /// | tick   | each drum wheel that moves                             | 10 ms, 1.4 kHz       |
 /// | buzzer | BUZZER TEST held; the signals below                    | 420 Hz square        |
@@ -59,7 +59,8 @@ public final class DeskSound {
         engine.connect(buzz, to: engine.mainMixerNode, format: format)
         engine.mainMixerNode.outputVolume = volume
 
-        buffers[.click] = Self.burst(milliseconds: 18, frequency: 2600, gain: 0.5, format: format)
+        // 30 ms at 1.8 kHz: the 18 ms tick at 2.6 kHz was there, and too short to be heard.
+        buffers[.click] = Self.burst(milliseconds: 30, frequency: 1800, gain: 0.9, format: format)
         buffers[.clunk] = Self.burst(milliseconds: 70, frequency: 320, gain: 0.9, format: format)
         buffers[.tick] = Self.burst(milliseconds: 10, frequency: 1400, gain: 0.25, format: format)
         // A quick buzz is 110 ms on and 90 off; a long one, 1.2 s.

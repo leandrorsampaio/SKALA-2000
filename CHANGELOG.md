@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.1
+
+- **Panel B's lamps**: each group on one line, its plate on the left, as panel A's rows
+  are; MODE and KIND share a line, and SERVICE TIER and WARNINGS.
+- **Panel A's foot**: the buzzer and SILENCED, then the alarm buttons, SILENCE and
+  ACKNOWLEDGE, and the tests, LAMP TEST and BUZZER TEST, each under a plate of its own.
+  The instruction plate is as wide as its words need, and the two session counters
+  stand closer in.
+- **Panel D**: the MAINS switch is gone; MAINS is in the Console menu, ⇧⌘M, with a check
+  while the desk has power. The battery and the power source lamps stand further apart.
+- **A click you can hear.** Every button clicked on down and up, but 18 ms at 2.6 kHz was
+  too short and too high to be heard over the relays; it is now 30 ms at 1.8 kHz, louder.
+  A VoiceOver press clicks too.
+
 ## 0.4.0
 
 A narrower panel B, and room for A and E.

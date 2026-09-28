@@ -52,7 +52,7 @@ struct HitTableTests {
 
     @Test func everyButtonHasAControl() {
         let ids = Set(table.controls.map(\.id))
-        for id in PK4.litButtons + PK4.round + [PK4.selector, PK4.mains] {
+        for id in PK4.litButtons + PK4.round + [PK4.selector] {
             #expect(ids.contains(id), "\(id) cannot be clicked")
         }
         for slot in PK4.slots { #expect(ids.contains(PK4.pencil(slot: slot))) }
@@ -198,11 +198,6 @@ final class DeskViewInputTests {
         #expect(view.layers.knob.animation(forKey: "lean") != nil)
     }
 
-    @Test func theMainsToggleThrows() {
-        view.mouseDown(with: event(.leftMouseDown, at: center(of: PK4.mains, .toggle)))
-        #expect(sent == [.mains(false)])
-    }
-
     @Test func paintAndLampsTakeNoClicks() throws {
         let lamp = try #require(
             DeskLayout.first("lamp", id: PK4.annunciator(.run, slot: 1).rawValue))
@@ -336,8 +331,8 @@ struct AccessibilityTests {
         #expect(value("Total cost") == "27 dollars")
         #expect(value("Permission mode, bypass") == "dark")
         #expect(value("Session selector") == "Session 1")
-        // 72 lamps, 18 nixie rows, 6 meters, 5 drums, 31 controls, the buzzer, the build card.
-        #expect(all.count == 134)
+        // 72 lamps, 18 nixie rows, 6 meters, 5 drums, 30 controls, the buzzer, the build card.
+        #expect(all.count == 133)
         _ = window
     }
 

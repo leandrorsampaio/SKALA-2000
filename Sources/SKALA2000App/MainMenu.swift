@@ -10,6 +10,9 @@ enum MainMenu {
         var showTextLog: () -> Void
         var openSafetyLog: () -> Void
         var openDataFolder: () -> Void
+        /// MAINS, now the desk has no switch for it.
+        var toggleMains: () -> Void
+        var mainsOn: () -> Bool
     }
 
     static func build(_ actions: Actions) -> NSMenu {
@@ -71,6 +74,9 @@ enum MainMenu {
                 "Safety Log", #selector(MenuTarget.safetyLog), "l", [.command, .shift],
                 target: target))
         console.addItem(.separator())
+        console.addItem(
+            item("Mains", #selector(MenuTarget.mains), "m", [.command, .shift], target: target))
+        console.addItem(.separator())
         console.addItem(item("Open Data Folder", #selector(MenuTarget.dataFolder), target: target))
         add(console, to: main)
 
@@ -103,7 +109,7 @@ enum MainMenu {
 }
 
 @MainActor
-final class MenuTarget: NSObject {
+final class MenuTarget: NSObject, NSMenuItemValidation {
     static let shared = MenuTarget()
     var actions: MainMenu.Actions?
 
@@ -123,4 +129,11 @@ final class MenuTarget: NSObject {
     @objc func textLog() { actions?.showTextLog() }
     @objc func safetyLog() { actions?.openSafetyLog() }
     @objc func dataFolder() { actions?.openDataFolder() }
+    @objc func mains() { actions?.toggleMains() }
+
+    /// MAINS shows a check while the desk has power.
+    func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        if item.action == #selector(mains) { item.state = actions?.mainsOn() == true ? .on : .off }
+        return true
+    }
 }

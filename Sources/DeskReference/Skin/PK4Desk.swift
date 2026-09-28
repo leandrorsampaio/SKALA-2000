@@ -282,10 +282,9 @@ private struct PanelA: View {
                 }
             }
             InstructionPlate(
-                text:
-                    "Red windows flash while their cause holds. SIL silences every signal"
-            )
-            HStack(alignment: .top) {
+                text: "Red windows flash while their cause holds. SIL silences every signal",
+                width: 520)
+            HStack(alignment: .top, spacing: 90) {
                 NixieReadout(
                     label: "Sessions running", template: "0", value: s.nixie(PK4.sessionsRunning),
                     labelWidth: 170, code: "HG1", id: PK4.sessionsRunning.rawValue
@@ -293,7 +292,6 @@ private struct PanelA: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Sessions running")
                 .accessibilityValue(PK4Words.digits(s.nixie(PK4.sessionsRunning)))
-                Spacer()
                 NixieReadout(
                     label: "Sessions busy", template: "0", value: s.nixie(PK4.sessionsBusy),
                     labelWidth: 150, code: "HG2", id: PK4.sessionsBusy.rawValue
@@ -302,7 +300,7 @@ private struct PanelA: View {
                 .accessibilityLabel("Sessions busy")
                 .accessibilityValue(PK4Words.digits(s.nixie(PK4.sessionsBusy)))
             }
-            HStack(alignment: .top) {
+            HStack(alignment: .top, spacing: 0) {
                 VStack(spacing: 14) {
                     Labelled(label: "Buzzer", tag: "HA1") { BuzzerGrille(sounding: s.buzzer) }
                     // Burns while an alarm would go unheard: silenced, or muted in Settings.
@@ -316,21 +314,30 @@ private struct PanelA: View {
                     .accessibilityValue(PK4Words.lamp(s.lamp(PK4.silenced)))
                 }
                 Spacer()
-                PushButton(
-                    id: PK4.silence, cap: "Sil", label: "Silence", face: s.button(PK4.silence),
-                    code: "SB1")
+                // What the alarms answer to, and the two tests, each a group of its own.
+                VStack(spacing: 14) {
+                    Plate(text: "Alarms")
+                    HStack(alignment: .top, spacing: 24) {
+                        PushButton(
+                            id: PK4.silence, cap: "Sil", label: "Silence",
+                            face: s.button(PK4.silence), code: "SB1")
+                        PushButton(
+                            id: PK4.acknowledge, cap: "Ack", label: "Acknowledge", tone: .amber,
+                            face: s.button(PK4.acknowledge), code: "SB2")
+                    }
+                }
                 Spacer()
-                PushButton(
-                    id: PK4.acknowledge, cap: "Ack", label: "Acknowledge", tone: .amber,
-                    face: s.button(PK4.acknowledge), code: "SB2")
-                Spacer()
-                PushButton(
-                    id: PK4.lampTest, cap: "Test", label: "Lamp test", face: s.button(PK4.lampTest),
-                    code: "SB3")
-                Spacer()
-                PushButton(
-                    id: PK4.buzzerTest, cap: "Bzr", label: "Buzzer test",
-                    face: s.button(PK4.buzzerTest), code: "SB19")
+                VStack(spacing: 14) {
+                    Plate(text: "Tests")
+                    HStack(alignment: .top, spacing: 24) {
+                        PushButton(
+                            id: PK4.lampTest, cap: "Test", label: "Lamp test",
+                            face: s.button(PK4.lampTest), code: "SB3")
+                        PushButton(
+                            id: PK4.buzzerTest, cap: "Bzr", label: "Buzzer test",
+                            face: s.button(PK4.buzzerTest), code: "SB19")
+                    }
+                }
             }
         }
     }
@@ -448,61 +455,61 @@ private struct PanelB: View {
                 }
             }
 
-            Grid(alignment: .topLeading, horizontalSpacing: 20, verticalSpacing: 16) {
-                GridRow {
-                    LampGroup(
-                        title: "Permission mode",
+            // Each group on one line, its plate on the left, as panel A's rows are; the
+            // short groups two to a line, so the second plates line up too.
+            VStack(alignment: .leading, spacing: 10) {
+                LampRow(
+                    title: "Permission mode",
+                    windows: [
+                        ("Default", .white, PK4.permission(.default), "HL35"),
+                        ("Accept\nedits", .white, PK4.permission(.acceptEdits), "HL36"),
+                        ("Plan", .white, PK4.permission(.plan), "HL37"),
+                        ("Auto", .amber, PK4.permission(.auto), "HL38"),
+                        ("Bypass", .red, PK4.permission(.bypass), "HL39"),
+                    ], s: s)
+                LampRow(
+                    title: "Effort",
+                    windows: [
+                        ("Low", .green, PK4.effort(.low), "HL40"),
+                        ("Medium", .green, PK4.effort(.medium), "HL41"),
+                        ("High", .amber, PK4.effort(.high), "HL42"),
+                        ("X-high", .amber, PK4.effort(.xhigh), "HL43"),
+                        ("Max", .amber, PK4.effort(.max), "HL72"),
+                        ("Ultra\ncode", .red, PK4.effort(.ultracode), "HL73"),
+                    ], s: s)
+                LampRow(
+                    title: "Model",
+                    windows: [
+                        ("Opus 200K", .white, PK4.model(.opus200k), "HL44"),
+                        ("Opus 1M", .white, PK4.model(.opus1m), "HL74"),
+                        ("Sonnet", .white, PK4.model(.sonnet), "HL45"),
+                        ("Haiku", .white, PK4.model(.haiku), "HL46"),
+                        ("Fable", .white, PK4.model(.fable), "HL71"),
+                        ("Other", .amber, PK4.model(.other), "HL47"),
+                    ], s: s)
+                HStack(spacing: 30) {
+                    LampRow(
+                        title: "Mode",
                         windows: [
-                            ("Default", .white, PK4.permission(.default), "HL35"),
-                            ("Accept\nedits", .white, PK4.permission(.acceptEdits), "HL36"),
-                            ("Plan", .white, PK4.permission(.plan), "HL37"),
-                            ("Auto", .amber, PK4.permission(.auto), "HL38"),
-                            ("Bypass", .red, PK4.permission(.bypass), "HL39"),
+                            ("Normal", .white, PK4.mode(.normal), "HL48"),
+                            ("Other mode", .amber, PK4.mode(.other), "HL49"),
                         ], s: s)
-                    LampGroup(
-                        title: "Effort",
+                    LampRow(
+                        title: "Kind", titleWidth: nil,
                         windows: [
-                            ("Low", .green, PK4.effort(.low), "HL40"),
-                            ("Medium", .green, PK4.effort(.medium), "HL41"),
-                            ("High", .amber, PK4.effort(.high), "HL42"),
-                            ("X-high", .amber, PK4.effort(.xhigh), "HL43"),
-                            ("Max", .amber, PK4.effort(.max), "HL72"),
-                            ("Ultra\ncode", .red, PK4.effort(.ultracode), "HL73"),
-                        ], s: s)
-                    LampGroup(
-                        title: "Model",
-                        windows: [
-                            ("Opus 200K", .white, PK4.model(.opus200k), "HL44"),
-                            ("Opus 1M", .white, PK4.model(.opus1m), "HL74"),
-                            ("Sonnet", .white, PK4.model(.sonnet), "HL45"),
-                            ("Haiku", .white, PK4.model(.haiku), "HL46"),
-                            ("Fable", .white, PK4.model(.fable), "HL71"),
-                            ("Other", .amber, PK4.model(.other), "HL47"),
+                            ("Interactive", .white, PK4.kind(.interactive), "HL50"),
+                            ("Detached", .white, PK4.kind(.detached), "HL51"),
                         ], s: s)
                 }
-                GridRow {
-                    VStack(alignment: .leading, spacing: 10) {
-                        LampGroup(
-                            title: "Mode",
-                            windows: [
-                                ("Normal", .white, PK4.mode(.normal), "HL48"),
-                                ("Other mode", .amber, PK4.mode(.other), "HL49"),
-                            ], s: s)
-                        LampGroup(
-                            title: "Kind",
-                            windows: [
-                                ("Interactive", .white, PK4.kind(.interactive), "HL50"),
-                                ("Detached", .white, PK4.kind(.detached), "HL51"),
-                            ], s: s)
-                    }
-                    LampGroup(
+                HStack(spacing: 30) {
+                    LampRow(
                         title: "Service tier",
                         windows: [
                             ("Standard", .white, PK4.tier(.standard), "HL52"),
                             ("Other tier", .amber, PK4.tier(.other), "HL53"),
                         ], s: s)
-                    LampGroup(
-                        title: "Warnings",
+                    LampRow(
+                        title: "Warnings", titleWidth: nil,
                         windows: [
                             ("Price\nunknown", .red, PK4.warning(.price), "HL54"),
                             ("Data stale", .red, PK4.warning(.stale), "HL55"),
@@ -572,6 +579,35 @@ private struct PanelB: View {
         GuardedButton(
             id: id, cap: cap, label: label, keyed: keyed, face: s.button(id),
             open: s.guardsOpen.contains(id), armed: s.keysArmed.contains(id), code: code)
+    }
+}
+
+/// A plate and its windows on one line, the plate on the left.
+private struct LampRow: View {
+    var title: String
+    /// The plates of the first group on each line share a width, so the lamps line up.
+    var titleWidth: CGFloat? = 150
+    var windows: [(String, LampColor, InstrumentID, String)]
+    let s: ConsoleSnapshot
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Plate(text: title, width: titleWidth)
+            HStack(spacing: 8) {
+                ForEach(windows, id: \.2) { window in
+                    LampWindow(
+                        label: window.0, color: window.1, state: s.lamp(window.2),
+                        code: window.3, id: window.2.rawValue
+                    )
+                    .equatable()
+                    .accessibilityElement()
+                    .accessibilityLabel(
+                        "\(title), \(window.0.replacingOccurrences(of: "\n", with: " "))"
+                    )
+                    .accessibilityValue(PK4Words.lamp(s.lamp(window.2)))
+                }
+            }
+        }
     }
 }
 
@@ -667,7 +703,7 @@ private struct PanelD: View {
                 Spacer()
                 round(PK4.fc2, "FC2", "Awake · display off", codes: ("HL69", "HL70", "SB18"))
             }
-            HStack(alignment: .center, spacing: 22) {
+            HStack(alignment: .center, spacing: 44) {
                 EdgewiseMeter(
                     label: "Battery %", value: s.meter(PK4.batteryMeter), code: "PA4",
                     id: PK4.batteryMeter.rawValue
@@ -675,19 +711,17 @@ private struct PanelD: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Battery")
                 .accessibilityValue(PK4Words.meter(s.meter(PK4.batteryMeter)))
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 14) {
                     Plate(text: "Power source")
-                    HStack(spacing: 8) {
+                    HStack(spacing: 14) {
                         window("On mains", .green, PK4.onMains, "HL59")
                         window("On battery", .amber, PK4.onBattery, "HL60")
                     }
-                    HStack(spacing: 8) {
+                    HStack(spacing: 14) {
                         window("Charging", .white, PK4.charging, "HL61")
                         window("Batt low", .red, PK4.batteryLow, "HL62")
                     }
                 }
-                // The desk's own supply, beside the Mac's.
-                ToggleSwitch(label: "Mains 220 V\n50 Hz", on: s.mains, code: "SA2")
             }
             // Well clear of the buttons above: a group of its own.
             .padding(.top, 30)
