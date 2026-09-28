@@ -106,11 +106,14 @@ final class LoadSampler {
     static func essentials(at moment: Date) -> [Reading] {
         var out = [
             Reading(
-                .machine, .thermalState, .text(MacProbes.thermal(ProcessInfo.processInfo.thermalState)),
+                .machine, .thermalState,
+                .text(MacProbes.thermal(ProcessInfo.processInfo.thermalState)),
                 at: moment, ttl: LoadSource.ttl)
         ]
         if let pressure = MacProbes.memoryPressure() {
-            out.append(Reading(.machine, .memoryPressure, .text(pressure), at: moment, ttl: LoadSource.ttl))
+            out.append(
+                Reading(.machine, .memoryPressure, .text(pressure), at: moment, ttl: LoadSource.ttl)
+            )
         }
         return out
     }
@@ -118,7 +121,9 @@ final class LoadSampler {
     func sample(_ sessions: [SessionKey: Int32], at moment: Date) -> [Reading] {
         var out: [Reading] = []
         func add(_ field: Field, _ value: Value?) {
-            if let value { out.append(Reading(.machine, field, value, at: moment, ttl: LoadSource.ttl)) }
+            if let value {
+                out.append(Reading(.machine, field, value, at: moment, ttl: LoadSource.ttl))
+            }
         }
 
         if let ticks = MacProbes.cpuTicks() {
@@ -144,16 +149,20 @@ final class LoadSampler {
         add(.diskFree, free?.bytes.map(Value.amount))
         if let bytes = MacProbes.diskBytes() {
             let seconds = disk.map { moment.timeIntervalSince($0.at) } ?? 0
-            add(.diskRead, MacProbes.rate(from: disk?.read, to: bytes.read, over: seconds).map(Value.amount))
+            add(
+                .diskRead,
+                MacProbes.rate(from: disk?.read, to: bytes.read, over: seconds).map(Value.amount))
             add(
                 .diskWrite,
-                MacProbes.rate(from: disk?.written, to: bytes.written, over: seconds).map(Value.amount))
+                MacProbes.rate(from: disk?.written, to: bytes.written, over: seconds).map(
+                    Value.amount))
             disk = (bytes.read, bytes.written, moment)
         }
         if let counters = MacProbes.networkCounters() {
             if let network,
                 let traffic = MacProbes.traffic(
-                    from: network.counters, to: counters, over: moment.timeIntervalSince(network.at))
+                    from: network.counters, to: counters, over: moment.timeIntervalSince(network.at)
+                )
             {
                 add(.networkIn, .amount(traffic.received))
                 add(.networkOut, .amount(traffic.sent))
@@ -174,7 +183,8 @@ final class LoadSampler {
 
         for (key, sample) in processes.measure(sessions) {
             func session(_ field: Field, _ value: Double) {
-                out.append(Reading(.session(key), field, .amount(value), at: moment, ttl: LoadSource.ttl))
+                out.append(
+                    Reading(.session(key), field, .amount(value), at: moment, ttl: LoadSource.ttl))
             }
             if let share = sample.share { session(.processCPU, share) }
             session(.processMemory, sample.memory)

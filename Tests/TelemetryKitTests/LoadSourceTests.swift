@@ -85,7 +85,10 @@ import Testing
     @Test func fanSpeedsAreReadInEitherOfTheSMCsShapes() {
         let float = FanReader.fourCC("flt ")
         let bits = Float(2317).bitPattern
-        let bytes = [UInt8(bits & 0xff), UInt8(bits >> 8 & 0xff), UInt8(bits >> 16 & 0xff), UInt8(bits >> 24)]
+        let bytes = [
+            UInt8(bits & 0xff), UInt8(bits >> 8 & 0xff), UInt8(bits >> 16 & 0xff),
+            UInt8(bits >> 24),
+        ]
         #expect(FanReader.number((float, bytes)) == 2317)
         // Intel: fixed point, two bits after the point, most significant byte first.
         #expect(FanReader.number((FanReader.fourCC("fpe2"), [0x24, 0x34])) == 2317)
@@ -136,7 +139,9 @@ import Testing
         #expect(try #require(amount(.memoryTotal)) > 0)
         #expect(try #require(amount(.memoryUsed)) > 0)
         #expect(readings.contains { $0.field == .thermalState })
-        for field in [Field.gpuLoad] { if let share = amount(field) { #expect((0...1).contains(share)) } }
+        for field in [Field.gpuLoad] {
+            if let share = amount(field) { #expect((0...1).contains(share)) }
+        }
         for field in [Field.systemPower, .socTemperature, .ssdTemperature, .batteryTemperature] {
             if let figure = amount(field) { #expect((0...500).contains(figure), "\(field)") }
         }

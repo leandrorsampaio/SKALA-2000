@@ -211,7 +211,8 @@ enum MacProbes {
                     let message = raw.loadUnaligned(fromByteOffset: offset, as: if_msghdr2.self)
                     if Int32(message.ifm_data.ifi_type) == IFT_ETHER {
                         out[message.ifm_index] = Counters(
-                            received: message.ifm_data.ifi_ibytes, sent: message.ifm_data.ifi_obytes)
+                            received: message.ifm_data.ifi_ibytes, sent: message.ifm_data.ifi_obytes
+                        )
                     }
                 }
                 offset += size

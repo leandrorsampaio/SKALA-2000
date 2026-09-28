@@ -290,7 +290,9 @@ final class ConsoleHost {
         }
         var out = [flag(.builtInSpeakers, speakers.isOnSpeakers)]
         if let window {
-            out += [flag(.windowOnTop, window.isOnTop), flag(.loadPanelShown, window.showsLoadPanel)]
+            out += [
+                flag(.windowOnTop, window.isOnTop), flag(.loadPanelShown, window.showsLoadPanel),
+            ]
         }
         return out
     }

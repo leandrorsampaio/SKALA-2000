@@ -85,7 +85,9 @@ public final class SpeakerSwitch {
     public static func speaker(among devices: [Device]) -> Device? {
         let builtIn = devices.filter { $0.builtIn && $0.outputs > 0 }
         return builtIn.first { $0.source == fourCC("ispk") }
-            ?? builtIn.first { $0.source == nil && $0.uid.localizedCaseInsensitiveContains("speaker") }
+            ?? builtIn.first {
+                $0.source == nil && $0.uid.localizedCaseInsensitiveContains("speaker")
+            }
     }
 
     static func fourCC(_ text: String) -> UInt32 {

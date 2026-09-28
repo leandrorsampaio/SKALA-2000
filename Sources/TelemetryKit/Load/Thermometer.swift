@@ -20,9 +20,10 @@ final class Thermometer {
     private typealias SetMatching = @convention(c) (AnyObject, CFDictionary) -> Int32
     private typealias CopyServices = @convention(c) (AnyObject) -> Unmanaged<CFArray>?
     private typealias CopyProperty = @convention(c) (AnyObject, CFString) -> Unmanaged<AnyObject>?
-    private typealias CopyEvent = @convention(c) (AnyObject, Int64, Int32, Int64) -> Unmanaged<
-        AnyObject
-    >?
+    private typealias CopyEvent =
+        @convention(c) (AnyObject, Int64, Int32, Int64) -> Unmanaged<
+            AnyObject
+        >?
     private typealias FloatValue = @convention(c) (AnyObject, Int32) -> Double
 
     private static let temperatureEvent: Int64 = 15
@@ -77,7 +78,9 @@ final class Thermometer {
 
     /// The hottest of each group, in °C. A sensor reading outside anything a Mac can be is
     /// a sensor not reading, and is left out.
-    static func hottest(_ samples: [(group: Group, celsius: Double)]) -> (
+    static func hottest(
+        _ samples: [(group: Group, celsius: Double)]
+    ) -> (
         soc: Double?, ssd: Double?
     ) {
         func top(_ group: Group) -> Double? {
@@ -90,8 +93,9 @@ final class Thermometer {
     func read() -> (soc: Double?, ssd: Double?) {
         guard let copyEvent, let floatValue else { return (nil, nil) }
         let samples = sensors.compactMap { sensor -> (group: Group, celsius: Double)? in
-            guard let event = copyEvent(sensor.service, Self.temperatureEvent, 0, 0)?
-                .takeRetainedValue()
+            guard
+                let event = copyEvent(sensor.service, Self.temperatureEvent, 0, 0)?
+                    .takeRetainedValue()
             else { return nil }
             return (sensor.group, floatValue(event, Self.temperatureField))
         }

@@ -17,10 +17,12 @@ import Testing
     @Test func theMetersShowTheMacsLoad() {
         let bench = Bench()
         #expect(bench.snap.meter(PK4.loadMeter(.cpu)) == Needle.leftStop)
-        mac(bench, [
-            (.cpuLoad, .amount(0.42)), (.gpuLoad, .amount(0.1)), (.systemPower, .amount(35)),
-            (.memoryUsed, .amount(18 * gigabyte)), (.memoryTotal, .amount(24 * gigabyte)),
-        ])
+        mac(
+            bench,
+            [
+                (.cpuLoad, .amount(0.42)), (.gpuLoad, .amount(0.1)), (.systemPower, .amount(35)),
+                (.memoryUsed, .amount(18 * gigabyte)), (.memoryTotal, .amount(24 * gigabyte)),
+            ])
         #expect(bench.snap.meter(PK4.loadMeter(.cpu)) == 0.42)
         #expect(bench.snap.meter(PK4.loadMeter(.gpu)) == 0.1)
         // Watts on a scale of 0 to 100, and a Mac drawing more pins the needle there.
@@ -57,12 +59,14 @@ import Testing
     @Test func theTubesReadInTheirUnits() {
         let bench = Bench()
         #expect(bench.snap.nixie(PK4.gauge(.socTemp)) == "   ")
-        mac(bench, [
-            (.socTemperature, .amount(47.6)), (.fan1Speed, .amount(2317.4)),
-            (.memoryUsed, .amount(18.24 * gigabyte)), (.swapUsed, .amount(0.93 * gigabyte)),
-            (.diskFree, .amount(32_900_000_000)), (.diskRead, .amount(12_340_000)),
-            (.networkIn, .amount(1_250_000_000)),
-        ])
+        mac(
+            bench,
+            [
+                (.socTemperature, .amount(47.6)), (.fan1Speed, .amount(2317.4)),
+                (.memoryUsed, .amount(18.24 * gigabyte)), (.swapUsed, .amount(0.93 * gigabyte)),
+                (.diskFree, .amount(32_900_000_000)), (.diskRead, .amount(12_340_000)),
+                (.networkIn, .amount(1_250_000_000)),
+            ])
         #expect(bench.snap.nixie(PK4.gauge(.socTemp)) == "048")
         #expect(bench.snap.nixie(PK4.gauge(.fan1)) == "2317")
         #expect(bench.snap.nixie(PK4.gauge(.memoryUsed)) == "18.2")

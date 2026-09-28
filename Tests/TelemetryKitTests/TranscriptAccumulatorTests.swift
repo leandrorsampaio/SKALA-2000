@@ -120,7 +120,10 @@ import Testing
         let readings = read([on, active]).readings(for: "s", at: Date(), ttl: 6)
         #expect(readings.contains { $0.field == .remoteControl && $0.value == .flag(true) })
         // Whether it is on, and nothing more: the bridge's id and its link go nowhere.
-        #expect(!readings.contains { "\($0.value)".contains("cse_") || "\($0.value)".contains("claude.ai") })
+        #expect(
+            !readings.contains {
+                "\($0.value)".contains("cse_") || "\($0.value)".contains("claude.ai")
+            })
     }
 
     /// After a `/model` switch the newer record wins, whichever kind it is.

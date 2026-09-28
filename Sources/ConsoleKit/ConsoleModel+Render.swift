@@ -206,7 +206,8 @@ extension ConsoleModel {
         func share(_ value: Double?) -> Double? { value.map { min(1, max(0, $0)) } }
         out[PK4.loadMeter(.cpu)] = share(machineAmount(.cpuLoad, now))
         out[PK4.loadMeter(.gpu)] = share(machineAmount(.gpuLoad, now))
-        out[PK4.loadMeter(.power)] = share(machineAmount(.systemPower, now).map { $0 / PK4.powerScale })
+        out[PK4.loadMeter(.power)] = share(
+            machineAmount(.systemPower, now).map { $0 / PK4.powerScale })
         if let used = machineAmount(.memoryUsed, now),
             let total = machineAmount(.memoryTotal, now), total > 0
         {

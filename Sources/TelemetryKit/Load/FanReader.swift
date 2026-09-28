@@ -13,8 +13,14 @@ final class FanReader {
     /// information is padded to twelve, as C pads it; left at nine, every field after it
     /// lands in the wrong place and the SMC refuses the call.
     private struct Request {
-        struct Version { var major: UInt8 = 0, minor: UInt8 = 0, build: UInt8 = 0, reserved: UInt8 = 0, release: UInt16 = 0 }
-        struct Limits { var version: UInt16 = 0, length: UInt16 = 0, cpu: UInt32 = 0, gpu: UInt32 = 0, memory: UInt32 = 0 }
+        struct Version {
+            var major: UInt8 = 0, minor: UInt8 = 0, build: UInt8 = 0, reserved: UInt8 = 0,
+                release: UInt16 = 0
+        }
+        struct Limits {
+            var version: UInt16 = 0, length: UInt16 = 0, cpu: UInt32 = 0, gpu: UInt32 = 0,
+                memory: UInt32 = 0
+        }
         struct KeyInfo {
             var size: UInt32 = 0
             var type: UInt32 = 0
@@ -112,7 +118,8 @@ final class FanReader {
         let bytes = value.bytes
         switch value.type {
         case fourCC("flt ") where bytes.count >= 4:
-            let bits = UInt32(bytes[0]) | UInt32(bytes[1]) << 8 | UInt32(bytes[2]) << 16
+            let bits =
+                UInt32(bytes[0]) | UInt32(bytes[1]) << 8 | UInt32(bytes[2]) << 16
                 | UInt32(bytes[3]) << 24
             let speed = Double(Float(bitPattern: bits))
             return speed.isFinite && speed >= 0 ? speed : nil

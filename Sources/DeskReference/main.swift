@@ -142,7 +142,8 @@ enum Reference {
             _ night: Bool = false, _ finish: Finish = .greyGreen, _ s: ConsoleSnapshot
         ) -> some View {
             themed(
-                PK4Desk(snapshot: s).frame(width: PK4Size.deskWidth, height: PK4Size.deskHeight), night: night, finish: finish)
+                PK4Desk(snapshot: s).frame(width: PK4Size.deskWidth, height: PK4Size.deskHeight),
+                night: night, finish: finish)
         }
         let live = model.snapshot
         try render(desk(false, .greyGreen, live), "day.png", scale: scale, folder: folder)

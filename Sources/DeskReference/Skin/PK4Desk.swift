@@ -887,7 +887,6 @@ private struct PanelF: View {
                 }
             }
 
-
             // Heat, fans and the disk's traffic on the left; memory, the disk's room and the
             // network on the right. Each column's glass the width of its widest readout.
             HStack(alignment: .top, spacing: 0) {
@@ -952,7 +951,9 @@ private struct PanelF: View {
         .accessibilityValue(PK4Words.meter(s.meter(id)))
     }
 
-    private func gauge(_ label: String, _ gauge: PK4.Gauge, _ unit: String, _ code: String)
+    private func gauge(
+        _ label: String, _ gauge: PK4.Gauge, _ unit: String, _ code: String
+    )
         -> some View
     {
         let id = PK4.gauge(gauge)

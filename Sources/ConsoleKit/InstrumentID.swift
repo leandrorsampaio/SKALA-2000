@@ -135,7 +135,6 @@ public enum PK4 {
 
     // MARK: Panel C · control, selected session
 
-
     public static func function(_ number: Int) -> InstrumentID { InstrumentID("c.f\(number)") }
 
     // MARK: Panel D · computer controls
@@ -281,16 +280,17 @@ public enum PK4 {
 
     /// Top to bottom as the desk is drawn, for the power-up strike. Readouts on the same
     /// line strike together.
-    public static let nixieRows: [[InstrumentID]] = [
-        [selected],
-        [contextUsed, queueDepth],
-        [inputTokens, toolCalls],
-        [outputTokens, lastTurn],
-        [thinkingTokens, turnMessages],
-        [cacheRead, uptime],
-        [cacheWritten, cost],
-        [sessionsRunning, sessionsBusy],
-    ] + Quota.allCases.map { quota in ResetPart.allCases.map { quotaReset(quota, $0) } }
+    public static let nixieRows: [[InstrumentID]] =
+        [
+            [selected],
+            [contextUsed, queueDepth],
+            [inputTokens, toolCalls],
+            [outputTokens, lastTurn],
+            [thinkingTokens, turnMessages],
+            [cacheRead, uptime],
+            [cacheWritten, cost],
+            [sessionsRunning, sessionsBusy],
+        ] + Quota.allCases.map { quota in ResetPart.allCases.map { quotaReset(quota, $0) } }
         // Panel F, two columns of tubes a line, then the sessions' two rows.
         + [
             [gauge(.socTemp), gauge(.memoryUsed)], [gauge(.ssdTemp), gauge(.memoryWired)],
