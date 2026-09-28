@@ -17,7 +17,7 @@ struct ArtDiskCacheTests {
     }
 
     @Test func aSetComesBackAsItWent() throws {
-        let set = ArtSet.render(style: ArtStyle(), scale: 0.25)
+        let set = try #require(ArtSet.render(style: ArtStyle(), scale: 0.25))
         let data = try #require(ArtDiskCache.encode(set))
         let back = try #require(ArtDiskCache.decode(data, style: set.style, scale: set.scale))
         #expect(back.sprites.count == set.sprites.count)

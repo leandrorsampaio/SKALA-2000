@@ -87,6 +87,9 @@ public struct PersistedConsole: Codable, Equatable, Sendable {
     public var serviceSeconds: TimeInterval = 0
     /// Slot 1 at index 0.
     public var pencils: [String] = ["", "", "", ""]
+    /// Which session sat in each slot, slot 1 at index 0, so a relaunch seats every
+    /// session under its own pencil strip again rather than in the order they started.
+    public var seats: [String] = ["", "", "", ""]
     public var selector = 1
     public var armedKeys: [InstrumentID] = []
     public var finish: Finish = .greyGreen
@@ -102,6 +105,8 @@ public struct PersistedConsole: Codable, Equatable, Sendable {
             (try? container.decodeIfPresent(TimeInterval.self, forKey: .serviceSeconds)) ?? 0
         let strips = (try? container.decodeIfPresent([String].self, forKey: .pencils)) ?? []
         pencils = (0..<PK4.slots.count).map { $0 < strips.count ? strips[$0] : "" }
+        let sat = (try? container.decodeIfPresent([String].self, forKey: .seats)) ?? []
+        seats = (0..<PK4.slots.count).map { $0 < sat.count ? sat[$0] : "" }
         selector = min(
             4, max(1, (try? container.decodeIfPresent(Int.self, forKey: .selector)) ?? 1))
         armedKeys =
@@ -119,6 +124,17 @@ public struct PersistedConsole: Codable, Equatable, Sendable {
         let index = slot - 1
         guard pencils.indices.contains(index) else { return }
         pencils[index] = text
+    }
+
+    /// The slot `key` last sat in, if it still holds it.
+    func seat(of key: SessionKey) -> Int? {
+        seats.firstIndex(of: key.rawValue).map { $0 + 1 }
+    }
+
+    mutating func setSeat(_ slot: Int, _ key: SessionKey?) {
+        let index = slot - 1
+        guard seats.indices.contains(index) else { return }
+        seats[index] = key?.rawValue ?? ""
     }
 }
 

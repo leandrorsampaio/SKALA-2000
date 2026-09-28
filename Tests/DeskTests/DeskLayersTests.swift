@@ -11,7 +11,7 @@ import Testing
 @MainActor
 struct DeskLayersTests {
 
-    static let art = ArtSet.render(style: ArtStyle(), scale: 0.5)
+    static let art = ArtSet.render(style: ArtStyle(), scale: 0.5)!
 
     func layers(reduceMotion: Bool = false) -> DeskLayers {
         let layers = DeskLayers()

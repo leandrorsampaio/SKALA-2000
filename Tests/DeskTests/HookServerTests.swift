@@ -169,6 +169,19 @@ struct HookServerTests {
         #expect(try Data(contentsOf: url) == Data("mine".utf8))
     }
 
+    /// curl asks before sending a body over 1 MiB. Told to wait 30 s for the answer, it
+    /// still finishes inside its 5: the answer comes at once.
+    @Test func aLargeBodyIsAskedForAtOnce() throws {
+        let (server, inbox) = try running()
+        defer { server.stop() }
+        let body = Data(("{\"x\":\"" + String(repeating: "a", count: 2_000_000) + "\"}").utf8)
+        let status = try Self.curl(
+            server.socketURL, ["--expect100-timeout", "30"] + Self.valid, body: body)
+        #expect(status == 204)
+        settle()
+        #expect(inbox.bodies.first?.count == body.count)
+    }
+
     @Test func garbageCostsAConnectionAndNothingElse() throws {
         let (server, inbox) = try running()
         defer { server.stop() }
@@ -210,6 +223,31 @@ struct HookInstallerTests {
 
     func read(_ url: URL) throws -> [String: Any] {
         try #require(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+    }
+
+    /// Removing takes out only our hook: one someone put in the same group stays.
+    @Test func aHookSharingOurGroupStays() throws {
+        let url = try scratch()
+        let installer = HookInstaller(settings: url, events: Self.events)
+        try installer.install()
+        var settings = try read(url)
+        var hooks = try #require(settings["hooks"] as? [String: Any])
+        var stop = try #require(hooks["Stop"] as? [[String: Any]])
+        var inner = try #require(stop[0]["hooks"] as? [[String: Any]])
+        inner.append(["type": "command", "command": "echo mine"])
+        stop[0]["hooks"] = inner
+        hooks["Stop"] = stop
+        settings["hooks"] = hooks
+        try JSONSerialization.data(withJSONObject: settings).write(to: url)
+
+        try installer.remove()
+        let after = try #require(try read(url)["hooks"] as? [String: Any])
+        let kept = try #require(after["Stop"] as? [[String: Any]])
+        #expect(kept.count == 1)
+        #expect((kept[0]["hooks"] as? [[String: Any]])?.count == 1)
+        #expect((kept[0]["hooks"] as? [[String: Any]])?.first?["command"] as? String == "echo mine")
+        #expect(after["SessionStart"] == nil)
+        #expect(installer.status() == .notInstalled)
     }
 
     /// Settings kept with someone's dotfiles, linked from ~/.claude: the link stays a link,

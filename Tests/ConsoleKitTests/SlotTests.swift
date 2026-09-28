@@ -27,6 +27,37 @@ import Testing
         #expect(bench.log.events(.slotReleased).count == 1)
     }
 
+    /// After a relaunch every session sits in its own slot again, under its own strip,
+    /// rather than in the order the sessions started.
+    @Test func aRelaunchSeatsEverySessionWhereItSat() {
+        let bench = Bench()
+        bench.feed(bench.poll(["a"]))
+        bench.feed(bench.poll(["a", "b"]))
+        bench.feed(bench.poll(["b"]))
+        bench.feed(bench.poll(["b", "c"]))
+        #expect(bench.slot(of: "c") == 1)
+        #expect(bench.slot(of: "b") == 2)
+        bench.model.flush()
+
+        let relaunched = Bench(saved: bench.store.state)
+        let now = relaunched.now
+        relaunched.feed(
+            relaunched.agent("b", started: now.addingTimeInterval(-600))
+                + relaunched.agent("c", started: now.addingTimeInterval(-60))
+                + [relaunched.roster(["b", "c"])])
+        #expect(relaunched.slot(of: "c") == 1)
+        #expect(relaunched.slot(of: "b") == 2)
+    }
+
+    /// The wall clock set back an hour: the desk goes on showing what arrives.
+    @Test func aClockSetBackDoesNotHoldTheDeskBack() {
+        let bench = Bench()
+        bench.clock.now = bench.now.addingTimeInterval(-3600)
+        bench.feed(bench.poll(["a"]))
+        bench.run(for: 0.2)
+        #expect(bench.lamp(.run, 1) == .on)
+    }
+
     @Test func newcomersInOnePollAreSeatedOldestFirst() {
         let bench = Bench()
         let early = bench.now.addingTimeInterval(-600)

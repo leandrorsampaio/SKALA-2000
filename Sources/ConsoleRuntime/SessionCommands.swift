@@ -193,13 +193,17 @@ public enum SessionCommands {
     }
 
     /// What resumes a session: in its own folder, by its id. Single-quoted, so a folder
-    /// name cannot become a command.
+    /// name cannot become a command, and neither can an id that is not a plain one.
     public static func resumeCommand(cwd: String, session: SessionKey) -> String {
-        let quoted = "'" + cwd.replacingOccurrences(of: "'", with: "'\\''") + "'"
-        return "cd \(quoted) && claude --resume \(session.rawValue)"
+        func quoted(_ word: String) -> String {
+            "'" + word.replacingOccurrences(of: "'", with: "'\\''") + "'"
+        }
+        let id = session.isPathSafe ? session.rawValue : quoted(session.rawValue)
+        return "cd \(quoted(cwd)) && claude --resume \(id)"
     }
 
     static func transcript(of key: SessionKey, in home: ClaudeHome) -> URL? {
+        guard key.isPathSafe else { return nil }
         let folders =
             (try? FileManager.default.contentsOfDirectory(
                 at: home.projects, includingPropertiesForKeys: nil)) ?? []
@@ -237,7 +241,7 @@ public enum SessionCommands {
             guard let key = request.session, let found = details(key), !found.isJob,
                 let number = found.pid, number > 0
             else { return reply(false) }
-            let pid = Int32(number)
+            guard let pid = Int32(exactly: number) else { return reply(false) }
             let send = {
                 sendAndWatch(pid, key, signal, system: system, reached: reached, reply: reply)
             }

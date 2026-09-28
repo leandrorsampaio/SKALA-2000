@@ -87,7 +87,9 @@ final class ConsoleHost {
         guard console == nil else { return }
         let folder = self.folder
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        var created: PK4Console?
+        // Weak: the console holds these commands, and a strong reference back would keep
+        // every console the demo switch replaced alive.
+        weak var created: PK4Console?
         let console = PK4Console(
             directory: folder, commands: commands(for: { created }), readsMachine: !demo,
             extras: { [weak self] in self?.keepAwakeReadings() ?? [] },

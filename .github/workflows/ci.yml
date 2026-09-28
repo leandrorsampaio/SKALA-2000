@@ -13,22 +13,29 @@ jobs:
   test:
     name: Build and test
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain
         run: swift --version
-      - name: Build
-        run: swift build -c release
+      - name: Build cache
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: ${{ runner.os }}-build-${{ hashFiles('Package.swift') }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-build-${{ hashFiles('Package.swift') }}-
       # The golden tests compare pixels, and a CI machine's font rasterising may differ:
       # they run on the owner's Mac and are skipped here (CI=true).
       - name: Test
         run: swift test
+      # The release build, once: the app is assembled from it.
       - name: Assemble the app
         run: scripts/build-app.sh
 
   format:
     name: Format
     runs-on: macos-15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Lint

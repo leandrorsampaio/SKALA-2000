@@ -194,6 +194,21 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
         for id in [PK4.function(6), PK4.function(7), PK4.f8, PK4.f9] { #expect(actions[id] == nil) }
     }
 
+    /// An id that is not a plain one never becomes a path or a shell word.
+    @Test func anOddSessionIDIsNeverAPathOrAShellWord() {
+        #expect(SessionKey("5d2c-familyhub_1.x").isPathSafe)
+        for odd in ["../../etc/passwd", "..", ".", "", "a b", "a;b", "a/b"] {
+            #expect(!SessionKey(odd).isPathSafe, "\(odd)")
+        }
+        #expect(
+            SessionCommands.resumeCommand(cwd: "/tmp", session: "a; rm -rf ~")
+                == "cd '/tmp' && claude --resume 'a; rm -rf ~'")
+        let home = ClaudeHome(root: URL(fileURLWithPath: "/tmp/skala-none"))
+        #expect(SessionCommands.transcript(of: "../x", in: home) == nil)
+        // A pid too large for the system's type is no process, not a crash.
+        #expect(!ClaudeCodeCollector.processIsAlive(5_000_000_000))
+    }
+
     /// Single-quoted, so a folder called `x; rm -rf ~` stays a folder name.
     @Test func theResumeCommandQuotesTheFolder() {
         #expect(

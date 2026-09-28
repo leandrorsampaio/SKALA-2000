@@ -254,6 +254,19 @@ final class DeskViewInputTests {
         #expect(view.focusable.contains { $0.id == PK4.f9 && $0.kind == .button })
     }
 
+    /// The guard falls over the button that has the keyboard: the focus goes to the flap.
+    @Test func aFallingGuardTakesTheFocusWithIt() throws {
+        var s = ConsoleSnapshot()
+        s.guardsOpen = [PK4.f9]
+        view.apply(s)
+        let cap = try #require(
+            view.hitTable.controls.first { $0.id == PK4.f9 && $0.kind == .button })
+        view.setFocus(cap)
+        view.apply(ConsoleSnapshot())
+        #expect(view.keyboardFocus?.id == PK4.f9)
+        #expect(view.keyboardFocus?.kind == .flap)
+    }
+
     @Test func arrowsTurnTheFocusedSelector() throws {
         let selector = try #require(view.hitTable.controls.first { $0.kind == .selector })
         view.setFocus(selector)
@@ -339,6 +352,27 @@ struct AccessibilityTests {
         // Under a closed guard there is nothing to press.
         let f10 = try #require(all.first { $0.accessibilityLabel() == "End session" })
         #expect(!f10.accessibilityPerformPress())
+        _ = window
+    }
+
+    /// A guarded button fires only after 2 s held: VoiceOver's press holds it that long.
+    @Test func aGuardedButtonIsHeldForItsTwoSeconds() async throws {
+        let (view, window) = desk()
+        var sent: [ConsoleIntent] = []
+        view.send = { sent.append($0) }
+        var s = ConsoleSnapshot()
+        s.guardsOpen = [PK4.f9]
+        view.apply(s)
+        let f9 = try #require(
+            elements(view).first { $0.accessibilityLabel() == "Function 9, unassigned" })
+        #expect(f9.accessibilityPerformPress())
+        #expect(sent == [.press(PK4.f9)])
+        // Released about 2.2 s later: waited for, as other suites share the main thread.
+        let asked = Date()
+        let deadline = asked.addingTimeInterval(10)
+        while sent.count < 2, Date() < deadline { try await Task.sleep(for: .milliseconds(50)) }
+        #expect(sent == [.press(PK4.f9), .release(PK4.f9)])
+        #expect(Date().timeIntervalSince(asked) >= ConsoleTiming.holdToFire)
         _ = window
     }
 }

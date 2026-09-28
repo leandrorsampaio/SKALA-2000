@@ -66,11 +66,19 @@ public struct ProcessRunner: CommandRunning {
         }
 
         // Read while the program runs: a full pipe would otherwise stop it from exiting.
+        // Read as it arrives rather than by a thread blocked until end of file, which a
+        // grandchild still holding the pipe would keep blocked for good.
         let collected = Collected()
         let drained = DispatchSemaphore(value: 0)
-        DispatchQueue.global(qos: .utility).async {
-            collected.set(output.fileHandleForReading.readDataToEndOfFile())
-            drained.signal()
+        let reader = output.fileHandleForReading
+        reader.readabilityHandler = { handle in
+            let data = handle.availableData
+            if data.isEmpty {
+                handle.readabilityHandler = nil
+                drained.signal()
+            } else {
+                collected.append(data)
+            }
         }
 
         let timedOut = exited.wait(timeout: .now() + timeout) == .timedOut
@@ -84,6 +92,8 @@ public struct ProcessRunner: CommandRunning {
             }
         }
         _ = drained.wait(timeout: .now() + 1)
+        reader.readabilityHandler = nil
+        try? reader.close()
         return CommandOutput(
             status: timedOut ? -1 : process.terminationStatus, stdout: collected.data,
             timedOut: timedOut)
@@ -99,9 +109,9 @@ public struct ProcessRunner: CommandRunning {
             return value
         }
 
-        func set(_ data: Data) {
+        func append(_ data: Data) {
             lock.lock()
-            value = data
+            value.append(data)
             lock.unlock()
         }
     }

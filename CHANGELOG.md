@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.2
+
+The rest of the first outside review.
+
+- **The buzzer** starts again when the Mac's sound output changes under a sounding alarm,
+  headphones in or out; it used to go silent for good.
+- **VoiceOver** can fire F8 to F10: its press holds a guarded button for its two seconds.
+- **Keyboard focus** leaves a button when its guard falls, for the flap.
+- **Sessions keep their slots across a relaunch**, each under its own pencil strip.
+- **Settings** save the paint and the buzzer mute at once, even with MAINS off.
+- **Hooks.** A body over 1 MiB no longer waits a second for the go-ahead curl asks for.
+  Removing takes out only SKALA-2000's hook, even from a group holding one of yours. At
+  most 16 hook connections are served at once.
+- **Robustness.** A session id that is not a plain one never becomes a path or a shell
+  word, and a pid too large for the system is no process rather than a crash. Shutting
+  F10's guard or turning its key back mid-hold drops the relay. A guard falling after NO
+  ANSWER is logged as it falls. A clock set back no longer holds the desk's readings
+  back. Art the Mac cannot spare the memory for is skipped, and the art on screen stays.
+  Every demo day has its own sessions, so its drums count from the start. Another build's
+  cached art is kept for a week. A replaced console is let go, and switching the demo no
+  longer adds a snapshot observer each time.
+- **Tools.** The bench will not run beside another SKALA-2000 and quits its own copy
+  whatever fails. CI has a time limit, a build cache and one release build.
+- **Tests.** 227. Lenses in the golden comparisons allow 24 levels, for their glow.
+
 ## 0.1.1
 
 Fixes from two outside reviews.

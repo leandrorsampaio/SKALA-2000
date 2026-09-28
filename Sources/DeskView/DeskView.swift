@@ -100,6 +100,8 @@ public final class DeskView: NSView {
         let state = Self.signposts.beginInterval("apply snapshot")
         self.snapshot = snapshot
         if snapshot.finish != finish { finish = snapshot.finish }
+        // A guard that fell takes the keyboard focus off the button it now covers.
+        refreshFocus()
         layers.apply(snapshot, animated: layers.art != nil)
         accessibility.update(snapshot)
         Self.signposts.endInterval("apply snapshot", state)
@@ -214,6 +216,12 @@ public final class DeskView: NSView {
             let art = ArtCache.shared.art(style: style, scale: scale)
             DispatchQueue.main.async { [weak self] in
                 guard let self, ticket == self.generation else { return }
+                // Not drawn, for want of memory: the art on screen stays, and the next
+                // change of size or style asks again.
+                guard let art else {
+                    self.requested = self.layers.art.map { (scale: $0.scale, style: $0.style) }
+                    return
+                }
                 let installStarted = CACurrentMediaTime()
                 defer {
                     if Self.recordsTimings {
@@ -238,15 +246,6 @@ public final class DeskView: NSView {
     }
 
     public nonisolated(unsafe) static var installSeconds: [Double] = []
-
-    /// Renders synchronously, for tests and the first frame of a warm launch.
-    public func renderNow() {
-        generation += 1
-        let art = ArtCache.shared.art(style: style, scale: pixelScale)
-        layers.install(art)
-        requested = (art.scale, style)
-        layers.apply(snapshot, animated: false)
-    }
 
     // MARK: - Geometry for input
 

@@ -140,7 +140,11 @@ extension ConsoleModel {
                 let right = startedAt(rhs) ?? .distantFuture
                 return left == right ? lhs < rhs : left < right
             }
-        for key in newcomers { take(key, at: now, viaHook: false) }
+        // Sessions that had a slot before a relaunch sit down first, each in its own.
+        let returning = newcomers.filter { saved.seat(of: $0) != nil }
+        for key in returning + newcomers.filter({ saved.seat(of: $0) == nil }) {
+            take(key, at: now, viaHook: false)
+        }
     }
 
     func startedAt(_ key: SessionKey) -> Date? {
@@ -149,9 +153,11 @@ extension ConsoleModel {
 
     func take(_ key: SessionKey, at now: Date, viaHook: Bool) {
         guard slots.slot(of: key) == nil else { return }
-        if let slot = slots.take(key, at: now, viaHook: viaHook) {
+        if let slot = slots.take(key, at: now, viaHook: viaHook, preferring: saved.seat(of: key)) {
             refused.remove(key)
             prefill[slot] = key
+            saved.setSeat(slot, key)
+            scheduleSave(now)
             record(.slotTaken, at: now, slot: slot, session: key)
         } else if refused.insert(key).inserted {
             record(.slotRefused, at: now, session: key, detail: "all four slots in use")
@@ -162,6 +168,8 @@ extension ConsoleModel {
         let key = slots.key(in: slot)
         slots.release(slot)
         prefill[slot] = nil
+        saved.setSeat(slot, nil)
+        scheduleSave(now)
         record(.slotReleased, at: now, slot: slot, session: key, detail: detail)
     }
 

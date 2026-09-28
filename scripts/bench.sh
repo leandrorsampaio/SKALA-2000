@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 #
 # Launches build/SKALA-2000.app in one bench scenario, measures its CPU and memory, quits.
-# A SKALA-2000 already running is quit first, and not started again.
+# Refuses to start while another SKALA-2000 runs: it would measure the wrong one.
 #
 #   scripts/bench.sh static|flash|demo|real [seconds=60] [warmup=10]
 #
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:?usage: bench.sh static|flash|demo|real [seconds=60] [warmup=10]}"; SECONDS_TO_SAMPLE="${2:-60}"; WARMUP="${3:-10}"
-osascript -e 'quit app "SKALA-2000"' >/dev/null 2>&1 || true
-sleep 1
+if pgrep -x SKALA-2000 >/dev/null; then
+    echo "SKALA-2000 is running. Quit it first; the bench starts its own copy." >&2
+    exit 1
+fi
+# Whatever fails below, the copy this starts is quit, and quit properly: it saves.
+trap 'osascript -e '"'"'quit app "SKALA-2000"'"'"' >/dev/null 2>&1 || true' EXIT
 open -n "$ROOT/build/SKALA-2000.app" --env SKALA_BENCH="$MODE" --env SKALA_BENCH_HIDE="${HIDE:-0}" --env SKALA_BENCH_FULLSCREEN="${FULLSCREEN:-0}"
 sleep 2
 PID=$(pgrep -n -x SKALA-2000)
@@ -26,4 +30,3 @@ print(f"with children {100*((end[1]+end[2])-(start[1]+start[2]))/span:.2f}% over
 PY
 )
 echo "$MODE: $CPU ($WITH_CHILDREN), footprint ${MEM:-?}"
-osascript -e 'quit app "SKALA-2000"' >/dev/null 2>&1 || true

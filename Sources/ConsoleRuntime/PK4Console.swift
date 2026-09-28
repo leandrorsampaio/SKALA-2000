@@ -117,6 +117,18 @@ public final class PK4Console {
         ingest(batch.readings)
     }
 
+    /// The paint, from Settings. Saved soon after, even with MAINS off.
+    public func setFinish(_ finish: Finish) {
+        model.setFinish(finish)
+        driver.poke()
+    }
+
+    /// Whether alarms sound the buzzer, from Settings. Saved soon after, like the paint.
+    public func setBuzzerMuted(_ muted: Bool) {
+        model.setBuzzerMuted(muted)
+        driver.poke()
+    }
+
     /// Stops everything and writes the desk's memory. Call before letting go of it.
     public func shutDown() {
         stopSources()

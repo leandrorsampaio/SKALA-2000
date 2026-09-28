@@ -315,7 +315,7 @@ MainActor.assumeIsolated {
                 let started = Date()
                 let background = ArtSet.renderBackground(style: ArtStyle(), scale: scale)
                 let middle = Date()
-                let art = ArtSet.render(style: ArtStyle(night: true), scale: scale)
+                let art = ArtSet.render(style: ArtStyle(night: true), scale: scale)!
                 print(
                     String(
                         format:

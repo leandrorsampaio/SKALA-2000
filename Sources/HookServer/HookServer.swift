@@ -44,6 +44,9 @@ public final class HookServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "skala2000.hooks", qos: .utility)
     private var listener: Int32 = -1
     private var source: DispatchSourceRead?
+    /// Connections served at once. Each holds a worker thread for up to 5 s, and a flood
+    /// of hook events must not take every thread the app shares.
+    private let slots = DispatchSemaphore(value: 16)
     /// Told when a request is refused, with the reason, for the log.
     public var refused: @Sendable (String) -> Void = { _ in }
 
@@ -139,9 +142,16 @@ public final class HookServer: @unchecked Sendable {
             var on: Int32 = 1
             setsockopt(client, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
             _ = fcntl(client, F_SETFL, fcntl(client, F_GETFL) & ~O_NONBLOCK)
+            guard slots.wait(timeout: .now()) == .success else {
+                respond(client, 503, "too many connections at once")
+                close(client)
+                continue
+            }
+            let slots = self.slots
             DispatchQueue.global(qos: .utility).async { [weak self] in
                 self?.serve(client)
                 close(client)
+                slots.signal()
             }
         }
     }
@@ -168,6 +178,14 @@ public final class HookServer: @unchecked Sendable {
                         return respond(client, problem.status, problem.reason)
                     }
                     request = head
+                    // curl asks before sending a body over 1 MiB and, unanswered, waits a
+                    // second of the hook's two.
+                    if head.headers["expect"]?.lowercased() == "100-continue",
+                        buffer.count - head.bodyStart < head.contentLength
+                    {
+                        let go = "HTTP/1.1 100 Continue\r\n\r\n"
+                        _ = go.withCString { write(client, $0, strlen($0)) }
+                    }
                 }
             }
             if let request, buffer.count - request.bodyStart >= request.contentLength { break }
@@ -200,6 +218,7 @@ public final class HookServer: @unchecked Sendable {
                 204: "No Content", 400: "Bad Request", 403: "Forbidden", 404: "Not Found",
                 405: "Method Not Allowed", 408: "Request Timeout", 411: "Length Required",
                 413: "Payload Too Large", 431: "Request Header Fields Too Large",
+                503: "Service Unavailable",
             ][status] ?? "Error"
         let response =
             "HTTP/1.1 \(status) \(reason)\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"

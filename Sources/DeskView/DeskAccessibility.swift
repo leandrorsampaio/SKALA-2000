@@ -326,8 +326,18 @@ final class ControlElement: DeskElement {
         guard let view, isAccessibilityEnabled() else { return false }
         switch control.kind {
         case .button, .round:
-            view.send(.press(control.id))
-            view.send(.release(control.id))
+            let id = control.id
+            view.send(.press(id))
+            if PK4.guarded.contains(id) {
+                // A guarded button fires only after 2 s held: VoiceOver's press holds it
+                // that long. Guard, key and password still stand in the way.
+                DispatchQueue.main.asyncAfter(deadline: .now() + ConsoleTiming.holdToFire + 0.2) {
+                    [weak view] in
+                    view?.send(.release(id))
+                }
+            } else {
+                view.send(.release(id))
+            }
         case .flap: view.send(.guard(control.id, open: !snapshot.guardsOpen.contains(control.id)))
         case .key: view.send(.key(control.id, armed: !snapshot.keysArmed.contains(control.id)))
         case .toggle: view.send(.mains(!snapshot.mains))

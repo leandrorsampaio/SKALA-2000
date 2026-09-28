@@ -137,14 +137,17 @@ public final class ArtSet: @unchecked Sendable {
     // MARK: - Rendering
 
     /// Renders the whole set. Thread-safe and synchronous: call it off the main thread.
-    public static func render(style: ArtStyle, scale: CGFloat) -> ArtSet {
+    ///
+    /// `nil` when the Mac would not give the memory for it (some 125 MB at 5K): the desk
+    /// keeps the set it shows rather than stopping, or showing one with pieces missing.
+    public static func render(style: ArtStyle, scale: CGFloat) -> ArtSet? {
         let state = signposts.beginInterval("render art", "\(style.key) @\(scale)")
         defer { signposts.endInterval("render art", state) }
         let started = Date()
         DeskFonts.register()
-        let background = backgroundPicture(style: style, scale: scale)
+        guard let background = backgroundPicture(style: style, scale: scale) else { return nil }
         let set = ArtSet(style: style, scale: scale, background: background)
-        set.renderSprites()
+        guard set.renderSprites() else { return nil }
         set.index()
         set.renderSeconds = Date().timeIntervalSince(started)
         return set
@@ -153,7 +156,7 @@ public final class ArtSet: @unchecked Sendable {
     /// Only the static art, for comparisons.
     public static func renderBackground(style: ArtStyle, scale: CGFloat) -> CGImage {
         DeskFonts.register()
-        return backgroundPicture(style: style, scale: scale).image()!
+        return backgroundPicture(style: style, scale: scale)!.image()!
     }
 
     /// For the tools: how many bands, or `nil` for one per core up to eight.
@@ -161,7 +164,7 @@ public final class ArtSet: @unchecked Sendable {
 
     /// The static art, drawn in bands on every core. Each band draws the whole desk clipped
     /// to its rows, so where bands meet the pixels are the same as one drawing would give.
-    static func backgroundPicture(style: ArtStyle, scale: CGFloat) -> Picture {
+    static func backgroundPicture(style: ArtStyle, scale: CGFloat) -> Picture? {
         let width = Int((DeskLayout.size.width * scale).rounded())
         let height = Int((DeskLayout.size.height * scale).rounded())
         let bands = bandCount ?? min(8, max(2, ProcessInfo.processInfo.activeProcessorCount))
@@ -177,7 +180,7 @@ public final class ArtSet: @unchecked Sendable {
             ctx.setShouldSmoothFonts(true)
             ctx.interpolationQuality = .high
             StaticPainter.paint(into: ctx, scale: scale, style: style)
-        }!
+        }
     }
 
     /// `frame` snapped outward to whole device pixels.
@@ -227,15 +230,15 @@ public final class ArtSet: @unchecked Sendable {
         return ctx.makeImage()
     }
 
-    func sprite(_ frame: CGRect, _ draw: (Pen) -> Void) -> Sprite {
+    func sprite(_ frame: CGRect, _ draw: (Pen) -> Void) -> Sprite? {
         let snapped = snap(frame)
-        let picture = ArtSet.picture(frame: snapped, scale: scale, draw)!
+        guard let picture = ArtSet.picture(frame: snapped, scale: scale, draw) else { return nil }
         return Sprite(picture: picture, frame: snapped)
     }
 
     /// Draws with the origin moved to `origin`, so the sprite painters' local coordinates
     /// land where the element is.
-    func sprite(_ frame: CGRect, origin: CGPoint, _ draw: @escaping (Pen) -> Void) -> Sprite {
+    func sprite(_ frame: CGRect, origin: CGPoint, _ draw: @escaping (Pen) -> Void) -> Sprite? {
         sprite(frame) { pen in pen.translate(origin.x, origin.y) { draw(pen) } }
     }
 
@@ -261,8 +264,9 @@ public final class ArtSet: @unchecked Sendable {
         job(name, frame) { pen in pen.translate(origin.x, origin.y) { draw(pen) } }
     }
 
-    /// Draws every sprite, on every core: each is independent of the others.
-    private func renderSprites() {
+    /// Draws every sprite, on every core: each is independent of the others. False when
+    /// any could not be drawn.
+    private func renderSprites() -> Bool {
         pending = []
         collect()
         let jobs = pending
@@ -278,6 +282,7 @@ public final class ArtSet: @unchecked Sendable {
             lock.unlock()
         }
         sprites = done
+        return done.count == jobs.count
     }
 
     /// Lists every sprite the desk needs.
@@ -478,7 +483,7 @@ public final class ArtSet: @unchecked Sendable {
     // MARK: - Text on paper
 
     /// A pencil strip's writing, for the paper inside `holder`.
-    public func pencil(_ text: String, holder: CGRect) -> Sprite {
+    public func pencil(_ text: String, holder: CGRect) -> Sprite? {
         let paper = holder.insetBy(dx: 4, dy: 4)
         return sprite(paper, origin: paper.origin) { pen in
             SpritePainters.pencil(pen, text: text, size: paper.size)
@@ -486,7 +491,7 @@ public final class ArtSet: @unchecked Sendable {
     }
 
     /// The version typed on the PROGRAM BUILD card.
-    public func programBuild(_ text: String, in rect: CGRect) -> Sprite {
+    public func programBuild(_ text: String, in rect: CGRect) -> Sprite? {
         let palette = style.palette
         return sprite(rect, origin: rect.origin) { pen in
             SpritePainters.programBuild(pen, text: text, size: rect.size, palette: palette)

@@ -71,7 +71,7 @@ final class AppSettings {
             return host.console?.model.snapshot.finish ?? .greyGreen
         }
         set {
-            withMutation(keyPath: \.finish) { host.console?.model.setFinish(newValue) }
+            withMutation(keyPath: \.finish) { host.console?.setFinish(newValue) }
         }
     }
 
@@ -81,7 +81,7 @@ final class AppSettings {
             return host.console?.model.buzzerMuted ?? false
         }
         set {
-            withMutation(keyPath: \.buzzerMuted) { host.console?.model.setBuzzerMuted(newValue) }
+            withMutation(keyPath: \.buzzerMuted) { host.console?.setBuzzerMuted(newValue) }
         }
     }
 

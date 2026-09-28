@@ -29,9 +29,9 @@ public final class ArtCache: @unchecked Sendable {
         }
     }
 
-    /// A set for `style` at `scale`, rendered now if need be. Thread-safe; call it off the
-    /// main thread.
-    public func art(style: ArtStyle, scale: CGFloat) -> ArtSet {
+    /// A set for `style` at `scale`, rendered now if need be, or `nil` if it could not be.
+    /// Thread-safe; call it off the main thread.
+    public func art(style: ArtStyle, scale: CGFloat) -> ArtSet? {
         if let hit = cached(style, scale) { return hit }
         drawing.lock()
         defer { drawing.unlock() }
@@ -41,7 +41,8 @@ public final class ArtCache: @unchecked Sendable {
         if disk, let saved = ArtDiskCache.read(style: style, scale: scale) {
             art = saved
         } else {
-            art = ArtSet.render(style: style, scale: scale)
+            guard let drawn = ArtSet.render(style: style, scale: scale) else { return nil }
+            art = drawn
             // Written in the background: the view is waiting for this set, not for the disk.
             if disk { DispatchQueue.global(qos: .utility).async { ArtDiskCache.write(art) } }
         }

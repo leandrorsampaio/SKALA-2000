@@ -29,10 +29,14 @@ struct SlotTable: Equatable {
 
     var freeSlot: Int? { PK4.slots.first { occupants[$0] == nil } }
 
-    /// The slot taken, or `nil` when all four are in use.
-    mutating func take(_ key: SessionKey, at moment: Date, viaHook: Bool) -> Int? {
+    /// The slot taken, or `nil` when all four are in use: `preferred` if it is free, else
+    /// the lowest free one.
+    mutating func take(
+        _ key: SessionKey, at moment: Date, viaHook: Bool, preferring preferred: Int? = nil
+    ) -> Int? {
         if let existing = slot(of: key) { return existing }
-        guard let free = freeSlot else { return nil }
+        let wanted = preferred.flatMap { PK4.slots.contains($0) && occupants[$0] == nil ? $0 : nil }
+        guard let free = wanted ?? freeSlot else { return nil }
         occupants[free] = Occupant(
             key: key, takenAt: moment, viaHook: viaHook, lastEvidence: moment)
         return free

@@ -38,10 +38,21 @@ public struct FakeDay: Sendable {
     private var sessions: [SimSession]
     private var battery = 0.86
 
-    public init(start: Date, seed: UInt64 = 1972) {
+    /// - Parameters:
+    ///   - start: the day's midnight, as the day's clock reads it.
+    ///   - seed: the randomness, the same every time for the same seed.
+    ///   - keySuffix: appended to every session's id. A demo gives each day its own, so the
+    ///     desk counts a new day's sessions from zero instead of taking them for
+    ///     yesterday's, whose figures it remembers.
+    public init(start: Date, seed: UInt64 = 1972, keySuffix: String = "") {
         self.start = start
         rng = SplitMix(seed: seed)
         sessions = SimSession.cast()
+        if !keySuffix.isEmpty {
+            for index in sessions.indices {
+                sessions[index].key = SessionKey(sessions[index].key.rawValue + keySuffix)
+            }
+        }
     }
 
     /// When a demo opens the day: 08:55, five minutes before the first alarm.
@@ -52,7 +63,8 @@ public struct FakeDay: Sendable {
     /// the real time, and nothing downstream can tell them from Claude Code's. It stops
     /// one tick short, so the first catch-up has the whole desk to report.
     public static func opening(at moment: Date, seed: UInt64 = 1972) -> FakeDay {
-        var day = FakeDay(start: moment.addingTimeInterval(-opensAt), seed: seed)
+        let suffix = "-" + String(Int(moment.timeIntervalSince1970) / 60, radix: 36)
+        var day = FakeDay(start: moment.addingTimeInterval(-opensAt), seed: seed, keySuffix: suffix)
         while day.elapsed + tick < opensAt { _ = day.step() }
         return day
     }
@@ -112,7 +124,7 @@ struct SimSession: Sendable {
         case ended
     }
 
-    let key: SessionKey
+    var key: SessionKey
     let name: String
     let cwd: String
     let title: String

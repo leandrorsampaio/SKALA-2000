@@ -114,6 +114,20 @@ import Testing
         #expect(day.now == moment.addingTimeInterval(20))
     }
 
+    /// A demo's every day has its own session ids: the desk remembers yesterday's figures
+    /// by id, and would not count a repeat of them.
+    @Test func eachDemoDayHasItsOwnSessions() {
+        func keys(_ moment: Date) -> Set<SessionKey> {
+            var day = FakeDay.opening(at: moment)
+            let roster = day.step().compactMap { $0.value.keys }.first ?? []
+            return Set(roster)
+        }
+        let monday = keys(Date(timeIntervalSince1970: 1_800_000_000))
+        let tuesday = keys(Date(timeIntervalSince1970: 1_800_086_400))
+        #expect(!monday.isEmpty)
+        #expect(monday.isDisjoint(with: tuesday))
+    }
+
     @Test func theDayIsTheSameEveryTime() async {
         let first = await replay(hours: 2).bench.model.saved.totals
         let second = await replay(hours: 2).bench.model.saved.totals

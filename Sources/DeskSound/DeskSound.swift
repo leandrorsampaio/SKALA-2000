@@ -39,6 +39,7 @@ public final class DeskSound {
     private var buzzerLoop: AVAudioPCMBuffer?
     private var buzzing = false
     private var lastClunk = Date.distantPast
+    private var outputObserver: NSObjectProtocol?
 
     public init() {
         format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
@@ -56,6 +57,20 @@ public final class DeskSound {
         buffers[.clunk] = Self.burst(milliseconds: 70, frequency: 320, gain: 0.9, format: format)
         buffers[.tick] = Self.burst(milliseconds: 10, frequency: 1400, gain: 0.25, format: format)
         buzzerLoop = Self.square(frequency: 420, gain: 0.04, format: format)
+
+        // Headphones in or out, a display's speakers gone: the engine stops itself. An
+        // alarm still sounding starts again on whatever the Mac plays through now.
+        outputObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.outputChanged() }
+        }
+    }
+
+    private func outputChanged() {
+        guard buzzing else { return }
+        buzzing = false
+        buzzer(true)
     }
 
     public func stop() {

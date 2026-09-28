@@ -223,7 +223,10 @@ extension ConsoleModel {
             guard let touched = guards[id]?.touched else { continue }
             let falls = touched.addingTimeInterval(ConsoleTiming.guardFallsAfter)
             if now >= falls {
-                setGuard(id, open: false, at: falls, reason: "idle")
+                // Not before whatever last happened under it: after a command's 93 s the
+                // guard falls as the no answer shows, and is logged then, not 88 s back.
+                let at = max(falls, cycles[id]?.since ?? falls)
+                setGuard(id, open: false, at: at, reason: "idle")
                 fired = true
             }
         }
@@ -287,6 +290,8 @@ extension ConsoleModel {
         }
         state.open = open
         guards[id] = state
+        // A flap shut over a button being held drops the time-delay relay: nothing fires.
+        if !open { cycles[id]?.heldSince = nil }
         record(
             open ? .guardLifted : .guardLowered, at: moment, instrument: id,
             slot: saved.selector, session: slots.key(in: saved.selector), detail: reason)
@@ -301,6 +306,8 @@ extension ConsoleModel {
             saved.armedKeys.append(id)
         } else {
             saved.armedKeys.removeAll { $0 == id }
+            // The key turned back while the button is held: the relay drops out.
+            cycles[id]?.heldSince = nil
         }
         scheduleSave(moment)
         record(

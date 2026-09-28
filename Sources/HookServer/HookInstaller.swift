@@ -60,18 +60,32 @@ public struct HookInstaller: Sendable {
         return object
     }
 
-    static func isOurs(_ group: Any) -> Bool {
-        guard let hooks = (group as? [String: Any])?["hooks"] as? [[String: Any]] else {
-            return false
+    static func isOurs(hook: Any) -> Bool {
+        ((hook as? [String: Any])?["command"] as? String)?.contains(marker) == true
+    }
+
+    static func holdsOurs(_ group: Any) -> Bool {
+        ((group as? [String: Any])?["hooks"] as? [Any])?.contains { isOurs(hook: $0) } == true
+    }
+
+    /// The group with our hook taken out, or `nil` when nothing else was in it. A hook
+    /// someone put in the same group as ours stays.
+    static func withoutOurs(_ group: Any) -> Any? {
+        guard var fields = group as? [String: Any], let hooks = fields["hooks"] as? [Any] else {
+            return group
         }
-        return hooks.contains { ($0["command"] as? String)?.contains(marker) == true }
+        let kept = hooks.filter { !isOurs(hook: $0) }
+        if kept.count == hooks.count { return group }
+        if kept.isEmpty { return nil }
+        fields["hooks"] = kept
+        return fields
     }
 
     public func status() -> Status {
         guard let settings = try? load() else { return .unreadable }
         let hooks = settings["hooks"] as? [String: Any] ?? [:]
         let missing = events.filter { event in
-            !((hooks[event] as? [Any]) ?? []).contains(where: Self.isOurs)
+            !((hooks[event] as? [Any]) ?? []).contains(where: Self.holdsOurs)
         }
         if missing.isEmpty { return .installed }
         return missing.count == events.count ? .notInstalled : .partial(missing: missing)
@@ -93,7 +107,7 @@ public struct HookInstaller: Sendable {
         let existing = root["hooks"] as? [String: Any] ?? [:]
         var merged: [String: Any] = [:]
         for event in Set(existing.keys).union(installing ? Set(events) : []) {
-            var groups = ((existing[event] as? [Any]) ?? []).filter { !Self.isOurs($0) }
+            var groups = ((existing[event] as? [Any]) ?? []).compactMap(Self.withoutOurs)
             if installing, events.contains(event) {
                 groups.append([
                     "hooks": [

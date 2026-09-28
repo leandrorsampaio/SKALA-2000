@@ -111,7 +111,8 @@ struct GoldenTests {
         }
         let full = try #require(drawn)
         let mine = Pixels(try #require(DeskImages.halved(full)))
-        #expect(mine.width == golden.width && mine.height == golden.height)
+        // Compared pixel by pixel below: images of different sizes would read past one.
+        try #require(mine.width == golden.width && mine.height == golden.height)
 
         let whole = mine.error(
             against: golden, in: CGRect(origin: .zero, size: DeskLayout.size), scale: scale)
@@ -124,8 +125,16 @@ struct GoldenTests {
             where snapshot.lamp(InstrumentID(element.id)) != .flash {
                 let error = mine.shiftedError(against: golden, in: element.rect, scale: scale)
                 // Bright lettering on black bakelite turns half a unit of placement into a
-                // large difference; everything else must match closely.
-                let limit: Double = kind == "plate" ? 30 : 16
+                // large difference. A lit lens is 22 pixels here and mostly glow, a blur in
+                // both pipelines: two outside runs saw one reach 18 and 20, which this Mac
+                // never has. Everything else must match closely; a lens painted wrong
+                // differs by far more than 24.
+                let limit: Double =
+                    switch kind {
+                    case "plate": 30
+                    case "lens": 24
+                    default: 16
+                    }
                 #expect(
                     error < limit,
                     "\(name): \(kind) \(element.id) \(element.text()) differs by \(error)")

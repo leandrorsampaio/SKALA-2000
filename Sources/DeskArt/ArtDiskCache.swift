@@ -149,15 +149,24 @@ enum ArtDiskCache {
         return file
     }
 
-    /// Keeps the most recently used sets, and nothing from another build.
+    /// Another build's sets are kept this long after they were last used: a copy in
+    /// /Applications and a fresh build take turns, and each would otherwise delete the
+    /// other's art and start cold every time.
+    static let othersKept: TimeInterval = 7 * 24 * 3600
+
+    /// Keeps the most recently used sets of this build, and another build's for a week.
     static func prune() {
         guard
             let files = try? FileManager.default.contentsOfDirectory(
                 at: folder, includingPropertiesForKeys: [.contentModificationDateKey])
         else { return }
         let sets = files.filter { $0.pathExtension == "bin" }
+        let stale = Date().addingTimeInterval(-othersKept)
         for file in sets where !file.lastPathComponent.contains(buildStamp) {
-            try? FileManager.default.removeItem(at: file)
+            let used =
+                (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?
+                .contentModificationDate ?? .distantPast
+            if used < stale { try? FileManager.default.removeItem(at: file) }
         }
         let current = sets.filter { $0.lastPathComponent.contains(buildStamp) }.sorted {
             let a =

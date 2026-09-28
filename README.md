@@ -88,7 +88,7 @@ Files: the desk's memory, the safety log and the text log in
 ## Development
 
 ```bash
-swift test                                        # 217 tests, about 30 s
+swift test                                        # 227 tests, about 30 s
 swift format lint --recursive --strict Sources Tests
 scripts/build-app.sh && scripts/bench.sh static   # CPU and memory in one scenario
 ```

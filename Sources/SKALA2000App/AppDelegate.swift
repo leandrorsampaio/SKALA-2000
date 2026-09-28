@@ -15,6 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var director = DeskDirector(sound: sound)
     private var desk: DeskWindowController?
     private var bench: BenchLog?
+    /// The snapshot tracker currently armed; see `follow`.
+    private var following = 0
     private lazy var settings = AppSettings(host: host, sound: sound)
     private lazy var settingsWindow = SettingsWindowController(settings: settings)
     private lazy var textLog = TextLogWindowController { [weak self] in
@@ -77,12 +79,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// The relays, the buzzer and the window follow the model, not the view: a hidden
     /// console still sounds its alarms.
+    ///
+    /// One tracker at a time. A replaced console re-arms from `consoleChanged` while the
+    /// old tracker, fired by the same change, would re-arm too: the ticket retires it.
     private func follow() {
+        following += 1
+        let ticket = following
         withObservationTracking {
             _ = host.console?.model.snapshot
         } onChange: { [weak self] in
             Task { @MainActor in
-                guard let self else { return }
+                guard let self, ticket == self.following else { return }
                 if let snapshot = self.host.console?.model.snapshot {
                     self.director.hear(snapshot)
                     self.desk?.snapshotChanged(snapshot)

@@ -15,6 +15,17 @@ public struct SessionKey: RawRepresentable, Hashable, Sendable, Codable, Compara
 
     public var description: String { rawValue }
 
+    /// Whether the id can name a file: letters, digits, `.`, `_` and `-`, and not `.` or
+    /// `..`. Claude Code's ids always can; one that cannot, from a damaged record or a
+    /// hook body, never becomes a path or a shell word.
+    public var isPathSafe: Bool {
+        !rawValue.isEmpty && rawValue != "." && rawValue != ".."
+            && rawValue.utf8.allSatisfy { byte in
+                (48...57).contains(byte) || (65...90).contains(byte) || (97...122).contains(byte)
+                    || byte == 45 || byte == 46 || byte == 95
+            }
+    }
+
     public static func < (lhs: SessionKey, rhs: SessionKey) -> Bool {
         lhs.rawValue < rhs.rawValue
     }

@@ -238,6 +238,44 @@ final class Recorder {
         #expect(recorder.requests.count == 1)
     }
 
+    /// The flap shut, or the key turned back, while the button is held: the relay drops
+    /// out and nothing is sent.
+    @Test func shuttingTheGuardOrTheKeyMidHoldSendsNothing() {
+        let recorder = Recorder()
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: recorder.action()]))
+        bench.send(.guard(PK4.f10, open: true))
+        bench.send(.key(PK4.f10, armed: true))
+        bench.send(.press(PK4.f10))
+        bench.run(for: 1)
+        bench.send(.key(PK4.f10, armed: false))
+        bench.run(for: 2)
+        bench.send(.release(PK4.f10))
+        #expect(recorder.requests.isEmpty)
+
+        bench.send(.key(PK4.f10, armed: true))
+        bench.send(.press(PK4.f10))
+        bench.run(for: 1)
+        bench.send(.guard(PK4.f10, open: false))
+        bench.run(for: 2)
+        #expect(recorder.requests.isEmpty)
+        #expect(bench.snap.cues.relay == 0)
+    }
+
+    /// A command out for half a minute keeps its guard up; when it shows no answer the
+    /// guard falls, and the log says so at that moment, not when the button was pressed.
+    @Test func aGuardFallingAfterNoAnswerIsLoggedAsItFalls() throws {
+        let slow = CommandAction(timeout: 30) { _, _ in }
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f8: slow]))
+        bench.send(.guard(PK4.f8, open: true))
+        bench.send(.press(PK4.f8))
+        bench.run(for: 2)
+        bench.send(.release(PK4.f8))
+        bench.run(for: 40)
+        let noAnswer = try #require(bench.log.events(.commandNoAnswer).last)
+        let lowered = try #require(bench.log.events(.guardLowered).last)
+        #expect(lowered.at >= noAnswer.at)
+    }
+
     @Test func anOpenGuardFallsAfterFiveIdleSeconds() {
         let bench = Bench()
         bench.send(.guard(PK4.f8, open: true))

@@ -69,7 +69,9 @@ public final class TranscriptSource {
     /// is Claude Code's business, so the session id is looked up rather than reproduced.
     private func locate(at moment: Date) -> URL? {
         if let url, FileManager.default.fileExists(atPath: url.path) { return url }
-        guard moment.timeIntervalSince(lastSearch) >= Self.searchEvery else { return nil }
+        guard moment.timeIntervalSince(lastSearch) >= Self.searchEvery, key.isPathSafe else {
+            return nil
+        }
         lastSearch = moment
 
         let folders =

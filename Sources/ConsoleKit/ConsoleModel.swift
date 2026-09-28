@@ -276,6 +276,9 @@ public final class ConsoleModel {
 
     func publish(force: Bool) {
         let now = clock.now
+        // The wall clock set back: publishing waits for the coalescing gap, not for the
+        // clock to catch up with the moment it was set back from.
+        if let last = lastPublish, last > now { lastPublish = now }
         if !force, let last = lastPublish,
             now < last.addingTimeInterval(ConsoleTiming.coalesce)
         {

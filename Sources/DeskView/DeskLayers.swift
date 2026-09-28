@@ -594,16 +594,18 @@ final class DeskLayers {
                 if let holder = DeskLayout.all("pencil").first(where: {
                     $0.text("slot") == "\(slot)"
                 })?.rect {
-                    let sprite = art.pencil(text, holder: holder)
-                    layer.contents = sprite.picture.contents
-                    layer.frame = sprite.frame
+                    if let sprite = art.pencil(text, holder: holder) {
+                        layer.contents = sprite.picture.contents
+                        layer.frame = sprite.frame
+                    }
                 }
             }
             if snapshot.programBuild != programText {
                 programText = snapshot.programBuild
-                let sprite = art.programBuild(programText ?? " ", in: programRect)
-                program.contents = sprite.picture.contents
-                program.frame = sprite.frame
+                if let sprite = art.programBuild(programText ?? " ", in: programRect) {
+                    program.contents = sprite.picture.contents
+                    program.frame = sprite.frame
+                }
             }
         } else {
             for slot in pencils.keys { pencilText[slot] = snapshot.pencil(slot: slot) }
@@ -790,6 +792,8 @@ final class DeskLayers {
         shake.duration = 0.02
         shake.autoreverses = true
         shake.repeatCount = .infinity
+        // Nobody sees 120 trembles a second, and every frame costs WindowServer a redraw.
+        shake.preferredFrameRateRange = Motion.flashRate
         buzzer.add(shake, forKey: "shake")
     }
 

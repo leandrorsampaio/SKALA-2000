@@ -53,14 +53,19 @@ if os.path.exists(real_path):
 existing = settings.get("hooks", {})
 marker = "SKALA-2000/hooks.sock"
 
-def is_ours(group):
-    return any(marker in hook.get("command", "") for hook in group.get("hooks", []))
+def without_ours(group):
+    """The group with our hook taken out, or None if nothing else was in it."""
+    hooks = group.get("hooks", [])
+    rest = [hook for hook in hooks if marker not in hook.get("command", "")]
+    if len(rest) == len(hooks):
+        return group
+    return dict(group, hooks=rest) if rest else None
 
 merged, changes = {}, []
 for event in sorted(set(existing) | set(ours)):
     groups = existing.get(event, [])
-    kept = [group for group in groups if not is_ours(group)]
-    had = len(kept) != len(groups)
+    kept = [rest for rest in map(without_ours, groups) if rest is not None]
+    had = kept != groups
     if mode != "--remove" and event in ours:
         kept += ours[event]
         changes.append(("replace" if had else "add", event))

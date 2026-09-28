@@ -24,8 +24,9 @@ public enum DeskPrinter {
         descriptor.storageMode = .shared
         guard let texture = device.makeTexture(descriptor: descriptor) else { return nil }
 
+        guard let art = ArtSet.render(style: style, scale: scale) else { return nil }
         let layers = DeskLayers()
-        layers.install(ArtSet.render(style: style, scale: scale))
+        layers.install(art)
         layers.apply(snapshot, animated: false)
 
         // Our own queue, so we can wait for the GPU before reading the texture back.
