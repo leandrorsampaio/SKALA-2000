@@ -328,3 +328,96 @@ struct HookInstallerTests {
         #expect(HookInstaller.command.contains(HookInstaller.marker))
     }
 }
+
+/// The status line's route: its JSON in, its line back, and nothing delivered as an event.
+@Suite(.serialized)
+struct StatuslineRouteTests {
+
+    init() { signal(SIGPIPE, SIG_IGN) }
+
+    @Test func theStatusLineIsAnsweredWithItsLine() throws {
+        let inbox = HookServerTests.Inbox()
+        let server = HookServer(socketURL: HookServerTests.socketURL()) { inbox.add($0) }
+        server.statusline = { body in "line of \(body.count) bytes" }
+        try server.start()
+        defer { server.stop() }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
+        process.arguments = [
+            "-sS", "-m", "5", "--unix-socket", server.socketURL.path, "-H", "X-SKALA-Client: 1",
+            "-H", "Content-Type: application/json", "--data-binary", "@-",
+            "http://localhost\(HookServer.statuslinePath)",
+        ]
+        let input = Pipe()
+        let output = Pipe()
+        process.standardInput = input
+        process.standardOutput = output
+        try process.run()
+        input.fileHandleForWriting.write(Data("{\"a\":1}".utf8))
+        try input.fileHandleForWriting.close()
+        process.waitUntilExit()
+        let printed = String(
+            decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        #expect(printed == "line of 7 bytes")
+        Thread.sleep(forTimeInterval: 0.2)
+        #expect(inbox.bodies.isEmpty)
+    }
+}
+
+/// SKALA-2000's status line in Claude Code's settings, and nobody else's touched.
+struct StatuslineInstallerTests {
+
+    func scratch() throws -> URL {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "skala-statusline-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent("settings.json")
+    }
+
+    func read(_ url: URL) throws -> [String: Any] {
+        try #require(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+    }
+
+    @Test func itGoesInAndComesOutLeavingTheRestAlone() throws {
+        let url = try scratch()
+        try Data(#"{"model": "opus"}"#.utf8).write(to: url)
+        let installer = StatuslineInstaller(settings: url)
+        #expect(installer.status() == .notInstalled)
+
+        try installer.install()
+        #expect(installer.status() == .installed)
+        let installed = try read(url)
+        #expect(installed["model"] as? String == "opus")
+        let line = try #require(installed["statusLine"] as? [String: Any])
+        #expect(line["type"] as? String == "command")
+        #expect(line["command"] as? String == StatuslineInstaller.command)
+        #expect(FileManager.default.fileExists(atPath: installer.backup.path))
+
+        try installer.remove()
+        #expect(installer.status() == .notInstalled)
+        let removed = try read(url)
+        #expect(removed["statusLine"] == nil)
+        #expect(removed["model"] as? String == "opus")
+    }
+
+    @Test func someoneElsesStatusLineIsNeverReplaced() throws {
+        let url = try scratch()
+        try Data(#"{"statusLine": {"type": "command", "command": "~/bin/mine.sh"}}"#.utf8)
+            .write(to: url)
+        let installer = StatuslineInstaller(settings: url)
+        #expect(installer.status() == .otherStatusline)
+        #expect(throws: StatuslineInstaller.Failure.otherStatusline) { try installer.install() }
+        try installer.remove()
+        let line = try #require(try read(url)["statusLine"] as? [String: Any])
+        #expect(line["command"] as? String == "~/bin/mine.sh")
+    }
+
+    @Test func theCommandReachesTheAppsSocketAndNothingElse() {
+        let command = StatuslineInstaller.command
+        #expect(command.contains(HookInstaller.marker))
+        #expect(command.contains(HookServer.statuslinePath))
+        #expect(command.contains("X-SKALA-Client: 1"))
+        #expect(command.hasSuffix("|| true"))
+    }
+}

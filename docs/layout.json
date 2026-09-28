@@ -5646,7 +5646,7 @@
     "h" : 84,
     "id" : "",
     "info" : {
-      "text" : "Reserved · quota 5 h"
+      "text" : "Reserved"
     },
     "kind" : "blanking",
     "w" : 200,
@@ -5657,7 +5657,7 @@
     "h" : 84,
     "id" : "",
     "info" : {
-      "text" : "Reserved · quota week · reset"
+      "text" : "Reserved"
     },
     "kind" : "blanking",
     "w" : 200,
@@ -7133,7 +7133,7 @@
     },
     "kind" : "edgeDial",
     "w" : 70,
-    "x" : 2034,
+    "x" : 1979.5,
     "y" : 1310
   },
   {
@@ -7145,7 +7145,7 @@
     },
     "kind" : "plate",
     "w" : 87.5,
-    "x" : 2025.5,
+    "x" : 1971,
     "y" : 1536
   },
   {
@@ -7156,7 +7156,7 @@
     },
     "kind" : "tag",
     "w" : 26.5,
-    "x" : 2056,
+    "x" : 2001.5,
     "y" : 1566
   },
   {
@@ -7167,7 +7167,7 @@
     },
     "kind" : "edgewise",
     "w" : 111.5,
-    "x" : 2013.5,
+    "x" : 1959,
     "y" : 1298
   },
   {
@@ -7179,7 +7179,7 @@
     },
     "kind" : "plate",
     "w" : 115,
-    "x" : 2155,
+    "x" : 2092.5,
     "y" : 1376
   },
   {
@@ -7191,7 +7191,7 @@
     },
     "kind" : "lampLabel",
     "w" : 50,
-    "x" : 2178,
+    "x" : 2115.5,
     "y" : 1418.5
   },
   {
@@ -7203,7 +7203,7 @@
     },
     "kind" : "lampCode",
     "w" : 19.5,
-    "x" : 2193,
+    "x" : 2130.5,
     "y" : 1435.5
   },
   {
@@ -7216,7 +7216,7 @@
     },
     "kind" : "lamp",
     "w" : 96,
-    "x" : 2155,
+    "x" : 2092.5,
     "y" : 1410
   },
   {
@@ -7228,7 +7228,7 @@
     },
     "kind" : "lampLabel",
     "w" : 58.5,
-    "x" : 2277.5,
+    "x" : 2215,
     "y" : 1419.5
   },
   {
@@ -7240,7 +7240,7 @@
     },
     "kind" : "lampCode",
     "w" : 19.5,
-    "x" : 2297,
+    "x" : 2234.5,
     "y" : 1434.5
   },
   {
@@ -7253,7 +7253,7 @@
     },
     "kind" : "lamp",
     "w" : 96,
-    "x" : 2259,
+    "x" : 2196.5,
     "y" : 1410
   },
   {
@@ -7265,7 +7265,7 @@
     },
     "kind" : "lampLabel",
     "w" : 52,
-    "x" : 2177,
+    "x" : 2114.5,
     "y" : 1474.5
   },
   {
@@ -7277,7 +7277,7 @@
     },
     "kind" : "lampCode",
     "w" : 17.5,
-    "x" : 2194,
+    "x" : 2131.5,
     "y" : 1491.5
   },
   {
@@ -7290,7 +7290,7 @@
     },
     "kind" : "lamp",
     "w" : 96,
-    "x" : 2155,
+    "x" : 2092.5,
     "y" : 1466
   },
   {
@@ -7302,7 +7302,7 @@
     },
     "kind" : "lampLabel",
     "w" : 52,
-    "x" : 2281,
+    "x" : 2218.5,
     "y" : 1474.5
   },
   {
@@ -7314,7 +7314,7 @@
     },
     "kind" : "lampCode",
     "w" : 19.5,
-    "x" : 2297,
+    "x" : 2234.5,
     "y" : 1491.5
   },
   {
@@ -7327,8 +7327,42 @@
     },
     "kind" : "lamp",
     "w" : 96,
-    "x" : 2259,
+    "x" : 2196.5,
     "y" : 1466
+  },
+  {
+    "h" : 140,
+    "id" : "e.mains",
+    "info" : {
+
+    },
+    "kind" : "toggle",
+    "w" : 72,
+    "x" : 2326,
+    "y" : 1340
+  },
+  {
+    "h" : 40,
+    "id" : "",
+    "info" : {
+      "style" : "small",
+      "text" : "Mains 220 V\n50 Hz"
+    },
+    "kind" : "plate",
+    "w" : 95,
+    "x" : 2314.5,
+    "y" : 1486
+  },
+  {
+    "h" : 16,
+    "id" : "",
+    "info" : {
+      "text" : "SA2"
+    },
+    "kind" : "tag",
+    "w" : 27,
+    "x" : 2348.5,
+    "y" : 1532
   },
   {
     "h" : 18,
@@ -7398,38 +7432,457 @@
     "y" : 1303
   },
   {
-    "h" : 140,
-    "id" : "e.mains",
+    "h" : 44,
+    "id" : "e.quota.session",
     "info" : {
 
     },
-    "kind" : "toggle",
-    "w" : 72,
-    "x" : 76,
-    "y" : 1355
+    "kind" : "hEdgeDial",
+    "w" : 240,
+    "x" : 70,
+    "y" : 1348
+  },
+  {
+    "h" : 24,
+    "id" : "",
+    "info" : {
+      "style" : "bare",
+      "text" : "Quota · 5 h"
+    },
+    "kind" : "plate",
+    "w" : 89,
+    "x" : 145.5,
+    "y" : 1398
+  },
+  {
+    "h" : 16,
+    "id" : "",
+    "info" : {
+      "text" : "PA5"
+    },
+    "kind" : "tag",
+    "w" : 27,
+    "x" : 176.5,
+    "y" : 1428
+  },
+  {
+    "h" : 112,
+    "id" : "e.quota.session",
+    "info" : {
+
+    },
+    "kind" : "hEdgewise",
+    "w" : 264,
+    "x" : 58,
+    "y" : 1340
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.session",
+    "info" : {
+      "index" : "0",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 366,
+    "y" : 1346
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.session",
+    "info" : {
+      "index" : "1",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 396,
+    "y" : 1346
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.session",
+    "info" : {
+      "index" : "2",
+      "separator" : "true",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 10,
+    "x" : 426,
+    "y" : 1346
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.session",
+    "info" : {
+      "index" : "3",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 438,
+    "y" : 1346
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.session",
+    "info" : {
+      "index" : "4",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 468,
+    "y" : 1346
+  },
+  {
+    "h" : 62,
+    "id" : "e.nixie.quota.session",
+    "info" : {
+      "span" : "",
+      "template" : "00:00",
+      "xl" : "false"
+    },
+    "kind" : "nixie",
+    "w" : 154,
+    "x" : 354,
+    "y" : 1339
   },
   {
     "h" : 24,
     "id" : "",
     "info" : {
       "style" : "small",
-      "text" : "Mains 220 V 50 Hz"
+      "text" : "Resets in"
     },
     "kind" : "plate",
-    "w" : 135.5,
-    "x" : 44,
-    "y" : 1501
+    "w" : 80.5,
+    "x" : 391,
+    "y" : 1407
   },
   {
     "h" : 16,
     "id" : "",
     "info" : {
-      "text" : "SA2"
+      "text" : "HG18"
+    },
+    "kind" : "tag",
+    "w" : 31.5,
+    "x" : 415.5,
+    "y" : 1437
+  },
+  {
+    "h" : 14,
+    "id" : "",
+    "info" : {
+      "size" : "12.0",
+      "text" : "Near limit"
+    },
+    "kind" : "lampLabel",
+    "w" : 54.5,
+    "x" : 561,
+    "y" : 1355.5
+  },
+  {
+    "h" : 12,
+    "id" : "",
+    "info" : {
+      "size" : "10",
+      "text" : "HL80"
+    },
+    "kind" : "lampCode",
+    "w" : 19.5,
+    "x" : 578.5,
+    "y" : 1370.5
+  },
+  {
+    "h" : 46,
+    "id" : "e.quota.session.near",
+    "info" : {
+      "code" : "HL80",
+      "color" : "amber",
+      "label" : "Near limit"
+    },
+    "kind" : "lamp",
+    "w" : 96,
+    "x" : 540,
+    "y" : 1346
+  },
+  {
+    "h" : 16,
+    "id" : "",
+    "info" : {
+      "size" : "13.0",
+      "text" : "At limit"
+    },
+    "kind" : "lampLabel",
+    "w" : 44,
+    "x" : 566,
+    "y" : 1408.5
+  },
+  {
+    "h" : 12,
+    "id" : "",
+    "info" : {
+      "size" : "10",
+      "text" : "HL81"
+    },
+    "kind" : "lampCode",
+    "w" : 17.5,
+    "x" : 579.5,
+    "y" : 1425.5
+  },
+  {
+    "h" : 46,
+    "id" : "e.quota.session.limit",
+    "info" : {
+      "code" : "HL81",
+      "color" : "red",
+      "label" : "At limit"
+    },
+    "kind" : "lamp",
+    "w" : 96,
+    "x" : 540,
+    "y" : 1400
+  },
+  {
+    "h" : 44,
+    "id" : "e.quota.week",
+    "info" : {
+
+    },
+    "kind" : "hEdgeDial",
+    "w" : 240,
+    "x" : 70,
+    "y" : 1472
+  },
+  {
+    "h" : 24,
+    "id" : "",
+    "info" : {
+      "style" : "bare",
+      "text" : "Quota · week"
+    },
+    "kind" : "plate",
+    "w" : 105,
+    "x" : 137.5,
+    "y" : 1522
+  },
+  {
+    "h" : 16,
+    "id" : "",
+    "info" : {
+      "text" : "PA6"
     },
     "kind" : "tag",
     "w" : 27,
-    "x" : 98.5,
+    "x" : 176.5,
+    "y" : 1552
+  },
+  {
+    "h" : 112,
+    "id" : "e.quota.week",
+    "info" : {
+
+    },
+    "kind" : "hEdgewise",
+    "w" : 264,
+    "x" : 58,
+    "y" : 1464
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.week",
+    "info" : {
+      "index" : "0",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 351,
+    "y" : 1470
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.week",
+    "info" : {
+      "index" : "1",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 381,
+    "y" : 1470
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.week",
+    "info" : {
+      "index" : "2",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 411,
+    "y" : 1470
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.week",
+    "info" : {
+      "index" : "3",
+      "separator" : "true",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 10,
+    "x" : 441,
+    "y" : 1470
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.week",
+    "info" : {
+      "index" : "4",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 453,
+    "y" : 1470
+  },
+  {
+    "h" : 48,
+    "id" : "e.nixie.quota.week",
+    "info" : {
+      "index" : "5",
+      "separator" : "false",
+      "xl" : "false"
+    },
+    "kind" : "tube",
+    "w" : 28,
+    "x" : 483,
+    "y" : 1470
+  },
+  {
+    "h" : 62,
+    "id" : "e.nixie.quota.week",
+    "info" : {
+      "span" : "",
+      "template" : "000:00",
+      "xl" : "false"
+    },
+    "kind" : "nixie",
+    "w" : 184,
+    "x" : 339,
+    "y" : 1463
+  },
+  {
+    "h" : 24,
+    "id" : "",
+    "info" : {
+      "style" : "small",
+      "text" : "Resets in"
+    },
+    "kind" : "plate",
+    "w" : 80.5,
+    "x" : 391,
     "y" : 1531
+  },
+  {
+    "h" : 16,
+    "id" : "",
+    "info" : {
+      "text" : "HG19"
+    },
+    "kind" : "tag",
+    "w" : 31.5,
+    "x" : 415.5,
+    "y" : 1561
+  },
+  {
+    "h" : 14,
+    "id" : "",
+    "info" : {
+      "size" : "12.0",
+      "text" : "Near limit"
+    },
+    "kind" : "lampLabel",
+    "w" : 54.5,
+    "x" : 561,
+    "y" : 1479.5
+  },
+  {
+    "h" : 12,
+    "id" : "",
+    "info" : {
+      "size" : "10",
+      "text" : "HL82"
+    },
+    "kind" : "lampCode",
+    "w" : 19.5,
+    "x" : 578.5,
+    "y" : 1494.5
+  },
+  {
+    "h" : 46,
+    "id" : "e.quota.week.near",
+    "info" : {
+      "code" : "HL82",
+      "color" : "amber",
+      "label" : "Near limit"
+    },
+    "kind" : "lamp",
+    "w" : 96,
+    "x" : 540,
+    "y" : 1470
+  },
+  {
+    "h" : 16,
+    "id" : "",
+    "info" : {
+      "size" : "13.0",
+      "text" : "At limit"
+    },
+    "kind" : "lampLabel",
+    "w" : 44,
+    "x" : 566,
+    "y" : 1532.5
+  },
+  {
+    "h" : 12,
+    "id" : "",
+    "info" : {
+      "size" : "10",
+      "text" : "HL83"
+    },
+    "kind" : "lampCode",
+    "w" : 19.5,
+    "x" : 578.5,
+    "y" : 1549.5
+  },
+  {
+    "h" : 46,
+    "id" : "e.quota.week.limit",
+    "info" : {
+      "code" : "HL83",
+      "color" : "red",
+      "label" : "At limit"
+    },
+    "kind" : "lamp",
+    "w" : 96,
+    "x" : 540,
+    "y" : 1524
   },
   {
     "h" : 16,
@@ -7440,8 +7893,8 @@
     },
     "kind" : "lampLabel",
     "w" : 54,
-    "x" : 218.5,
-    "y" : 1436.5
+    "x" : 65,
+    "y" : 1644.5
   },
   {
     "h" : 12,
@@ -7452,8 +7905,8 @@
     },
     "kind" : "lampCode",
     "w" : 19.5,
-    "x" : 236,
-    "y" : 1453.5
+    "x" : 82.5,
+    "y" : 1661.5
   },
   {
     "h" : 46,
@@ -7465,8 +7918,8 @@
     },
     "kind" : "lamp",
     "w" : 96,
-    "x" : 197.5,
-    "y" : 1428
+    "x" : 44,
+    "y" : 1636
   },
   {
     "h" : 32,
@@ -7476,8 +7929,8 @@
     },
     "kind" : "wheel",
     "w" : 22,
-    "x" : 356,
-    "y" : 1398
+    "x" : 279,
+    "y" : 1606
   },
   {
     "h" : 32,
@@ -7487,8 +7940,8 @@
     },
     "kind" : "wheel",
     "w" : 22,
-    "x" : 378,
-    "y" : 1398
+    "x" : 301,
+    "y" : 1606
   },
   {
     "h" : 32,
@@ -7498,8 +7951,8 @@
     },
     "kind" : "wheel",
     "w" : 22,
-    "x" : 400,
-    "y" : 1398
+    "x" : 323,
+    "y" : 1606
   },
   {
     "h" : 32,
@@ -7509,8 +7962,8 @@
     },
     "kind" : "wheel",
     "w" : 22,
-    "x" : 422,
-    "y" : 1398
+    "x" : 345,
+    "y" : 1606
   },
   {
     "h" : 32,
@@ -7520,8 +7973,8 @@
     },
     "kind" : "wheel",
     "w" : 22,
-    "x" : 444,
-    "y" : 1398
+    "x" : 367,
+    "y" : 1606
   },
   {
     "h" : 32,
@@ -7531,8 +7984,8 @@
     },
     "kind" : "wheel",
     "w" : 22,
-    "x" : 466,
-    "y" : 1398
+    "x" : 389,
+    "y" : 1606
   },
   {
     "h" : 52,
@@ -7542,8 +7995,8 @@
     },
     "kind" : "drum",
     "w" : 156,
-    "x" : 344,
-    "y" : 1388
+    "x" : 267,
+    "y" : 1596
   },
   {
     "h" : 24,
@@ -7554,8 +8007,8 @@
     },
     "kind" : "plate",
     "w" : 132.5,
-    "x" : 355.5,
-    "y" : 1446
+    "x" : 279,
+    "y" : 1654
   },
   {
     "h" : 16,
@@ -7565,8 +8018,8 @@
     },
     "kind" : "unit",
     "w" : 7,
-    "x" : 418.5,
-    "y" : 1476
+    "x" : 341.5,
+    "y" : 1684
   },
   {
     "h" : 16,
@@ -7576,8 +8029,8 @@
     },
     "kind" : "tag",
     "w" : 27,
-    "x" : 408.5,
-    "y" : 1498
+    "x" : 331.5,
+    "y" : 1706
   },
   {
     "h" : 64,
@@ -7588,7 +8041,7 @@
     "kind" : "groundBolt",
     "w" : 64,
     "x" : 550,
-    "y" : 1404
+    "y" : 1612
   },
   {
     "h" : 28,
@@ -7599,7 +8052,7 @@
     "kind" : "earth",
     "w" : 28,
     "x" : 622,
-    "y" : 1422
+    "y" : 1630
   },
   {
     "h" : 24,
@@ -7611,217 +8064,7 @@
     "kind" : "plate",
     "w" : 68,
     "x" : 566,
-    "y" : 1474
-  },
-  {
-    "h" : 24,
-    "id" : "",
-    "info" : {
-      "style" : "small",
-      "text" : "Fuses"
-    },
-    "kind" : "plate",
-    "w" : 56.5,
-    "x" : 319,
-    "y" : 1573
-  },
-  {
-    "h" : 44,
-    "id" : "FU1",
-    "info" : {
-
-    },
-    "kind" : "fuse",
-    "w" : 44,
-    "x" : 51.5,
-    "y" : 1607
-  },
-  {
-    "h" : 15,
-    "id" : "",
-    "info" : {
-      "text" : "Mains 4 A"
-    },
-    "kind" : "caption",
-    "w" : 58.5,
-    "x" : 44,
-    "y" : 1655
-  },
-  {
-    "h" : 16,
-    "id" : "",
-    "info" : {
-      "text" : "FU1"
-    },
-    "kind" : "tag",
-    "w" : 24.5,
-    "x" : 61,
-    "y" : 1674
-  },
-  {
-    "h" : 44,
-    "id" : "FU2",
-    "info" : {
-
-    },
-    "kind" : "fuse",
-    "w" : 44,
-    "x" : 162.5,
-    "y" : 1607
-  },
-  {
-    "h" : 15,
-    "id" : "",
-    "info" : {
-      "text" : "Lamps 2 A"
-    },
-    "kind" : "caption",
-    "w" : 61,
-    "x" : 154,
-    "y" : 1655
-  },
-  {
-    "h" : 16,
-    "id" : "",
-    "info" : {
-      "text" : "FU2"
-    },
-    "kind" : "tag",
-    "w" : 27,
-    "x" : 171,
-    "y" : 1674
-  },
-  {
-    "h" : 44,
-    "id" : "FU3",
-    "info" : {
-
-    },
-    "kind" : "fuse",
-    "w" : 44,
-    "x" : 270,
-    "y" : 1607
-  },
-  {
-    "h" : 15,
-    "id" : "",
-    "info" : {
-      "text" : "Nixie 1 A"
-    },
-    "kind" : "caption",
-    "w" : 50,
-    "x" : 267,
-    "y" : 1655
-  },
-  {
-    "h" : 16,
-    "id" : "",
-    "info" : {
-      "text" : "FU3"
-    },
-    "kind" : "tag",
-    "w" : 27,
-    "x" : 278.5,
-    "y" : 1674
-  },
-  {
-    "h" : 44,
-    "id" : "FU4",
-    "info" : {
-
-    },
-    "kind" : "fuse",
-    "w" : 44,
-    "x" : 374.5,
-    "y" : 1607
-  },
-  {
-    "h" : 15,
-    "id" : "",
-    "info" : {
-      "text" : "Logic 2 A"
-    },
-    "kind" : "caption",
-    "w" : 56,
-    "x" : 368.5,
-    "y" : 1655
-  },
-  {
-    "h" : 16,
-    "id" : "",
-    "info" : {
-      "text" : "FU4"
-    },
-    "kind" : "tag",
-    "w" : 27,
-    "x" : 383,
-    "y" : 1674
-  },
-  {
-    "h" : 44,
-    "id" : "FU5",
-    "info" : {
-
-    },
-    "kind" : "fuse",
-    "w" : 44,
-    "x" : 493.5,
-    "y" : 1607
-  },
-  {
-    "h" : 15,
-    "id" : "",
-    "info" : {
-      "text" : "Buzzer 0.5 A"
-    },
-    "kind" : "caption",
-    "w" : 78,
-    "x" : 476.5,
-    "y" : 1655
-  },
-  {
-    "h" : 16,
-    "id" : "",
-    "info" : {
-      "text" : "FU5"
-    },
-    "kind" : "tag",
-    "w" : 27,
-    "x" : 502,
-    "y" : 1674
-  },
-  {
-    "h" : 44,
-    "id" : "FU6",
-    "info" : {
-
-    },
-    "kind" : "fuse",
-    "w" : 44,
-    "x" : 606,
-    "y" : 1607
-  },
-  {
-    "h" : 15,
-    "id" : "",
-    "info" : {
-      "text" : "Spare"
-    },
-    "kind" : "caption",
-    "w" : 37.5,
-    "x" : 609.5,
-    "y" : 1655
-  },
-  {
-    "h" : 16,
-    "id" : "",
-    "info" : {
-      "text" : "FU6"
-    },
-    "kind" : "tag",
-    "w" : 27.5,
-    "x" : 614.5,
-    "y" : 1674
+    "y" : 1682
   },
   {
     "h" : 18,

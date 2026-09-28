@@ -108,7 +108,33 @@ public struct FakeDay: Sendable {
             Reading(.machine, .displayAsleep, .flag(false), at: moment, ttl: 30),
             Reading(.machine, .systemAsleep, .flag(false), at: moment, ttl: 30),
         ]
+        out += quota(at: moment, day: t)
         return out
+    }
+
+    /// The plan's usage, as the status line reports it: the five-hour window fills through
+    /// each window to 88% and starts again; the week creeps from 62% to 75% over the day.
+    /// In whole points, as Claude Code's figures move.
+    func quota(at moment: Date, day t: TimeInterval) -> [Reading] {
+        let window: TimeInterval = 5 * 3600
+        let into = t.truncatingRemainder(dividingBy: window)
+        let sessionReset = moment.addingTimeInterval(window - into)
+        let weekReset = start.addingTimeInterval(3 * 86_400 + 4 * 3600)
+        func points(_ share: Double) -> Double { (share * 100).rounded(.down) / 100 }
+        return [
+            Reading(
+                .machine, .quotaSession, .amount(points(0.08 + 0.8 * into / window)), at: moment,
+                ttl: sessionReset.timeIntervalSince(moment)),
+            Reading(
+                .machine, .quotaSessionResets, .time(sessionReset), at: moment,
+                ttl: sessionReset.timeIntervalSince(moment)),
+            Reading(
+                .machine, .quotaWeek, .amount(points(0.62 + 0.13 * t / Self.length)), at: moment,
+                ttl: weekReset.timeIntervalSince(moment)),
+            Reading(
+                .machine, .quotaWeekResets, .time(weekReset), at: moment,
+                ttl: weekReset.timeIntervalSince(moment)),
+        ]
     }
 }
 

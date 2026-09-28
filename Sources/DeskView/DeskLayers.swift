@@ -82,6 +82,8 @@ final class DeskLayers {
     private(set) var needles: [InstrumentID: CALayer] = [:]
     private var meterGlass: [InstrumentID: CALayer] = [:]
     let pointer = CALayer()
+    /// The plan usage meters' pointers, by meter.
+    private(set) var horizontalPointers: [InstrumentID: CALayer] = [:]
     let knob = CALayer()
     private let knobHighlight = CALayer()
     let lever = CALayer()
@@ -116,6 +118,7 @@ final class DeskLayers {
     private let toggleRect = DeskLayout.all("toggle").first?.rect ?? .zero
     private let buzzerRect = DeskLayout.all("buzzer").first?.rect ?? .zero
     private let edgeDial = DeskLayout.all("edgeDial").first
+    private let horizontalDials = DeskLayout.all("hEdgeDial").filter { !$0.id.isEmpty }
     private let programRect = DeskLayout.all("programText").first?.rect ?? .zero
 
     init() {
@@ -237,6 +240,15 @@ final class DeskLayers {
             meterGlass[InstrumentID(edge.id)] = glass
             add(glass)
         }
+        for dial in horizontalDials {
+            let id = InstrumentID(dial.id)
+            let pointer = CALayer()
+            horizontalPointers[id] = pointer
+            add(pointer)
+            let glass = CALayer()
+            meterGlass[id] = glass
+            add(glass)
+        }
 
         add(knob)
         add(knobHighlight)
@@ -356,6 +368,16 @@ final class DeskLayers {
                 pointer.position = pointerPosition(meterValues[PK4.batteryMeter] ?? 0)
             }
         }
+        for (id, pointer) in horizontalPointers {
+            place(meterGlass[id]!, art.meterGlass[id])
+            guard let sprite = art.horizontalPointer else { continue }
+            pointer.contents = sprite.picture.contents
+            pointer.anchorPoint = CGPoint(
+                x: -sprite.frame.minX / sprite.frame.width,
+                y: -sprite.frame.minY / sprite.frame.height)
+            pointer.bounds = CGRect(origin: .zero, size: sprite.frame.size)
+            pointer.position = horizontalPointerPosition(id, meterValues[id] ?? Needle.leftStop)
+        }
 
         if let sprite = art.knob {
             knob.contents = sprite.picture.contents
@@ -405,6 +427,16 @@ final class DeskLayers {
 
     private func knobAngle(_ position: Int, lean: Double = 0) -> CGFloat {
         CGFloat((-90 + 60 * Double(position - 1) + lean) * .pi / 180)
+    }
+
+    /// Where a plan usage meter's pointer tip sits: along the scale, 0 to 100%.
+    func horizontalPointerPosition(_ id: InstrumentID, _ value: Double) -> CGPoint {
+        guard let dial = horizontalDials.first(where: { $0.id == id.rawValue })?.rect else {
+            return .zero
+        }
+        let span = HorizontalEdgewise.right - HorizontalEdgewise.left
+        let fraction = CGFloat(min(1, max(0, value)))
+        return CGPoint(x: dial.minX + HorizontalEdgewise.left + span * fraction, y: dial.minY)
     }
 
     private func pointerPosition(_ value: Double) -> CGPoint {
@@ -547,6 +579,19 @@ final class DeskLayers {
                 let spring = Motion.pointer()
                 spring.fromValue = pointer.presentation()?.position.y ?? pointer.position.y
                 spring.toValue = target.y
+                pointer.add(spring, forKey: "slide")
+            }
+            pointer.position = target
+        }
+        for (id, pointer) in horizontalPointers {
+            let value = snapshot.meter(id)
+            guard meterValues[id] != value else { continue }
+            meterValues[id] = value
+            let target = horizontalPointerPosition(id, value)
+            if animate && !reduceMotion {
+                let spring = Motion.horizontalPointer()
+                spring.fromValue = pointer.presentation()?.position.x ?? pointer.position.x
+                spring.toValue = target.x
                 pointer.add(spring, forKey: "slide")
             }
             pointer.position = target

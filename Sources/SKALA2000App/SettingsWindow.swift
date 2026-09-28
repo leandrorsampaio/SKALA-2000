@@ -17,6 +17,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func show() {
         settings.refreshHooks()
+        settings.refreshStatusline()
         if let window {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -95,6 +96,22 @@ struct SettingsView: View {
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }
+            Section("Claude Code status line") {
+                LabeledContent("Status line in ~/.claude/settings.json") { Text(statuslineText) }
+                HStack {
+                    Button("Install status line") { settings.installStatusline() }
+                        .disabled(settings.statuslineStatus != .notInstalled)
+                    Button("Remove status line") { settings.removeStatusline() }
+                        .disabled(settings.statuslineStatus != .installed)
+                }
+                if let problem = settings.statuslineProblem {
+                    Text(problem).font(.caption).foregroundStyle(.red)
+                }
+                Text(
+                    "The status line tells panel E how much of your plan's 5-hour and weekly limits you have used. Claude Code shows the model, the context used and both limits under its prompt, and stops showing most of its footer hints, as with any status line."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Running") {
                 Toggle("Play the scripted day (demo)", isOn: $settings.demo)
                 Toggle(
@@ -117,6 +134,15 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 520)
         .fixedSize()
+    }
+
+    private var statuslineText: String {
+        switch settings.statuslineStatus {
+        case .installed: "installed"
+        case .notInstalled: "not installed"
+        case .otherStatusline: "another status line is configured"
+        case .unreadable: "settings.json could not be read"
+        }
     }
 
     private var hookText: String {

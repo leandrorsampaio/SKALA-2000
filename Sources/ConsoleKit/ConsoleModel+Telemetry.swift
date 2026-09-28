@@ -197,6 +197,7 @@ extension ConsoleModel {
         fillPencils(now)
         guard power == .live else { return }
         signalChanges(now)
+        signalQuota(now)
 
         for condition in alarmConditions(now) {
             guard let change = alarms.set(condition.id, condition.active, at: now) else {
@@ -252,6 +253,38 @@ extension ConsoleModel {
                 }
             }
         }
+    }
+
+    /// Beeps once as a plan window's amber lamp, or its red, comes on. The first readings
+    /// after launch are taken as they are.
+    func signalQuota(_ now: Date) {
+        // Nothing heard of the plan yet: nothing to compare the first reading with.
+        guard PK4.Quota.allCases.contains(where: { quotaUsed($0, now) != nil }) else { return }
+        var lit: Set<InstrumentID> = []
+        for quota in PK4.Quota.allCases {
+            let used = quotaUsed(quota, now) ?? 0
+            if used >= ConsoleTiming.quotaNear { lit.insert(PK4.quotaNear(quota)) }
+            if used >= ConsoleTiming.quotaLimit { lit.insert(PK4.quotaLimit(quota)) }
+        }
+        defer { quotaHeard = lit }
+        guard let before = quotaHeard else { return }
+        if !lit.subtracting(before).isEmpty { signal(.quota) }
+    }
+
+    /// The share of a plan window used, while the status line's last word on it holds.
+    func quotaUsed(_ quota: PK4.Quota, _ now: Date) -> Double? {
+        let field: Field = quota == .session ? .quotaSession : .quotaWeek
+        guard let reading = machine[field], reading.isFresh(at: now) else { return nil }
+        return reading.value.amount.map { min(1, max(0, $0)) }
+    }
+
+    /// Seconds until a plan window resets, while that is known.
+    func quotaResets(_ quota: PK4.Quota, _ now: Date) -> TimeInterval? {
+        let field: Field = quota == .session ? .quotaSessionResets : .quotaWeekResets
+        guard let reading = machine[field], reading.isFresh(at: now),
+            let reset = reading.value.time
+        else { return nil }
+        return max(0, reset.timeIntervalSince(now))
     }
 
     /// Counts a signal for the sound layer, unless SILENCE's mode or the mute holds it.

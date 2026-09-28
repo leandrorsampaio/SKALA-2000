@@ -52,7 +52,7 @@ Five sources, all short, all dry, mixed mono, played at the position of nothing 
 | `clunk` | relay on every window change, confirm, selector detent, key, guard, toggle (loudest) | 70 ms burst, band-pass 320 Hz |
 | `tick` | each drum wheel that moves | 10 ms burst, 1.4 kHz, quiet |
 | `buzzer` | the signals below, once each as the state begins; continuous only while BUZZER TEST is held | 420 Hz square wave, low gain, 3 ms edges |
-| `beep` | LOW CONTEXT coming on (under 5% of the context left) | 150 ms sine, 1.6 kHz, soft ends: higher and rounder than the buzzer, never taken for it |
+| `beep` | LOW CONTEXT coming on (under 5% of the context left); a plan usage window's NEAR LIMIT (80%) or AT LIMIT (95%) coming on | 150 ms sine, 1.6 kHz, soft ends: higher and rounder than the buzzer, never taken for it |
 
 **Signals.** DONE: one buzz, 300 ms. WAIT: two quick buzzes, 110 ms on and 90 off. CMPCT: three quick buzzes. BLOCK, DATA STALE and BATT LOW: one long buzz, 1.2 s. LOW CONTEXT: one beep. Each plays once, in turn, never over another. SILENCE is a mode: while on, no signal plays and its cap and the SILENCED lamp (amber, under the buzzer) burn; pressed again, it ends. BUZZER MUTED holds the signals back too, and lights SILENCED.
 

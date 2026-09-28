@@ -85,6 +85,10 @@ enum Motion {
     static func pointer() -> CASpringAnimation {
         spring("position.y", response: 0.45, damping: 0.65)
     }
+    /// A plan usage meter's pointer, the same spring along the other axis.
+    static func horizontalPointer() -> CASpringAnimation {
+        spring("position.x", response: 0.45, damping: 0.65)
+    }
     /// A drum wheel: 320 ms with a slight overshoot, each higher wheel 45 ms later.
     static func wheel() -> CASpringAnimation { spring("position.y", response: 0.32, damping: 0.7) }
     static let wheelStagger: CFTimeInterval = 0.045

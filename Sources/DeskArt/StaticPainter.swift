@@ -3,7 +3,7 @@ import CoreGraphics
 import Foundation
 
 /// Paints everything on the desk that never changes, in its dark and off state: paint,
-/// plates, tags, screws, bezels and unlit glass, dials, holes, the header, the fuses.
+/// plates, tags, screws, bezels and unlit glass, dials, holes, the header.
 ///
 /// A port of the reference `PK4Skin` views, one primitive at a time, placed by
 /// `DeskLayout`. Thread-safe: it touches nothing but its context, so the art renders off
@@ -32,7 +32,7 @@ public struct StaticPainter {
 
         // Housings under what sits in them.
         for meter in all("meter") { housing(meter.rect) }
-        for meter in all("edgewise") { housing(meter.rect) }
+        for meter in all("edgewise") + all("hEdgewise") { housing(meter.rect) }
         for guarded in all("guard") { guardWell(guarded) }
 
         for plate in all("plate") { self.plate(plate) }
@@ -63,10 +63,10 @@ public struct StaticPainter {
         for drum in all("drum") { drumHousing(drum) }
         for dial in all("dial") { meterDial(dial) }
         for dial in all("edgeDial") { edgewiseDial(dial.rect) }
+        for dial in all("hEdgeDial") { horizontalEdgewiseDial(dial.rect) }
         for selector in all("selector") { selectorPlate(selector.rect) }
         for toggle in all("toggle") { togglePlate(toggle.rect) }
         for pencil in all("pencil") { pencilHolder(pencil.rect) }
-        for fuse in all("fuse") { self.fuse(fuse.rect) }
         for bolt in all("groundBolt") { groundBolt(bolt.rect) }
         for earth in all("earth") { self.earth(earth.rect) }
     }
@@ -545,6 +545,33 @@ public struct StaticPainter {
         }
     }
 
+    /// A plan usage window's dial: the battery's edgewise scale on its side, 0 at the left,
+    /// 100 at the right, red from 80.
+    func horizontalEdgewiseDial(_ rect: CGRect) {
+        let ink = palette.tagInk
+        let left = HorizontalEdgewise.left
+        let span = HorizontalEdgewise.right - left
+        pen.translate(rect.minX, rect.minY) {
+            let plate = Pen.rect(
+                CGRect(x: 1, y: 1, width: rect.width - 2, height: rect.height - 2), radius: 3)
+            pen.fill(plate, palette.meterFace)
+            pen.stroke(plate, palette.bezel, width: 2)
+            pen.fill(
+                CGRect(x: left + span * 0.8, y: 6, width: span * 0.2, height: 5), rgb(0xC8321F))
+            for tick in 0...10 {
+                let x = left + span * CGFloat(tick) / 10
+                let major = tick % 5 == 0
+                let path = CGMutablePath()
+                path.move(to: CGPoint(x: x, y: 12))
+                path.addLine(to: CGPoint(x: x, y: 12 + (major ? 15 : 8)))
+                pen.stroke(path, ink, width: major ? 2 : 1)
+                if major {
+                    pen.text(String(tick * 10), label(13, ink), centeredAt: CGPoint(x: x, y: 35))
+                }
+            }
+        }
+    }
+
     // MARK: - Selector, toggle, pencil
 
     /// The session selector's brushed dial with its numerals, stop pins and the bakelite
@@ -610,20 +637,6 @@ public struct StaticPainter {
     }
 
     // MARK: - Panel E hardware
-
-    /// A fuse holder. Decorative.
-    func fuse(_ rect: CGRect) {
-        pen.translate(rect.minX, rect.minY) {
-            pen.fill(Pen.circle(CGRect(x: 2, y: 3.5, width: 40, height: 40)), black(0.45))
-            pen.fill(Pen.circle(CGRect(x: 2.5, y: 2.5, width: 39, height: 39)), rgb(0x2B2B28))
-            pen.fill(Pen.circle(CGRect(x: 9, y: 9, width: 26, height: 26)), rgb(0x151513))
-            pen.stroke(
-                Pen.circle(CGRect(x: 9, y: 9, width: 26, height: 26)), rgb(0x4A4A45), width: 1)
-            pen.fill(Pen.circle(CGRect(x: 13, y: 12, width: 8, height: 8)), white(0.22))
-            pen.fill(Pen.rect(CGRect(x: 10, y: 20, width: 24, height: 4), radius: 1), rgb(0x050505))
-            pen.fill(CGRect(x: 10, y: 24, width: 24, height: 1), white(0.3))
-        }
-    }
 
     /// The brass grounding bolt.
     func groundBolt(_ rect: CGRect) {

@@ -89,6 +89,10 @@ public enum Field: String, Sendable, CaseIterable, Codable {
     /// Mac Command Center's own Keep Awake modes, which FC1 and FC2 switch.
     case keepAwakeDisplayOn, keepAwakeDisplayOff
 
+    // J · the plan's usage limits, from the status line: the share of each window used,
+    // 0 to 1, and when it resets
+    case quotaSession, quotaSessionResets, quotaWeek, quotaWeekResets
+
     public var kind: Value.Kind {
         switch self {
         case .roster: .keys
@@ -100,9 +104,9 @@ public enum Field: String, Sendable, CaseIterable, Codable {
             .outputTokens, .thinkingTokens, .cacheReadTokens, .cacheCreationTokens, .linesAdded,
             .linesRemoved, .turnMessages:
             .count
-        case .costUSD, .batteryFraction: .amount
+        case .costUSD, .batteryFraction, .quotaSession, .quotaWeek: .amount
         case .turnDuration, .totalDuration, .apiDuration, .toolDuration: .seconds
-        case .startedAt, .compactBoundary: .time
+        case .startedAt, .compactBoundary, .quotaSessionResets, .quotaWeekResets: .time
         case .toolMix: .tally
         case .modelUsage: .lines
         case .unknownModelCost, .onMains, .charging, .displayAsleep, .systemAsleep,

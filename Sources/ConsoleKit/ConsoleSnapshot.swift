@@ -55,6 +55,8 @@ public enum Signal: String, CaseIterable, Sendable {
     case block
     /// Under 5% of the context left: a beep, higher than the buzzer and nothing like it.
     case lowContext
+    /// A plan usage window past 80%, or past 95%: the same beep.
+    case quota
 }
 
 /// One-shot events with nothing to show, for the sound layer. Each counts up when it
@@ -155,6 +157,9 @@ public enum ConsoleTiming {
     public static let holdToFire: TimeInterval = 2
     /// The share of context left below which LOW CONTEXT lights.
     public static let lowContext = 0.05
+    /// The share of a plan usage window used from which its amber lamp lights, and its red.
+    public static let quotaNear = 0.8
+    public static let quotaLimit = 0.95
     public static let guardFallsAfter: TimeInterval = 5
     public static let selectorDetent: TimeInterval = 0.11
     public static let powerOnLamp: TimeInterval = 0.25

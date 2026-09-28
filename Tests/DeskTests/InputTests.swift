@@ -234,7 +234,8 @@ final class DeskViewInputTests {
                 panels.append(focus.panel)
             }
         }
-        #expect(Array(panels.prefix(5)) == ["A", "B", "C", "D", "E"])
+        // Panel E has nothing to press since MAINS moved to D: from D, Tab comes round to A.
+        #expect(Array(panels.prefix(5)) == ["A", "B", "C", "D", "A"])
 
         // Back to a button and press it with the space bar: down on keydown, up on keyup.
         let silence = try #require(view.hitTable.controls.first { $0.id == PK4.silence })
@@ -333,8 +334,8 @@ struct AccessibilityTests {
         #expect(value("Total cost") == "27 dollars")
         #expect(value("Permission mode, bypass") == "dark")
         #expect(value("Session selector") == "Session 1")
-        // 69 lamps, 15 nixie rows, 4 meters, 5 drums, 31 controls, the buzzer, the build card.
-        #expect(all.count == 126)
+        // 73 lamps, 17 nixie rows, 6 meters, 5 drums, 31 controls, the buzzer, the build card.
+        #expect(all.count == 134)
         _ = window
     }
 

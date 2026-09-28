@@ -33,6 +33,7 @@ final class AppSettings {
         lampCodes = defaults.object(forKey: Keys.lampCodes) as? Bool ?? true
         apply()
         refreshHooks()
+        refreshStatusline()
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
 
@@ -136,6 +137,35 @@ final class AppSettings {
             hookProblem = "\(error)"
         }
         refreshHooks()
+    }
+
+    // MARK: - Status line
+
+    var statuslineStatus: StatuslineInstaller.Status = .notInstalled
+    var statuslineProblem: String?
+
+    func refreshStatusline() { statuslineStatus = StatuslineInstaller().status() }
+
+    func installStatusline() {
+        do {
+            try StatuslineInstaller().install()
+            statuslineProblem = nil
+        } catch StatuslineInstaller.Failure.otherStatusline {
+            statuslineProblem = "Another status line is configured; it was left as it is."
+        } catch {
+            statuslineProblem = "\(error)"
+        }
+        refreshStatusline()
+    }
+
+    func removeStatusline() {
+        do {
+            try StatuslineInstaller().remove()
+            statuslineProblem = nil
+        } catch {
+            statuslineProblem = "\(error)"
+        }
+        refreshStatusline()
     }
 
     // MARK: - Files

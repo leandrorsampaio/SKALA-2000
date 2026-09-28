@@ -48,11 +48,21 @@ Command Center's hooks, and any you wrote yourself, stay where they are, and bot
 listen at once. The settings file is copied to `settings.json.skala-backup` before every
 write.
 
+### Status line
+
+Your plan's usage limits, the five-hour window and the week, reach a local program only
+through Claude Code's status line. **Settings ▸ Claude Code status line** installs one: it
+posts the status line's JSON to the same socket, and prints the line the app answers with,
+for example `Opus 1M · ctx 37% · 5h 6% · week 72%`. Panel E shows both windows. They are
+there on Pro and Max plans once a session has had its first answer, and update while a
+session runs. A status line someone else configured is never replaced. Like any status
+line, it makes Claude Code drop most of its footer's keyboard hints.
+
 ### Settings
 
 Paint (grey-green, ivory, graphite), lamp designators, sound and volume, buzzer muted, the
-scripted day (a demo in a data folder of its own), open at login, the hooks, and the data
-folder. Day and night follow the Mac's Light and Dark appearance. Reduce Motion stops what
+scripted day (a demo in a data folder of its own), open at login, the hooks, the status
+line, and the data folder. Day and night follow the Mac's Light and Dark appearance. Reduce Motion stops what
 swings and slows the flash to 1 Hz; Increase Contrast darkens unlit glass.
 
 ## The desk
@@ -62,8 +72,8 @@ swings and slows the flash to 1 Hz; Increase Contrast darkens unlit glass.
 | **A · All sessions** | Four session columns, nine lamp rows (RUN, BUSY, WAIT, DONE, AGENT, BKGD, BLOCK, CMPCT, LOW CTX under 5% of the context left), pencil strips for project names, sessions running and busy, the buzzer and its SILENCED lamp, SILENCE, ACKNOWLEDGE, LAMP TEST, BUZZER TEST |
 | **B · Selected session** | The selector and SELECTED, context remaining, API and tool share of time (the needles drift a point or three now and then, as a moving coil does), token and cost nixies, permission mode, effort, model (Opus 200K and Opus 1M told apart by the session's context window), mode, kind, tier, warnings, drum totals, and the guarded F10–F12 (F12 ends the session after the key, a 2 s hold, and your password or Touch ID) |
 | **C · Control** | F1 open folder, F2 Terminal here, F3 copy the resume command, F4 safety log, F5 show transcript; F6 to F9 have no job yet |
-| **D · Computer controls** | Sleep, monitor off, Keep Awake with the display on (FC1) or off (FC2), battery, power source |
-| **E · Power and service** | MAINS and the power-up sequence, hours in service, the fuses |
+| **D · Computer controls** | Sleep, monitor off, Keep Awake with the display on (FC1) or off (FC2), battery, power source, and MAINS beside it |
+| **E · Power and service** | Your plan's usage: the five-hour window and the week, each on a horizontal edgewise meter, red from 80%, with the time to its reset on nixies, an amber NEAR LIMIT lamp from 80% and a red AT LIMIT from 95%, each beeping once as it comes on; POWER ON and the power-up sequence, hours in service |
 
 A new alarm flashes until ACKNOWLEDGE turns it steady, and goes dark when its cause
 clears. The buzzer speaks once as each state begins: one buzz for DONE, two quick for
@@ -92,7 +102,7 @@ Files: the desk's memory, the safety log and the text log in
 ## Development
 
 ```bash
-swift test                                        # 237 tests, about 30 s
+swift test                                        # 249 tests, about 30 s
 swift format lint --recursive --strict Sources Tests
 scripts/build-app.sh && scripts/bench.sh static   # CPU and memory in one scenario
 ```

@@ -53,6 +53,9 @@ public final class ConsoleModel {
     /// Each slot's session and which of its signalled windows were lit when last looked
     /// at, so that each sounds once as it comes on.
     @ObservationIgnored var heard: [Int: (key: SessionKey, rows: Set<AnnunciatorRow>)] = [:]
+    /// Which quota lamps were lit when last looked at; `nil` until the first reading, which
+    /// is taken as it is, silently.
+    @ObservationIgnored var quotaHeard: Set<InstrumentID>?
     @ObservationIgnored var nextTicket = 1
     @ObservationIgnored var loggedOnce: Set<String> = []
     @ObservationIgnored var issuesLogged: [String: Date] = [:]
@@ -232,6 +235,11 @@ public final class ConsoleModel {
             }
             let intoHour = saved.serviceSeconds.truncatingRemainder(dividingBy: 3600)
             due.append(now.addingTimeInterval(3600 - intoHour))
+            // A reset countdown turns over every minute.
+            if PK4.Quota.allCases.contains(where: { quotaResets($0, now) != nil }) {
+                let intoMinute = now.timeIntervalSince1970.truncatingRemainder(dividingBy: 60)
+                due.append(now.addingTimeInterval(60 - intoMinute))
+            }
         }
         // A deadline already past means "now": the caller should advance at once.
         return due.min()

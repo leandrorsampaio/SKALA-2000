@@ -171,6 +171,26 @@ public enum PK4 {
     public static let powerOn: InstrumentID = "e.poweron"
     public static let hoursInService: InstrumentID = "e.drum.hours"
 
+    /// The plan's two usage windows: the five hours of a session, and the week.
+    public enum Quota: String, CaseIterable, Sendable { case session, week }
+
+    /// How much of the window is used, on a horizontal edgewise meter.
+    public static func quotaMeter(_ quota: Quota) -> InstrumentID {
+        InstrumentID("e.quota.\(quota.rawValue)")
+    }
+    /// Hours and minutes until the window resets.
+    public static func quotaResets(_ quota: Quota) -> InstrumentID {
+        InstrumentID("e.nixie.quota.\(quota.rawValue)")
+    }
+    /// Amber from 80% used.
+    public static func quotaNear(_ quota: Quota) -> InstrumentID {
+        InstrumentID("e.quota.\(quota.rawValue).near")
+    }
+    /// Red from 95% used.
+    public static func quotaLimit(_ quota: Quota) -> InstrumentID {
+        InstrumentID("e.quota.\(quota.rawValue).limit")
+    }
+
     // MARK: Groups
 
     public static let routine: [InstrumentID] = (1...9).map(function)
@@ -193,6 +213,8 @@ public enum PK4 {
         // The column beside the token rows: six tubes each, so all six line up with COST.
         queueDepth: "000000", toolCalls: "000000", lastTurn: "0000:00",
         turnMessages: "000000", uptime: "0000:00", cost: "0000.00",
+        // Hours and minutes to a reset: under five for a session, up to 168 for a week.
+        quotaResets(.session): "00:00", quotaResets(.week): "000:00",
     ]
 
     /// Top to bottom as the desk is drawn, for the power-up strike. Readouts on the same
@@ -208,6 +230,8 @@ public enum PK4 {
         [cacheWritten, cost],
         [sessionsRunning, sessionsBusy],
         [targetB],
+        [quotaResets(.session)],
+        [quotaResets(.week)],
     ]
 
     /// Every lamp window and lens on the desk, which is what LAMP TEST lights.
@@ -226,6 +250,7 @@ public enum PK4 {
         lamps += Warning.allCases.map(warning)
         lamps += round.flatMap { [lensOn($0), lensOff($0)] }
         lamps += [onMains, onBattery, charging, batteryLow, powerOn]
+        lamps += Quota.allCases.flatMap { [quotaNear($0), quotaLimit($0)] }
         return lamps
     }
 

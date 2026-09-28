@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.0
+
+Your plan's usage on the desk.
+
+- **Panel E shows the plan's two usage windows**, the five hours and the week, each on a
+  horizontal edgewise meter, the battery's scale turned on its side and red from 80%.
+  Beside each, the hours and minutes to its reset on nixies, an amber NEAR LIMIT lamp
+  from 80% and a red AT LIMIT from 95%, each beeping once as it comes on. A window that
+  resets goes dark until it is heard of again.
+- **A status line brings them.** Only Claude Code's status line is told these figures, so
+  Settings ▸ Claude Code status line installs one: it posts its JSON to the app's socket
+  and prints the line the app answers, the model, the context used and both windows. One
+  someone else configured is never replaced. Claude Code does not tell a status line the
+  per-model weekly limits, credits or spend limits; those stay on claude.ai.
+- **MAINS moves to panel D**, beside the power source it switches. POWER ON and HOURS IN
+  SERVICE take panel E's bottom row, and the fuses, which did nothing, are gone. Panel B's
+  two plates reserved for the quotas now just say RESERVED.
+- The scripted day reports a plan's usage too, so the demo shows panel E at work.
+
 ## 0.2.0
 
 The desk as its owner asked for it after the first day at it.

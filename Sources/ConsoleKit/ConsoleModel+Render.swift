@@ -101,6 +101,15 @@ extension ConsoleModel {
             out[PK4.sessionsBusy] = NixieFormat.digits(busy.count, width: 1)
         }
 
+        // Panel E: how long until each plan window resets, while one is known.
+        for quota in PK4.Quota.allCases {
+            if let left = quotaResets(quota, now) {
+                // Minutes rounded up, as a countdown reads: 01:10 until under 69 minutes.
+                out[PK4.quotaResets(quota)] = NixieFormat.hoursMinutes(
+                    (left / 60).rounded(.up) * 60, leading: quota == .session ? 2 : 3)
+            }
+        }
+
         let panelB: [InstrumentID] = [
             PK4.contextUsed, PK4.inputTokens, PK4.outputTokens, PK4.thinkingTokens,
             PK4.cacheRead, PK4.cacheWritten, PK4.queueDepth, PK4.toolCalls, PK4.lastTurn,
@@ -188,6 +197,9 @@ extension ConsoleModel {
 
         let battery = machine[.batteryFraction].flatMap { $0.isFresh(at: now) ? $0 : nil }
         out[PK4.batteryMeter] = min(1, max(0, battery?.value.amount ?? 0))
+        for quota in PK4.Quota.allCases {
+            out[PK4.quotaMeter(quota)] = quotaUsed(quota, now) ?? Needle.leftStop
+        }
         return out
     }
 
@@ -217,6 +229,12 @@ extension ConsoleModel {
             let state = alarms.state(id)
             if state != .off { out[id] = state }
         }
+        for quota in PK4.Quota.allCases {
+            let used = quotaUsed(quota, now) ?? 0
+            light(PK4.quotaNear(quota), used >= ConsoleTiming.quotaNear)
+            light(PK4.quotaLimit(quota), used >= ConsoleTiming.quotaLimit)
+        }
+
         // Signals go unheard: SILENCE's mode is on, or the buzzer is muted in Settings.
         light(PK4.silenced, silenceMode || saved.buzzerMuted)
 

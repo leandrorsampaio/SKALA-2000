@@ -56,6 +56,8 @@ public final class ArtSet: @unchecked Sendable {
     public private(set) var needle: Sprite?
     public private(set) var meterGlass: [InstrumentID: Sprite] = [:]
     public private(set) var pointer: Sprite?
+    /// The plan usage meters' pointer, the same for both.
+    public private(set) var horizontalPointer: Sprite?
     public private(set) var knob: Sprite?
     public private(set) var knobHighlight: Sprite?
     public private(set) var lever: Sprite?
@@ -105,6 +107,7 @@ public final class ArtSet: @unchecked Sendable {
         drumStrip = sprites["drumStrip"]
         needle = sprites["needle"]
         pointer = sprites["pointer"]
+        horizontalPointer = sprites["hPointer"]
         knob = sprites["knob"]
         knobHighlight = sprites["knobHighlight"]
         lever = sprites["lever"]
@@ -444,7 +447,11 @@ public final class ArtSet: @unchecked Sendable {
         job("pointer", CGRect(x: 10, y: -7, width: 32, height: 14)) { pen in
             SpritePainters.pointer(pen)
         }
-        for element in DeskLayout.all("edgeDial") where !element.id.isEmpty {
+        job("hPointer", CGRect(x: -7, y: 10, width: 14, height: 22)) { pen in
+            SpritePainters.horizontalPointer(pen)
+        }
+        for element in DeskLayout.all("edgeDial") + DeskLayout.all("hEdgeDial")
+        where !element.id.isEmpty {
             let dial = element.rect
             job("meterGlass:\(element.id)", dial, origin: dial.origin) { pen in
                 SpritePainters.meterGlass(pen, size: dial.size, radius: 3)

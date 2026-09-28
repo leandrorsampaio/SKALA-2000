@@ -363,7 +363,7 @@ extension DeskDirector {
         case .wait: .buzzTwice
         case .compact: .buzzThrice
         case .block: .buzzLong
-        case .lowContext: .beep
+        case .lowContext, .quota: .beep
         }
     }
 }

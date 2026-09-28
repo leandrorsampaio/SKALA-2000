@@ -133,6 +133,17 @@ final class ConsoleHost {
         server.refused = { reason in
             Log.hooks("refused \(reason)")
         }
+        // The status line: the plan's usage windows go to the desk, the line back to
+        // Claude Code. The rest of what the status line is told is dropped here.
+        server.statusline = { [weak self] body in
+            let readings = ClaudeStatusline.readings(from: body, at: Date())
+            if !readings.isEmpty {
+                DispatchQueue.main.async { [weak self] in
+                    MainActor.assumeIsolated { self?.console?.ingest(readings) }
+                }
+            }
+            return ClaudeStatusline.line(from: body)
+        }
         do {
             try server.start()
             hooks = server

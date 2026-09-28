@@ -405,6 +405,17 @@ enum SpritePainters {
         pen.stroke(path, rgb(0x111111), width: 1)
     }
 
+    /// A plan usage meter's red pointer, pointing up at x = 0, its tip 12 below the dial's top.
+    static func horizontalPointer(_ pen: Pen) {
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: 0, y: 12))
+        path.addLine(to: CGPoint(x: -5, y: 30))
+        path.addLine(to: CGPoint(x: 5, y: 30))
+        path.closeSubpath()
+        pen.fill(path, rgb(0xC8321F))
+        pen.stroke(path, rgb(0x111111), width: 1)
+    }
+
     // MARK: - Toggle
 
     /// The MAINS lever, up, in the plate's 72 × 140 frame.

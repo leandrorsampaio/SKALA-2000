@@ -19,6 +19,8 @@ public final class HookServer: @unchecked Sendable {
 
     public static let header = "X-SKALA-Client"
     public static let path = "/v1/events/claude"
+    /// Where Claude Code's status line command posts its JSON, and reads back its line.
+    public static let statuslinePath = "/v1/statusline"
     public static let maximumBody = 8 * 1024 * 1024
 
     public enum Failure: Error, Equatable, CustomStringConvertible {
@@ -49,6 +51,8 @@ public final class HookServer: @unchecked Sendable {
     private let slots = DispatchSemaphore(value: 16)
     /// Told when a request is refused, with the reason, for the log.
     public var refused: @Sendable (String) -> Void = { _ in }
+    /// Takes a status line's JSON and gives the line to show. Runs on the server's queue.
+    public var statusline: @Sendable (Data) -> String = { _ in "" }
 
     public init(socketURL: URL, deliver: @escaping @Sendable (Data) -> Void) {
         self.socketURL = socketURL
@@ -194,13 +198,19 @@ public final class HookServer: @unchecked Sendable {
             return respond(client, 408, "incomplete request")
         }
         let body = buffer.subdata(in: request.bodyStart..<request.bodyStart + request.contentLength)
+        if request.target == Self.statuslinePath {
+            respond(client, 200, nil, body: Data(statusline(body).utf8))
+            return
+        }
         respond(client, 204, nil)
         deliver(body)
     }
 
     static func check(_ head: Request) -> (status: Int, reason: String)? {
         guard head.method == "POST" else { return (405, "method \(head.method)") }
-        guard head.target == path else { return (404, "path \(head.target)") }
+        guard head.target == path || head.target == statuslinePath else {
+            return (404, "path \(head.target)")
+        }
         // Nothing a browser sends is welcome.
         guard head.headers["origin"] == nil else { return (403, "a request with Origin") }
         guard head.headers[header.lowercased()] == "1" else { return (403, "no \(header) header") }
@@ -211,18 +221,21 @@ public final class HookServer: @unchecked Sendable {
         return nil
     }
 
-    private func respond(_ client: Int32, _ status: Int, _ refusal: String?) {
+    private func respond(_ client: Int32, _ status: Int, _ refusal: String?, body: Data = Data()) {
         if let refusal { refused(refusal) }
         let reason =
             [
-                204: "No Content", 400: "Bad Request", 403: "Forbidden", 404: "Not Found",
+                200: "OK", 204: "No Content", 400: "Bad Request", 403: "Forbidden",
+                404: "Not Found",
                 405: "Method Not Allowed", 408: "Request Timeout", 411: "Length Required",
                 413: "Payload Too Large", 431: "Request Header Fields Too Large",
                 503: "Service Unavailable",
             ][status] ?? "Error"
-        let response =
-            "HTTP/1.1 \(status) \(reason)\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        _ = response.withCString { write(client, $0, strlen($0)) }
+        var response = Data(
+            "HTTP/1.1 \(status) \(reason)\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n"
+                .utf8)
+        response.append(body)
+        _ = response.withUnsafeBytes { write(client, $0.baseAddress, $0.count) }
     }
 
     // MARK: - HTTP, as little as curl needs

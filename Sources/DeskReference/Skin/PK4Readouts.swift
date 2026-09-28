@@ -490,6 +490,88 @@ struct MeterGlass: View {
 
 /// A narrow 70 × 220 profile meter, for battery charge: a straight scale, a red pointer
 /// riding beside it and a red sector from 0 to 20.
+/// The vertical edgewise meter turned on its side, for the plan's usage windows: a straight
+/// scale from 0 at the left to 100 at the right, red from 80, and a red pointer that rises
+/// from below and slides along it.
+struct HorizontalEdgewiseMeter: View {
+    var label: String
+    var value: Double
+    var code: String?
+    var id: String = ""
+
+    /// The face, and where on it the scale starts and ends.
+    static let size = CGSize(width: 240, height: 44)
+    static let left: CGFloat = 16
+    static let right: CGFloat = 224
+
+    @Environment(\.pk4) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let size = Self.size
+        let left = Self.left
+        let span = Self.right - Self.left
+        let fraction = min(1, max(0, value))
+        VStack(spacing: 6) {
+            ZStack(alignment: .topLeading) {
+                Canvas { context, _ in
+                    let ink = palette.tagInk
+                    let plate = Path(
+                        roundedRect: CGRect(
+                            x: 1, y: 1, width: size.width - 2, height: size.height - 2),
+                        cornerRadius: 3)
+                    context.fill(plate, with: .color(palette.meterFace))
+                    context.stroke(plate, with: .color(palette.bezel), lineWidth: 2)
+                    context.fill(
+                        Path(CGRect(x: left + span * 0.8, y: 6, width: span * 0.2, height: 5)),
+                        with: .color(Color(hex: 0xC8321F)))
+                    for tick in 0...10 {
+                        let x = left + span * CGFloat(tick) / 10
+                        var path = Path()
+                        path.move(to: CGPoint(x: x, y: 12))
+                        path.addLine(to: CGPoint(x: x, y: 12 + (tick % 5 == 0 ? 15 : 8)))
+                        context.stroke(path, with: .color(ink), lineWidth: tick % 5 == 0 ? 2 : 1)
+                        if tick % 5 == 0 {
+                            context.draw(
+                                Text(String(tick * 10)).font(PK4Type.label(13)).foregroundStyle(
+                                    ink),
+                                at: CGPoint(x: x, y: 35), anchor: .center)
+                        }
+                    }
+                }
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: 12))
+                    path.addLine(to: CGPoint(x: -5, y: 30))
+                    path.addLine(to: CGPoint(x: 5, y: 30))
+                    path.closeSubpath()
+                }
+                .fill(Color(hex: 0xC8321F))
+                .overlay {
+                    Path { path in
+                        path.move(to: CGPoint(x: 0, y: 12))
+                        path.addLine(to: CGPoint(x: -5, y: 30))
+                        path.addLine(to: CGPoint(x: 5, y: 30))
+                        path.closeSubpath()
+                    }
+                    .stroke(Color(hex: 0x111111), lineWidth: 1)
+                }
+                .offset(x: left + span * fraction)
+                .animation(
+                    reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.65),
+                    value: fraction)
+                MeterGlass(width: size.width, height: size.height, radius: 3)
+            }
+            .frame(width: size.width, height: size.height)
+            .mark("hEdgeDial", id)
+            Plate(text: label, style: .bare)
+            if let code { Tag(text: code) }
+        }
+        .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+        .mark("hEdgewise", id)
+        .background { MeterHousing() }
+    }
+}
+
 struct EdgewiseMeter: View {
     var label: String
     var value: Double

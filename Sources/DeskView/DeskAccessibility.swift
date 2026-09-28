@@ -49,11 +49,13 @@ final class DeskAccessibility {
         let rows: [AnnunciatorRow: String] = [
             .run: "Running", .busy: "Busy", .wait: "Waiting for operator", .done: "Turn done",
             .agent: "Agent done", .bkgd: "Background job", .block: "Blocked", .cmpct: "Compacting",
+            .lowctx: "Low context",
         ]
         let groups = [
             "b.perm.": "Permission mode", "b.effort.": "Effort", "b.model.": "Model",
             "b.mode.": "Mode",
             "b.kind.": "Kind", "b.tier.": "Service tier", "b.warn.": "Warnings",
+            "e.quota.session.": "Quota, 5 hours", "e.quota.week.": "Quota, week",
         ]
         for lamp in DeskLayout.all("lamp") where !lamp.id.isEmpty {
             let id = InstrumentID(lamp.id)
@@ -81,6 +83,8 @@ final class DeskAccessibility {
             PK4.toolCalls: "Tool calls", PK4.lastTurn: "Last turn, minutes and seconds",
             PK4.turnMessages: "Turn messages", PK4.uptime: "Session uptime, hours and minutes",
             PK4.cost: "Cost, last checkpoint, dollars",
+            PK4.quotaResets(.session): "Quota, 5 hours, resets in hours and minutes",
+            PK4.quotaResets(.week): "Quota, week, resets in hours and minutes",
         ]
         for nixie in DeskLayout.all("nixie") {
             let id = InstrumentID(nixie.id)
@@ -91,8 +95,12 @@ final class DeskAccessibility {
         let meterLabels: [InstrumentID: String] = [
             PK4.contextMeter: "Context remaining", PK4.apiShareMeter: "API share of time",
             PK4.toolShareMeter: "Tool share of time", PK4.batteryMeter: "Battery",
+            PK4.quotaMeter(.session): "Quota, 5 hours, used",
+            PK4.quotaMeter(.week): "Quota, week, used",
         ]
-        for meter in DeskLayout.all("meter") + DeskLayout.all("edgewise") {
+        for meter in DeskLayout.all("meter") + DeskLayout.all("edgewise")
+            + DeskLayout.all("hEdgewise")
+        {
             let id = InstrumentID(meter.id)
             add(meter.rect, MeterElement(view: view, id: id, label: meterLabels[id] ?? meter.id))
         }

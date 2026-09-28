@@ -528,11 +528,9 @@ private struct PanelB: View {
                         label: "Lines removed", value: s.drum(PK4.linesRemoved), code: "PC4",
                         id: PK4.linesRemoved.rawValue)
                     Spacer()
-                    BlankingPlate(
-                        text: "Reserved · quota 5 h", size: CGSize(width: 200, height: 84))
+                    BlankingPlate(text: "Reserved", size: CGSize(width: 200, height: 84))
                     Spacer()
-                    BlankingPlate(
-                        text: "Reserved · quota week · reset", size: CGSize(width: 200, height: 84))
+                    BlankingPlate(text: "Reserved", size: CGSize(width: 200, height: 84))
                 }
             }
 
@@ -690,7 +688,7 @@ private struct PanelD: View {
             }
             InstructionPlate(
                 text: "Green = on, white = off. Both dark = no answer from the machine")
-            HStack(alignment: .center, spacing: 30) {
+            HStack(alignment: .center, spacing: 22) {
                 EdgewiseMeter(
                     label: "Battery %", value: s.meter(PK4.batteryMeter), code: "PA4",
                     id: PK4.batteryMeter.rawValue
@@ -709,6 +707,8 @@ private struct PanelD: View {
                         window("Batt low", .red, PK4.batteryLow, "HL62")
                     }
                 }
+                // The desk's own supply, beside the Mac's.
+                ToggleSwitch(label: "Mains 220 V\n50 Hz", on: s.mains, code: "SA2")
             }
         }
     }
@@ -740,19 +740,18 @@ private struct PanelE: View {
     @Environment(\.pk4) private var palette
 
     var body: some View {
-        PK4Panel(title: "E · Power and service", spacing: 26) {
+        PK4Panel(title: "E · Power and service", spacing: 10) {
+            quota(.session, "Quota · 5 h", codes: ("PA5", "HG18", "HL80", "HL81"))
+            quota(.week, "Quota · week", codes: ("PA6", "HG19", "HL82", "HL83"))
             HStack(alignment: .center) {
-                HStack(alignment: .center, spacing: 18) {
-                    ToggleSwitch(label: "Mains 220 V 50 Hz", on: s.mains, code: "SA2")
-                    LampWindow(
-                        label: "Power on", color: .green, state: s.lamp(PK4.powerOn), code: "HL58",
-                        id: PK4.powerOn.rawValue
-                    )
-                    .equatable()
-                    .accessibilityElement()
-                    .accessibilityLabel("Power on")
-                    .accessibilityValue(PK4Words.lamp(s.lamp(PK4.powerOn)))
-                }
+                LampWindow(
+                    label: "Power on", color: .green, state: s.lamp(PK4.powerOn), code: "HL58",
+                    id: PK4.powerOn.rawValue
+                )
+                .equatable()
+                .accessibilityElement()
+                .accessibilityLabel("Power on")
+                .accessibilityValue(PK4Words.lamp(s.lamp(PK4.powerOn)))
                 Spacer()
                 DrumCounter(
                     label: "Hours in service", value: s.drum(PK4.hoursInService), unit: "h",
@@ -760,62 +759,49 @@ private struct PanelE: View {
                 Spacer()
                 Labelled(label: "Ground") { GroundBolt() }
             }
-            VStack(spacing: 10) {
-                Plate(text: "Fuses")
-                HStack {
-                    ForEach(
-                        Array(
-                            [
-                                "Mains 4 A", "Lamps 2 A", "Nixie 1 A", "Logic 2 A", "Buzzer 0.5 A",
-                                "Spare",
-                            ].enumerated()), id: \.offset
-                    ) { index, name in
-                        if index > 0 { Spacer() }
-                        Fuse(name: name, code: "FU\(index + 1)")
-                    }
-                }
-            }
-            .accessibilityHidden(true)
+            // Apart from the quotas, and so that panel E keeps its height and A its own.
+            .padding(.top, 9)
         }
     }
-}
 
-/// The six fuse holders. Decorative in this version.
-private struct Fuse: View {
-    var name: String
-    var code: String
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Canvas { context, _ in
-                context.fill(
-                    Path(ellipseIn: CGRect(x: 2, y: 3.5, width: 40, height: 40)),
-                    with: .color(.black.opacity(0.45)))
-                context.fill(
-                    Path(ellipseIn: CGRect(x: 2.5, y: 2.5, width: 39, height: 39)),
-                    with: .color(Color(hex: 0x2B2B28)))
-                context.fill(
-                    Path(ellipseIn: CGRect(x: 9, y: 9, width: 26, height: 26)),
-                    with: .color(Color(hex: 0x151513)))
-                context.stroke(
-                    Path(ellipseIn: CGRect(x: 9, y: 9, width: 26, height: 26)),
-                    with: .color(Color(hex: 0x4A4A45)))
-                context.fill(
-                    Path(ellipseIn: CGRect(x: 13, y: 12, width: 8, height: 8)),
-                    with: .color(.white.opacity(0.22)))
-                context.fill(
-                    Path(roundedRect: CGRect(x: 10, y: 20, width: 24, height: 4), cornerRadius: 1),
-                    with: .color(Color(hex: 0x050505)))
-                context.fill(
-                    Path(CGRect(x: 10, y: 24, width: 24, height: 1)),
-                    with: .color(.white.opacity(0.3)))
+    /// One of the plan's usage windows: how much is used, how long until it resets, and
+    /// the lamps that warn at 80% and 95%.
+    private func quota(
+        _ quota: PK4.Quota, _ label: String, codes: (String, String, String, String)
+    ) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            HorizontalEdgewiseMeter(
+                label: label, value: s.meter(PK4.quotaMeter(quota)), code: codes.0,
+                id: PK4.quotaMeter(quota).rawValue
+            )
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
+            .accessibilityValue(PK4Words.meter(s.meter(PK4.quotaMeter(quota))))
+            Labelled(label: "Resets in", tag: codes.1) {
+                NixieReadout(
+                    template: PK4.nixies[PK4.quotaResets(quota)] ?? "",
+                    value: s.nixie(PK4.quotaResets(quota)), id: PK4.quotaResets(quota).rawValue)
             }
-            .frame(width: 44, height: 44)
-            .mark("fuse", code)
-            Text(name.plate).font(PK4Type.engraved(12)).tracking(1.08)
-                .mark("caption", "", ["text": name])
-            Tag(text: code)
+            // The same width for both, so the two rows line up.
+            .frame(width: 190)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(label), resets in")
+            .accessibilityValue(PK4Words.digits(s.nixie(PK4.quotaResets(quota))))
+            VStack(spacing: 8) {
+                window("Near limit", .amber, PK4.quotaNear(quota), codes.2)
+                window("At limit", .red, PK4.quotaLimit(quota), codes.3)
+            }
         }
+    }
+
+    private func window(
+        _ label: String, _ color: LampColor, _ id: InstrumentID, _ code: String
+    ) -> some View {
+        LampWindow(label: label, color: color, state: s.lamp(id), code: code, id: id.rawValue)
+            .equatable()
+            .accessibilityElement()
+            .accessibilityLabel(label)
+            .accessibilityValue(PK4Words.lamp(s.lamp(id)))
     }
 }
 
