@@ -91,7 +91,6 @@ extension ConsoleModel {
 
         let selected = String(saved.selector)
         out[PK4.selected] = selected
-        out[PK4.targetB] = selected
         out[PK4.targetC] = selected
 
         if let listed = freshRosterKeys(now) {

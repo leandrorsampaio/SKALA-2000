@@ -132,7 +132,6 @@ import Testing
         bench.feed(bench.poll(["a"]))
         #expect(bench.snap.selector == 3)
         #expect(bench.snap.nixie(PK4.selected) == "3")
-        #expect(bench.snap.nixie(PK4.targetB) == "3")
         #expect(bench.snap.nixie(PK4.targetC) == "3")
 
         bench.run(for: 2)

@@ -536,25 +536,10 @@ private struct PanelB: View {
 
             VStack(spacing: 16) {
                 Plate(text: "Disruptive commands")
-                HStack(alignment: .center, spacing: 0) {
-                    VStack(spacing: 20) {
-                        NixieReadout(
-                            label: "Command goes to session", template: "0",
-                            value: s.nixie(PK4.targetB),
-                            labelWidth: 220, code: "HG3", id: PK4.targetB.rawValue
-                        )
-                        .accessibilityHidden(true)
-                        InstructionPlate(
-                            text: "Lift guard, press and hold 2 s. Acts on the selected session")
-                    }
-                    .frame(width: 470)
-                    Spacer()
-                    HStack(alignment: .top, spacing: 36) {
-                        guarded(PK4.f10, "F10", "[Function 10]", keyed: false, code: "SB4")
-                        guarded(PK4.f11, "F11", "[Function 11]", keyed: false, code: "SB5")
-                        guarded(PK4.f12, "F12", "End session", keyed: true, code: "SB6")
-                    }
-                    Spacer()
+                HStack(alignment: .top, spacing: 36) {
+                    guarded(PK4.f10, "F10", "[Function 10]", keyed: false, code: "SB4")
+                    guarded(PK4.f11, "F11", "[Function 11]", keyed: false, code: "SB5")
+                    guarded(PK4.f12, "F12", "End session", keyed: true, code: "SB6")
                 }
             }
         }
@@ -686,8 +671,6 @@ private struct PanelD: View {
                 Spacer()
                 round(PK4.fc2, "FC2", "Awake · display off", codes: ("HL69", "HL70", "SB18"))
             }
-            InstructionPlate(
-                text: "Green = on, white = off. Both dark = no answer from the machine")
             HStack(alignment: .center, spacing: 22) {
                 EdgewiseMeter(
                     label: "Battery %", value: s.meter(PK4.batteryMeter), code: "PA4",
@@ -710,6 +693,8 @@ private struct PanelD: View {
                 // The desk's own supply, beside the Mac's.
                 ToggleSwitch(label: "Mains 220 V\n50 Hz", on: s.mains, code: "SA2")
             }
+            // Well clear of the buttons above: a group of its own.
+            .padding(.top, 30)
         }
     }
 
@@ -740,51 +725,43 @@ private struct PanelE: View {
     @Environment(\.pk4) private var palette
 
     var body: some View {
-        PK4Panel(title: "E · Power and service", spacing: 6) {
-            // The two plan windows side by side, well apart: each its meter, how long until
-            // it resets, and its two warning lamps under them.
-            HStack(alignment: .top, spacing: 0) {
-                quota(.session, "Quota · 5 h", meter: "PA5", lamps: ("HL80", "HL81")) {
-                    Labelled(label: "Resets in", tag: "HG18") {
-                        NixieReadout(
-                            template: PK4.nixies[PK4.sessionResets] ?? "",
-                            value: s.nixie(PK4.sessionResets), unit: "h:min",
-                            id: PK4.sessionResets.rawValue)
-                    }
-                }
-                Spacer()
-                quota(.week, "Quota · week", meter: "PA6", lamps: ("HL82", "HL83")) {
-                    Labelled(label: "Resets in", tag: "HG19") {
-                        HStack(spacing: 14) {
-                            NixieReadout(
-                                template: PK4.nixies[PK4.weekResetDays] ?? "",
-                                value: s.nixie(PK4.weekResetDays), unit: "d",
-                                id: PK4.weekResetDays.rawValue)
-                            NixieReadout(
-                                template: PK4.nixies[PK4.weekResetHours] ?? "",
-                                value: s.nixie(PK4.weekResetHours), unit: "h",
-                                id: PK4.weekResetHours.rawValue)
-                        }
-                    }
+        PK4Panel(title: "E · Power and service", spacing: 18) {
+            quota(.session, "Quota · 5 h", meter: "PA5", lamps: ("HL80", "HL81")) {
+                NixieReadout(
+                    label: "Resets in", template: PK4.nixies[PK4.sessionResets] ?? "",
+                    value: s.nixie(PK4.sessionResets), unit: "h:min", labelWidth: 90,
+                    code: "HG18", id: PK4.sessionResets.rawValue)
+            }
+            // Apart, so the two windows read as two.
+            quota(.week, "Quota · week", meter: "PA6", lamps: ("HL82", "HL83")) {
+                HStack(spacing: 14) {
+                    NixieReadout(
+                        label: "Resets in", template: PK4.nixies[PK4.weekResetDays] ?? "",
+                        value: s.nixie(PK4.weekResetDays), unit: "d", labelWidth: 90,
+                        code: "HG19", unitWidth: 12, id: PK4.weekResetDays.rawValue)
+                    NixieReadout(
+                        template: PK4.nixies[PK4.weekResetHours] ?? "",
+                        value: s.nixie(PK4.weekResetHours), unit: "h", unitWidth: 12,
+                        id: PK4.weekResetHours.rawValue)
                 }
             }
-            // No unit under it: the plate says hours. The point above keeps panel E at its
-            // height, and A at its own.
+            .padding(.top, 18)
+            // Apart from the two windows, its label on the left like theirs.
             DrumCounter(
                 label: "Hours in service", value: s.drum(PK4.hoursInService), code: "PC5",
-                id: PK4.hoursInService.rawValue
+                id: PK4.hoursInService.rawValue, labelLeading: true
             )
-            .padding(.top, 1)
+            .padding(.top, 29)
         }
     }
 
-    /// One of the plan's usage windows, top to bottom: how much is used, how long until it
-    /// resets, and the lamps that warn at 80% and 95%, side by side.
+    /// One of the plan's usage windows, in one row: its meter, and beside it how long until
+    /// it resets, the label on the left, with the lamps that warn at 80% and 95% under it.
     private func quota<Readout: View>(
         _ quota: PK4.Quota, _ label: String, meter: String, lamps: (String, String),
         @ViewBuilder readout: () -> Readout
     ) -> some View {
-        VStack(spacing: 6) {
+        HStack(alignment: .top, spacing: 20) {
             HorizontalEdgewiseMeter(
                 label: label, value: s.meter(PK4.quotaMeter(quota)), code: meter,
                 id: PK4.quotaMeter(quota).rawValue
@@ -792,13 +769,17 @@ private struct PanelE: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(label)
             .accessibilityValue(PK4Words.meter(s.meter(PK4.quotaMeter(quota))))
-            readout()
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(label), resets in")
-            HStack(spacing: 8) {
-                window("Near limit", .amber, PK4.quotaNear(quota), lamps.0)
-                window("At limit", .red, PK4.quotaLimit(quota), lamps.1)
+            VStack(alignment: .leading, spacing: 4) {
+                readout()
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(label), resets in")
+                HStack(spacing: 8) {
+                    window("Near limit", .amber, PK4.quotaNear(quota), lamps.0)
+                    window("At limit", .red, PK4.quotaLimit(quota), lamps.1)
+                }
             }
+            // The same width in both rows, so the two line up.
+            .frame(width: 320, alignment: .leading)
         }
     }
 

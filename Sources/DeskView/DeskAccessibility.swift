@@ -72,7 +72,7 @@ final class DeskAccessibility {
             add(lamp.rect, LampElement(view: view, id: id, label: label))
         }
 
-        // Nixie rows. SELECTED and the panel B copy of the target say what the selector
+        // Nixie rows. SELECTED says what the selector
         // does, so they are left out, as in the reference.
         let nixieLabels: [InstrumentID: String] = [
             PK4.sessionsRunning: "Sessions running", PK4.sessionsBusy: "Sessions busy",

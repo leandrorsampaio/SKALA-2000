@@ -164,18 +164,33 @@ struct DrumCounter: View {
     var unit: String?
     var code: String?
     var id: String = ""
+    /// The plate and tag to the left of the wheels, as the nixie readouts have them, rather
+    /// than under them.
+    var labelLeading = false
 
     @Environment(\.pk4) private var palette
 
     var body: some View {
-        VStack(spacing: 6) {
-            DrumWheels(value: value, digits: digits, id: id)
-            Plate(text: label)
-            if let unit {
-                Text(unit.plate).font(PK4Type.label(13)).tracking(0.78)
-                    .mark("unit", "", ["text": unit])
+        Group {
+            if labelLeading {
+                HStack(spacing: 10) {
+                    VStack(spacing: 6) {
+                        Plate(text: label)
+                        if let code { Tag(text: code) }
+                    }
+                    DrumWheels(value: value, digits: digits, id: id)
+                }
+            } else {
+                VStack(spacing: 6) {
+                    DrumWheels(value: value, digits: digits, id: id)
+                    Plate(text: label)
+                    if let unit {
+                        Text(unit.plate).font(PK4Type.label(13)).tracking(0.78)
+                            .mark("unit", "", ["text": unit])
+                    }
+                    if let code { Tag(text: code) }
+                }
             }
-            if let code { Tag(text: code) }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)

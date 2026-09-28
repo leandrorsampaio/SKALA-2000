@@ -130,7 +130,6 @@ public enum PK4 {
     public static let linesAdded: InstrumentID = "b.drum.added"
     public static let linesRemoved: InstrumentID = "b.drum.removed"
 
-    public static let targetB: InstrumentID = "b.nixie.target"
     /// The guarded keys. F10 and F11 have no job yet; F12, behind its key, ends a session.
     public static let f10: InstrumentID = "b.f10"
     public static let f11: InstrumentID = "b.f11"
@@ -207,7 +206,7 @@ public enum PK4 {
     /// it a string of exactly this length.
     public static let nixies: [InstrumentID: String] = [
         sessionsRunning: "0", sessionsBusy: "0",
-        selected: "0", targetB: "0", targetC: "0",
+        selected: "0", targetC: "0",
         contextUsed: "00000000", inputTokens: "00000000", outputTokens: "00000000",
         thinkingTokens: "00000000", cacheRead: "00000000", cacheWritten: "00000000",
         // The column beside the token rows: six tubes each, so all six line up with COST.
@@ -229,7 +228,6 @@ public enum PK4 {
         [cacheRead, uptime],
         [cacheWritten, cost],
         [sessionsRunning, sessionsBusy],
-        [targetB],
         [sessionResets],
         [weekResetDays, weekResetHours],
     ]

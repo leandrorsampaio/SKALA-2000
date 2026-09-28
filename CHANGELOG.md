@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.2
+
+Panels B, D and E, tidied.
+
+- **Panel E**: each plan window is one row, its meter beside how long until it resets,
+  the label on the readout's left, and its two lamps under the readout. The rows stand
+  apart, and HOURS IN SERVICE sits apart beneath them, its label on the left too.
+- **Panel B**: COMMAND GOES TO SESSION and the instruction under it are gone; the
+  disruptive commands stand alone, centred. The selected slot is still on SELECTED, and
+  on panel C.
+- **Panel D**: the instruction plate is gone, and the battery group stands further from
+  the buttons above it.
+
 ## 0.3.1
 
 Panel E, easier to read.
