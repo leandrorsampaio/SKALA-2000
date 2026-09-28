@@ -189,6 +189,8 @@ final class DeskViewInputTests {
     }
 
     @Test func theSelectorLeansOnItsStopAndSendsNothing() throws {
+        // The lean is motion: whatever this Mac's Reduce Motion says, it is under test here.
+        view.layers.reduceMotion = false
         let rect = try #require(view.hitTable.controls.first { $0.kind == .selector }?.rect)
         view.mouseDown(
             with: event(.leftMouseDown, at: CGPoint(x: rect.midX - 10, y: rect.midY + 30)))
