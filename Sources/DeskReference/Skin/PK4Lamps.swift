@@ -72,7 +72,7 @@ struct LampWindow: View, Equatable {
             ZStack {
                 // The spill a lit bulb throws on the paint: wide, faint, edge-less.
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(glass.on.opacity(palette.spillOpacity))
+                    .fill(glass.spill.opacity(palette.spillOpacity))
                     .padding(-5)
                     .blur(radius: palette.spillRadius / 2)
                     .opacity(level)
@@ -249,7 +249,7 @@ struct LampLens: View, Equatable {
                     .shadow(color: .black.opacity(0.55), radius: 1.5, y: 2)
                     .overlay {
                         // The glow a lit lens spills on the paint.
-                        Circle().fill(glass.on.opacity(palette.spillOpacity))
+                        Circle().fill(glass.spill.opacity(palette.spillOpacity))
                             .padding(-5).blur(radius: palette.spillRadius / 2).opacity(level)
                             .allowsHitTesting(false)
                     }

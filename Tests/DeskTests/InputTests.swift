@@ -56,7 +56,7 @@ struct HitTableTests {
             #expect(ids.contains(id), "\(id) cannot be clicked")
         }
         for slot in PK4.slots { #expect(ids.contains(PK4.pencil(slot: slot))) }
-        #expect(table.controls.contains { $0.kind == .key && $0.id == PK4.f10 })
+        #expect(table.controls.contains { $0.kind == .key && $0.id == PK4.f12 })
     }
 
     @Test func everyPanelFitsTheDesk() {
@@ -73,10 +73,10 @@ struct HitTableTests {
     }
 
     @Test func aClosedGuardTakesTheClickMeantForItsButton() throws {
-        let cap = try #require(table.controls.first { $0.id == PK4.f10 && $0.kind == .button })
+        let cap = try #require(table.controls.first { $0.id == PK4.f12 && $0.kind == .button })
         let point = CGPoint(x: cap.rect.midX, y: cap.rect.midY)
         #expect(table.control(at: point, guardsOpen: [])?.kind == .flap)
-        #expect(table.control(at: point, guardsOpen: [PK4.f10])?.kind == .button)
+        #expect(table.control(at: point, guardsOpen: [PK4.f12])?.kind == .button)
     }
 
     @Test func roundThingsTakeClicksInsideTheirCircle() throws {
@@ -165,17 +165,17 @@ final class DeskViewInputTests {
     }
 
     @Test func clickingAClosedGuardLiftsItAndPressesNothing() {
-        view.mouseDown(with: event(.leftMouseDown, at: center(of: PK4.f10)))
-        #expect(sent == [.guard(PK4.f10, open: true)])
+        view.mouseDown(with: event(.leftMouseDown, at: center(of: PK4.f12)))
+        #expect(sent == [.guard(PK4.f12, open: true)])
     }
 
     @Test func theKeyAndCapAnswerOnlyWithTheGuardUp() {
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f10]
+        s.guardsOpen = [PK4.f12]
         view.apply(s)
-        view.mouseDown(with: event(.leftMouseDown, at: center(of: PK4.f10, .key)))
-        view.mouseDown(with: event(.leftMouseDown, at: center(of: PK4.f10)))
-        #expect(sent == [.key(PK4.f10, armed: true), .press(PK4.f10)])
+        view.mouseDown(with: event(.leftMouseDown, at: center(of: PK4.f12, .key)))
+        view.mouseDown(with: event(.leftMouseDown, at: center(of: PK4.f12)))
+        #expect(sent == [.key(PK4.f12, armed: true), .press(PK4.f12)])
     }
 
     @Test func theSelectorWalksToANumeralOrStepsByHalves() throws {
@@ -246,24 +246,24 @@ final class DeskViewInputTests {
     }
 
     @Test func aClosedGuardsButtonIsNotATabStop() {
-        #expect(!view.focusable.contains { $0.id == PK4.f9 && $0.kind == .button })
-        #expect(view.focusable.contains { $0.id == PK4.f9 && $0.kind == .flap })
+        #expect(!view.focusable.contains { $0.id == PK4.f11 && $0.kind == .button })
+        #expect(view.focusable.contains { $0.id == PK4.f11 && $0.kind == .flap })
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f9]
+        s.guardsOpen = [PK4.f11]
         view.apply(s)
-        #expect(view.focusable.contains { $0.id == PK4.f9 && $0.kind == .button })
+        #expect(view.focusable.contains { $0.id == PK4.f11 && $0.kind == .button })
     }
 
     /// The guard falls over the button that has the keyboard: the focus goes to the flap.
     @Test func aFallingGuardTakesTheFocusWithIt() throws {
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f9]
+        s.guardsOpen = [PK4.f11]
         view.apply(s)
         let cap = try #require(
-            view.hitTable.controls.first { $0.id == PK4.f9 && $0.kind == .button })
+            view.hitTable.controls.first { $0.id == PK4.f11 && $0.kind == .button })
         view.setFocus(cap)
         view.apply(ConsoleSnapshot())
-        #expect(view.keyboardFocus?.id == PK4.f9)
+        #expect(view.keyboardFocus?.id == PK4.f11)
         #expect(view.keyboardFocus?.kind == .flap)
     }
 
@@ -333,8 +333,8 @@ struct AccessibilityTests {
         #expect(value("Total cost") == "27 dollars")
         #expect(value("Permission mode, bypass") == "dark")
         #expect(value("Session selector") == "Session 1")
-        // 65 lamps, 15 nixie rows, 4 meters, 5 drums, 29 controls, the buzzer, the build card.
-        #expect(all.count == 120)
+        // 69 lamps, 15 nixie rows, 4 meters, 5 drums, 31 controls, the buzzer, the build card.
+        #expect(all.count == 126)
         _ = window
     }
 
@@ -361,17 +361,17 @@ struct AccessibilityTests {
         var sent: [ConsoleIntent] = []
         view.send = { sent.append($0) }
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f9]
+        s.guardsOpen = [PK4.f11]
         view.apply(s)
         let f9 = try #require(
-            elements(view).first { $0.accessibilityLabel() == "Function 9, unassigned" })
+            elements(view).first { $0.accessibilityLabel() == "Function 11, unassigned" })
         #expect(f9.accessibilityPerformPress())
-        #expect(sent == [.press(PK4.f9)])
+        #expect(sent == [.press(PK4.f11)])
         // Released about 2.2 s later: waited for, as other suites share the main thread.
         let asked = Date()
         let deadline = asked.addingTimeInterval(10)
         while sent.count < 2, Date() < deadline { try await Task.sleep(for: .milliseconds(50)) }
-        #expect(sent == [.press(PK4.f9), .release(PK4.f9)])
+        #expect(sent == [.press(PK4.f11), .release(PK4.f11)])
         #expect(Date().timeIntervalSince(asked) >= ConsoleTiming.holdToFire)
         _ = window
     }

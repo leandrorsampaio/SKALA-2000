@@ -196,6 +196,7 @@ extension ConsoleModel {
     func reconcile(_ now: Date) {
         fillPencils(now)
         guard power == .live else { return }
+        signalChanges(now)
 
         for condition in alarmConditions(now) {
             guard let change = alarms.set(condition.id, condition.active, at: now) else {
@@ -204,6 +205,14 @@ extension ConsoleModel {
             record(
                 change == .raised ? .alarmRaised : .alarmCleared, at: now,
                 instrument: condition.id, slot: condition.slot, session: condition.session)
+
+            if change == .raised {
+                // WAIT asks twice, quickly; BLOCK and the desk's own alarms once, long.
+                let waiting = condition.slot.map {
+                    condition.id == PK4.annunciator(.wait, slot: $0)
+                }
+                signal(waiting == true ? .wait : .block)
+            }
 
             // BLOCKED writes its reason to the text log by itself: the console has no
             // other way to say what a stuck agent needs.
@@ -215,6 +224,53 @@ extension ConsoleModel {
                 _ = log.text(["S\(slot) NEEDS \(needs)"])
             }
         }
+    }
+
+    /// Signals the moment each slot's DONE, CMPCT and LOW CONTEXT windows come on. A
+    /// session only just seated is taken as it is, silently: it did not just change.
+    func signalChanges(_ now: Date) {
+        for slot in PK4.slots {
+            guard let key = slots.key(in: slot), let state = sessions[key], !state.isStale(at: now)
+            else {
+                heard[slot] = nil
+                continue
+            }
+            var rows: Set<AnnunciatorRow> = []
+            if state.fresh(.turnDone, at: now) != nil { rows.insert(.done) }
+            if state.isCompacting(at: now) { rows.insert(.cmpct) }
+            if isLowOnContext(state, now) { rows.insert(.lowctx) }
+            let before = heard[slot]
+            heard[slot] = (key, rows)
+            guard let before, before.key == key else { continue }
+            for row in AnnunciatorRow.allCases
+            where rows.contains(row) && !before.rows.contains(row) {
+                switch row {
+                case .done: signal(.done)
+                case .cmpct: signal(.compact)
+                case .lowctx: signal(.lowContext)
+                default: break
+                }
+            }
+        }
+    }
+
+    /// Counts a signal for the sound layer, unless SILENCE's mode or the mute holds it.
+    func signal(_ signal: Signal) {
+        guard !silenceMode, !saved.buzzerMuted else { return }
+        cues.signals[signal, default: 0] += 1
+    }
+
+    /// The share of the context window still free, when the session says both figures.
+    func contextLeft(_ state: SessionState, _ now: Date) -> Double? {
+        guard let used = state.count(.contextUsed, at: now),
+            let window = state.count(.contextWindow, at: now), window > 0
+        else { return nil }
+        return min(1, max(0, 1 - Double(used) / Double(window)))
+    }
+
+    /// Under 5% of the context left: LOW CONTEXT lights, and beeps once.
+    func isLowOnContext(_ state: SessionState, _ now: Date) -> Bool {
+        (contextLeft(state, now) ?? 1) < ConsoleTiming.lowContext
     }
 
     struct AlarmCondition {
@@ -320,9 +376,11 @@ extension ConsoleModel {
     }
 
     /// Substring match on the id. Anything else is OTHER; the full id goes to the log.
-    static func modelWindow(_ raw: String?) -> PK4.Model? {
+    /// Opus lights by its context window: 1M when the session reports one, else 200K,
+    /// Opus's standard window.
+    static func modelWindow(_ raw: String?, contextWindow: Int? = nil) -> PK4.Model? {
         guard let id = raw?.lowercased(), !id.isEmpty else { return nil }
-        if id.contains("opus") { return .opus }
+        if id.contains("opus") { return contextWindow == 1_000_000 ? .opus1m : .opus200k }
         if id.contains("sonnet") { return .sonnet }
         if id.contains("haiku") { return .haiku }
         if id.contains("fable") { return .fable }

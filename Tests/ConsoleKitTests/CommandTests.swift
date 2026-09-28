@@ -166,74 +166,74 @@ final class Recorder {
 
     @Test func aClosedGuardCoversTheButton() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f8: recorder.action()]))
-        bench.send(.press(PK4.f8))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: recorder.action()]))
+        bench.send(.press(PK4.f10))
         bench.run(for: 3)
-        bench.send(.release(PK4.f8))
+        bench.send(.release(PK4.f10))
         #expect(recorder.requests.isEmpty)
-        #expect(!bench.snap.button(PK4.f8).capDown)
+        #expect(!bench.snap.button(PK4.f10).capDown)
     }
 
     @Test func releasingAGuardedHoldEarlySendsNothingAndShowsNothing() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f8: recorder.action()]))
-        bench.send(.guard(PK4.f8, open: true))
-        bench.send(.press(PK4.f8))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: recorder.action()]))
+        bench.send(.guard(PK4.f10, open: true))
+        bench.send(.press(PK4.f10))
         bench.run(for: 1.9)
-        #expect(bench.snap.button(PK4.f8).capDown)
-        bench.send(.release(PK4.f8))
+        #expect(bench.snap.button(PK4.f10).capDown)
+        bench.send(.release(PK4.f10))
         bench.run(for: 1)
 
         #expect(recorder.requests.isEmpty)
         #expect(bench.snap.cues.relay == 0)
-        #expect(bench.snap.button(PK4.f8).phase == .idle)
+        #expect(bench.snap.button(PK4.f10).phase == .idle)
         #expect(bench.log.events(.commandSent).isEmpty)
     }
 
     @Test func aTwoSecondHoldPullsTheRelayInAndSends() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f9: recorder.action()]))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f11: recorder.action()]))
         bench.feed(bench.poll(["a"]))
-        bench.send(.guard(PK4.f9, open: true))
-        bench.send(.press(PK4.f9))
+        bench.send(.guard(PK4.f11, open: true))
+        bench.send(.press(PK4.f11))
         bench.run(for: 2)
 
         #expect(bench.snap.cues.relay == 1)
         #expect(recorder.requests.count == 1)
         #expect(recorder.requests.first?.session == "a")
         // The cap is still held down: letting go now changes nothing.
-        #expect(bench.snap.button(PK4.f9).capDown)
-        bench.send(.release(PK4.f9))
-        #expect(bench.snap.button(PK4.f9).phase == .sent)
+        #expect(bench.snap.button(PK4.f11).capDown)
+        bench.send(.release(PK4.f11))
+        #expect(bench.snap.button(PK4.f11).phase == .sent)
 
         // Confirmed: the cap glows for 1.5 s, then the guard falls shut.
         recorder.answer(true)
-        #expect(bench.snap.button(PK4.f9).lamp == .on)
+        #expect(bench.snap.button(PK4.f11).lamp == .on)
         bench.run(for: 1.4)
-        #expect(bench.snap.guardsOpen.contains(PK4.f9))
+        #expect(bench.snap.guardsOpen.contains(PK4.f11))
         bench.run(for: 0.2)
-        #expect(!bench.snap.guardsOpen.contains(PK4.f9))
+        #expect(!bench.snap.guardsOpen.contains(PK4.f11))
         #expect(bench.log.events(.guardLowered).last?.detail == "confirmed")
     }
 
     @Test func f10NeedsItsKeyAndTheKeyNeedsTheGuardOpen() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: recorder.action()]))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f12: recorder.action()]))
 
-        bench.send(.key(PK4.f10, armed: true))
-        #expect(!bench.snap.keysArmed.contains(PK4.f10))
+        bench.send(.key(PK4.f12, armed: true))
+        #expect(!bench.snap.keysArmed.contains(PK4.f12))
 
-        bench.send(.guard(PK4.f10, open: true))
-        bench.send(.press(PK4.f10))
+        bench.send(.guard(PK4.f12, open: true))
+        bench.send(.press(PK4.f12))
         bench.run(for: 2.5)
-        bench.send(.release(PK4.f10))
+        bench.send(.release(PK4.f12))
         // Without the key the button travels, and nothing is sent.
         #expect(recorder.requests.isEmpty)
 
-        bench.send(.key(PK4.f10, armed: true))
-        #expect(bench.snap.keysArmed.contains(PK4.f10))
+        bench.send(.key(PK4.f12, armed: true))
+        #expect(bench.snap.keysArmed.contains(PK4.f12))
         #expect(bench.log.events(.keyArmed).count == 1)
-        bench.send(.press(PK4.f10))
+        bench.send(.press(PK4.f12))
         bench.run(for: 2)
         #expect(recorder.requests.count == 1)
     }
@@ -242,20 +242,20 @@ final class Recorder {
     /// out and nothing is sent.
     @Test func shuttingTheGuardOrTheKeyMidHoldSendsNothing() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: recorder.action()]))
-        bench.send(.guard(PK4.f10, open: true))
-        bench.send(.key(PK4.f10, armed: true))
-        bench.send(.press(PK4.f10))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f12: recorder.action()]))
+        bench.send(.guard(PK4.f12, open: true))
+        bench.send(.key(PK4.f12, armed: true))
+        bench.send(.press(PK4.f12))
         bench.run(for: 1)
-        bench.send(.key(PK4.f10, armed: false))
+        bench.send(.key(PK4.f12, armed: false))
         bench.run(for: 2)
-        bench.send(.release(PK4.f10))
+        bench.send(.release(PK4.f12))
         #expect(recorder.requests.isEmpty)
 
-        bench.send(.key(PK4.f10, armed: true))
-        bench.send(.press(PK4.f10))
+        bench.send(.key(PK4.f12, armed: true))
+        bench.send(.press(PK4.f12))
         bench.run(for: 1)
-        bench.send(.guard(PK4.f10, open: false))
+        bench.send(.guard(PK4.f12, open: false))
         bench.run(for: 2)
         #expect(recorder.requests.isEmpty)
         #expect(bench.snap.cues.relay == 0)
@@ -265,11 +265,11 @@ final class Recorder {
     /// guard falls, and the log says so at that moment, not when the button was pressed.
     @Test func aGuardFallingAfterNoAnswerIsLoggedAsItFalls() throws {
         let slow = CommandAction(timeout: 30) { _, _ in }
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f8: slow]))
-        bench.send(.guard(PK4.f8, open: true))
-        bench.send(.press(PK4.f8))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: slow]))
+        bench.send(.guard(PK4.f10, open: true))
+        bench.send(.press(PK4.f10))
         bench.run(for: 2)
-        bench.send(.release(PK4.f8))
+        bench.send(.release(PK4.f10))
         bench.run(for: 40)
         let noAnswer = try #require(bench.log.events(.commandNoAnswer).last)
         let lowered = try #require(bench.log.events(.guardLowered).last)
@@ -278,11 +278,11 @@ final class Recorder {
 
     @Test func anOpenGuardFallsAfterFiveIdleSeconds() {
         let bench = Bench()
-        bench.send(.guard(PK4.f8, open: true))
+        bench.send(.guard(PK4.f10, open: true))
         bench.run(for: 4.9)
-        #expect(bench.snap.guardsOpen.contains(PK4.f8))
+        #expect(bench.snap.guardsOpen.contains(PK4.f10))
         bench.run(for: 0.2)
-        #expect(!bench.snap.guardsOpen.contains(PK4.f8))
+        #expect(!bench.snap.guardsOpen.contains(PK4.f10))
         #expect(bench.log.events(.guardLifted).count == 1)
         #expect(bench.log.events(.guardLowered).first?.detail == "idle")
     }

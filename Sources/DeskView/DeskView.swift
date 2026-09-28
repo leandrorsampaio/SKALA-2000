@@ -50,6 +50,9 @@ public final class DeskView: NSView {
     var focusFromKeyboard = false
     var pencilField: PencilField?
     lazy var accessibility = DeskAccessibility(view: self)
+    /// The needles' drift: see `Fluctuation`.
+    var driftTimer: Timer?
+    var random = SystemRandomNumberGenerator()
 
     public override init(frame: NSRect) {
         super.init(frame: frame)
@@ -157,6 +160,7 @@ public final class DeskView: NSView {
     public override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         scheduleRender(after: 0)
+        window == nil ? stopDrift() : startDrift()
     }
 
     public override func viewDidChangeEffectiveAppearance() {

@@ -99,8 +99,10 @@ extension ConsoleModel {
 
         switch id {
         case PK4.silence:
-            alarms.silence()
-            record(.alarmSilenced, at: moment, instrument: id)
+            // A mode, on and off: while on, no signal sounds and its lamps burn.
+            silenceMode.toggle()
+            record(
+                .alarmSilenced, at: moment, instrument: id, detail: silenceMode ? "on" : "off")
             confirm(id, at: moment)
         case PK4.acknowledge:
             let acknowledged = alarms.acknowledge()
@@ -297,7 +299,7 @@ extension ConsoleModel {
             slot: saved.selector, session: slots.key(in: saved.selector), detail: reason)
     }
 
-    /// The key sits in the well under F10's guard, so it turns only with the guard up.
+    /// The key sits in the well under F12's guard, so it turns only with the guard up.
     func setKey(_ id: InstrumentID, armed: Bool, at moment: Date) {
         guard PK4.keyed.contains(id), guards[id]?.open == true else { return }
         guards[id]?.touched = moment
@@ -342,9 +344,10 @@ extension ConsoleModel {
         accountService(moment)
         power = .off
         serviceMark = nil
-        // Off silences the buzzer and darkens every instrument. What the board knew goes
-        // with it: on power-up every alarm that is still true is raised again.
+        // Off darkens every instrument. What the board knew goes with it: on power-up every
+        // alarm that is still true is raised, and heard, again.
         alarms.reset()
+        heard = [:]
         testsHeld = []
         testsShowUntil = [:]
         walk = nil

@@ -239,11 +239,13 @@ private struct PanelA: View {
         (.wait, "Waiting for operator", "Wait", .red), (.done, "Turn done", "Done", .green),
         (.agent, "Agent done", "Agent", .white), (.bkgd, "Background job", "Bkgd", .white),
         (.block, "Blocked", "Block", .red), (.cmpct, "Compacting", "Cmpct", .amber),
+        (.lowctx, "Low context", "Low ctx", .red),
     ]
 
     var body: some View {
-        PK4Panel(title: "A · All sessions — annunciator", spacing: 30) {
-            Grid(horizontalSpacing: 8, verticalSpacing: 16) {
+        PK4Panel(title: "A · All sessions — annunciator", spacing: 26) {
+            // 11: nine rows of windows packed as an annunciator is, to leave the buzzer room.
+            Grid(horizontalSpacing: 8, verticalSpacing: 11) {
                 GridRow {
                     Plate(text: "Session", width: 190)
                     ForEach(PK4.slots, id: \.self) { slot in
@@ -266,7 +268,9 @@ private struct PanelA: View {
                             let id = PK4.annunciator(row.0, slot: slot)
                             LampWindow(
                                 label: row.2, color: row.3, state: s.lamp(id),
-                                code: "HL\(index * 4 + slot)", id: id.rawValue
+                                // HL33 on went to panel B first: LOW CONTEXT is HL76 to HL79.
+                                code: "HL\(index < 8 ? index * 4 + slot : 75 + slot)",
+                                id: id.rawValue
                             )
                             .equatable()
                             .accessibilityElement()
@@ -278,7 +282,7 @@ private struct PanelA: View {
             }
             InstructionPlate(
                 text:
-                    "New alarm flashes with buzzer until acknowledged, then burns steady until cause clears"
+                    "New alarm flashes until acknowledged, then burns steady until cause clears. SIL silences every signal"
             )
             HStack(alignment: .top) {
                 NixieReadout(
@@ -298,7 +302,18 @@ private struct PanelA: View {
                 .accessibilityValue(PK4Words.digits(s.nixie(PK4.sessionsBusy)))
             }
             HStack(alignment: .top) {
-                Labelled(label: "Buzzer", tag: "HA1") { BuzzerGrille(sounding: s.buzzer) }
+                VStack(spacing: 14) {
+                    Labelled(label: "Buzzer", tag: "HA1") { BuzzerGrille(sounding: s.buzzer) }
+                    // Burns while an alarm would go unheard: silenced, or muted in Settings.
+                    LampWindow(
+                        label: "Silenced", color: .amber, state: s.lamp(PK4.silenced),
+                        code: "HL75", id: PK4.silenced.rawValue
+                    )
+                    .equatable()
+                    .accessibilityElement()
+                    .accessibilityLabel("Silenced")
+                    .accessibilityValue(PK4Words.lamp(s.lamp(PK4.silenced)))
+                }
                 Spacer()
                 PushButton(
                     id: PK4.silence, cap: "Sil", label: "Silence", face: s.button(PK4.silence),
@@ -379,7 +394,8 @@ private struct PanelB: View {
 
     var body: some View {
         PK4Panel(
-            title: "B · Selected session — instruments", spacing: 30,
+            // 44: the 56 units the context window lamps took, spread over its four gaps.
+            title: "B · Selected session — instruments", spacing: 44,
             padding: EdgeInsets(top: 18, leading: 26, bottom: 18, trailing: 26),
             tightBottom: true
         ) {
@@ -401,13 +417,7 @@ private struct PanelB: View {
                 }
                 VStack(alignment: .leading, spacing: 30) {
                     HStack(alignment: .top, spacing: 36) {
-                        VStack(spacing: 10) {
-                            meter("Context remaining", PK4.contextMeter, red: 0...0.2, code: "PA1")
-                            HStack(spacing: 8) {
-                                window("200K", .white, PK4.window200K, "HL33")
-                                window("1M", .white, PK4.window1M, "HL34")
-                            }
-                        }
+                        meter("Context remaining", PK4.contextMeter, red: 0...0.2, code: "PA1")
                         meter("API share of time", PK4.apiShareMeter, code: "PA2")
                         meter("Tool share of time", PK4.toolShareMeter, code: "PA3")
                     }
@@ -459,7 +469,8 @@ private struct PanelB: View {
                     LampGroup(
                         title: "Model",
                         windows: [
-                            ("Opus", .white, PK4.model(.opus), "HL44"),
+                            ("Opus 200K", .white, PK4.model(.opus200k), "HL44"),
+                            ("Opus 1M", .white, PK4.model(.opus1m), "HL74"),
                             ("Sonnet", .white, PK4.model(.sonnet), "HL45"),
                             ("Haiku", .white, PK4.model(.haiku), "HL46"),
                             ("Fable", .white, PK4.model(.fable), "HL71"),
@@ -541,9 +552,9 @@ private struct PanelB: View {
                     .frame(width: 470)
                     Spacer()
                     HStack(alignment: .top, spacing: 36) {
-                        guarded(PK4.f8, "F8", "[Function 8]", keyed: false, code: "SB4")
-                        guarded(PK4.f9, "F9", "[Function 9]", keyed: false, code: "SB5")
-                        guarded(PK4.f10, "F10", "End session", keyed: true, code: "SB6")
+                        guarded(PK4.f10, "F10", "[Function 10]", keyed: false, code: "SB4")
+                        guarded(PK4.f11, "F11", "[Function 11]", keyed: false, code: "SB5")
+                        guarded(PK4.f12, "F12", "End session", keyed: true, code: "SB6")
                     }
                     Spacer()
                 }
@@ -561,16 +572,6 @@ private struct PanelB: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
         .accessibilityValue(PK4Words.meter(s.meter(id)))
-    }
-
-    private func window(
-        _ label: String, _ color: LampColor, _ id: InstrumentID, _ code: String
-    ) -> some View {
-        LampWindow(label: label, color: color, state: s.lamp(id), code: code, id: id.rawValue)
-            .equatable()
-            .accessibilityElement()
-            .accessibilityLabel(label)
-            .accessibilityValue(PK4Words.lamp(s.lamp(id)))
     }
 
     private func nixie(
@@ -632,7 +633,7 @@ private struct LampGroup: View {
 private struct PanelC: View {
     let s: ConsoleSnapshot
 
-    /// What the routine keys do, on their plates. F6 and F7 keep the placeholder until
+    /// What the routine keys do, on their plates. F6 to F9 keep the placeholder until
     /// they have a job: a key labelled with a promise it cannot keep is worse.
     static let functions: [Int: String] = [
         1: "Open folder", 2: "Terminal here", 3: "Copy resume", 4: "Safety log",
@@ -655,14 +656,12 @@ private struct PanelC: View {
                     GridRow {
                         ForEach(0..<3, id: \.self) { column in
                             let number = row * 3 + column + 1
-                            if number <= 7 {
-                                PushButton(
-                                    id: PK4.function(number), cap: "F\(number)",
-                                    label: Self.functions[number] ?? "[Function \(number)]",
-                                    face: s.button(PK4.function(number)), code: "SB\(7 + number)")
-                            } else {
-                                BlankingPlate(text: "Spare", size: CGSize(width: 112, height: 100))
-                            }
+                            // SB8 to SB14 for F1 to F7; SB15 on went to panel D first.
+                            PushButton(
+                                id: PK4.function(number), cap: "F\(number)",
+                                label: Self.functions[number] ?? "[Function \(number)]",
+                                face: s.button(PK4.function(number)),
+                                code: "SB\(number <= 7 ? 7 + number : 12 + number)")
                         }
                     }
                 }
@@ -681,7 +680,7 @@ private struct PanelD: View {
     var body: some View {
         PK4Panel(title: "D · Computer controls", spacing: 30) {
             HStack(alignment: .top) {
-                round(PK4.sleepMode, "Slp", "Sleep mode", codes: ("HL63", "HL64", "SB15"))
+                round(PK4.sleepMode, "Slp", "Sleep\nmode", codes: ("HL63", "HL64", "SB15"))
                 Spacer()
                 round(PK4.monitorOff, "Mon", "Turn off monitor", codes: ("HL65", "HL66", "SB16"))
                 Spacer()

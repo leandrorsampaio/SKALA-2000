@@ -43,6 +43,20 @@ public enum Finish: String, Codable, Sendable, CaseIterable {
     case greyGreen, ivory, graphite
 }
 
+/// What the desk says when a session's state begins: once, and nothing while silenced.
+public enum Signal: String, CaseIterable, Sendable {
+    /// A turn done: one buzz.
+    case done
+    /// Waiting for the operator: two quick buzzes.
+    case wait
+    /// Compacting: three quick buzzes.
+    case compact
+    /// Blocked, and the desk's own alarms, DATA STALE and BATT LOW: one long buzz.
+    case block
+    /// Under 5% of the context left: a beep, higher than the buzzer and nothing like it.
+    case lowContext
+}
+
 /// One-shot events with nothing to show, for the sound layer. Each counts up when it
 /// happens; a view plays its sound when the number moves. Window changes are not here:
 /// the sound layer hears those by comparing lamps.
@@ -53,6 +67,11 @@ public struct ConsoleCues: Sendable, Equatable {
     public var chirp = 0
     /// PRINT TEXT wrote to the text log and wants its window open.
     public var openLog = 0
+    /// How many of each signal have been given, so none is lost however the desk's
+    /// changes are coalesced before the sound layer hears them.
+    public var signals: [Signal: Int] = [:]
+
+    public func count(_ signal: Signal) -> Int { signals[signal] ?? 0 }
 
     public init() {}
 }
@@ -134,6 +153,8 @@ public enum ConsoleTiming {
     /// Six blinks at 160 ms.
     public static let noAnswerBlink: TimeInterval = 0.96
     public static let holdToFire: TimeInterval = 2
+    /// The share of context left below which LOW CONTEXT lights.
+    public static let lowContext = 0.05
     public static let guardFallsAfter: TimeInterval = 5
     public static let selectorDetent: TimeInterval = 0.11
     public static let powerOnLamp: TimeInterval = 0.25

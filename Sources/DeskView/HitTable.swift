@@ -21,7 +21,7 @@ public struct HitTable: Sendable {
         case flap
         /// Over a lifted flap, where it now stands: a click lets it fall.
         case hinge
-        /// F10's key switch, reachable with the guard up.
+        /// F12's key switch, reachable with the guard up.
         case key
         case selector
         case toggle

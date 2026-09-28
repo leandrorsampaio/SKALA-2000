@@ -11,7 +11,11 @@ import Foundation
 /// | click  | button contact, down and up                            | 18 ms, 2.6 kHz       |
 /// | clunk  | a relay: window change, confirm, detent, key, guard    | 70 ms, 320 Hz        |
 /// | tick   | each drum wheel that moves                             | 10 ms, 1.4 kHz       |
-/// | buzzer | any unacknowledged alarm                               | 420 Hz square, looped|
+/// | buzzer | BUZZER TEST held; the signals below                    | 420 Hz square        |
+/// | beep   | LOW CONTEXT comes on                                   | 150 ms, 1.6 kHz sine |
+///
+/// The signals are the buzzer in patterns: DONE one buzz, WAIT two quick, CMPCT three
+/// quick, BLOCK and the desk's own alarms one long. Each plays once, in turn.
 ///
 /// Pre-rendered once into buffers and played through `AVAudioEngine`. The system mute is
 /// respected by the output itself; nothing about the console's alarms depends on sound.
@@ -20,6 +24,8 @@ public final class DeskSound {
 
     public enum Effect: CaseIterable, Sendable {
         case click, clunk, tick
+        /// The signals.
+        case buzzOnce, buzzTwice, buzzThrice, buzzLong, beep
     }
 
     public var volume: Float = 0.8 {
@@ -56,6 +62,13 @@ public final class DeskSound {
         buffers[.click] = Self.burst(milliseconds: 18, frequency: 2600, gain: 0.5, format: format)
         buffers[.clunk] = Self.burst(milliseconds: 70, frequency: 320, gain: 0.9, format: format)
         buffers[.tick] = Self.burst(milliseconds: 10, frequency: 1400, gain: 0.25, format: format)
+        // A quick buzz is 110 ms on and 90 off; a long one, 1.2 s.
+        let buzz: (Double, Double) = (0.11, 0.09)
+        buffers[.buzzOnce] = Self.pattern([(0.3, 0)], format: format)
+        buffers[.buzzTwice] = Self.pattern([buzz, buzz], format: format)
+        buffers[.buzzThrice] = Self.pattern([buzz, buzz, buzz], format: format)
+        buffers[.buzzLong] = Self.pattern([(1.2, 0)], format: format)
+        buffers[.beep] = Self.beep(format: format)
         buzzerLoop = Self.square(frequency: 420, gain: 0.04, format: format)
 
         // Headphones in or out, a display's speakers gone: the engine stops itself. An
@@ -186,6 +199,57 @@ public final class DeskSound {
         return buffer
     }
 
+    /// How long an effect lasts, for playing signals one after another.
+    public func duration(_ effect: Effect) -> TimeInterval {
+        guard let buffer = buffers[effect] else { return 0 }
+        return Double(buffer.frameLength) / format.sampleRate
+    }
+
+    /// The buzzer's 420 Hz square, switched on and off: `(on, off)` in seconds for each
+    /// buzz. Each edge ramps over 3 ms, as a relay-driven buzzer does, and never clicks.
+    nonisolated static func pattern(
+        _ buzzes: [(on: Double, off: Double)], frequency: Double = 420, gain: Float = 0.05,
+        format: AVAudioFormat
+    ) -> AVAudioPCMBuffer {
+        let rate = format.sampleRate
+        let period = Int((rate / frequency).rounded())
+        let total = buzzes.reduce(0) { $0 + $1.on + $1.off }
+        let count = AVAudioFrameCount((total * rate).rounded())
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: count)!
+        buffer.frameLength = count
+        let samples = buffer.floatChannelData![0]
+        for index in 0..<Int(count) { samples[index] = 0 }
+        let ramp = Int(0.003 * rate)
+        var start = 0
+        for buzz in buzzes {
+            let length = Int((buzz.on * rate).rounded())
+            for index in 0..<length where start + index < Int(count) {
+                let edge = Float(min(index, length - 1 - index, ramp)) / Float(max(ramp, 1))
+                let wave: Float = (index % period) < period / 2 ? gain : -gain
+                samples[start + index] = wave * min(1, edge)
+            }
+            start += length + Int((buzz.off * rate).rounded())
+        }
+        return buffer
+    }
+
+    /// LOW CONTEXT's beep: a pure 1.6 kHz tone for 150 ms, soft at both ends. Higher than
+    /// the buzzer and round where it is harsh, so the two are never taken for each other.
+    nonisolated static func beep(format: AVAudioFormat) -> AVAudioPCMBuffer {
+        let rate = format.sampleRate
+        let count = AVAudioFrameCount(0.15 * rate)
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: count)!
+        buffer.frameLength = count
+        let samples = buffer.floatChannelData![0]
+        let fade = 0.012 * rate
+        for index in 0..<Int(count) {
+            let t = Double(index)
+            let envelope = min(1, t / fade, (Double(count) - t) / fade)
+            samples[index] = Float(0.22 * envelope * sin(2 * .pi * 1600 * t / rate))
+        }
+        return buffer
+    }
+
     /// A whole number of periods, so the loop has no seam: at 44.1 kHz, 420 Hz is exactly
     /// 105 samples.
     nonisolated static func square(
@@ -213,6 +277,8 @@ public final class DeskDirector {
 
     private let sound: DeskSound
     private var previous: ConsoleSnapshot?
+    /// When the last signal queued ends: a new one waits its turn.
+    private var signalsEnd = Date.distantPast
     public var announce: (String) -> Void = { _ in }
     public var openLog: () -> Void = {}
 
@@ -266,6 +332,17 @@ public final class DeskDirector {
         if snapshot.cues.chirp != old.cues.chirp { sound.chirp() }
         if snapshot.cues.openLog != old.cues.openLog { openLog() }
 
+        // Signals, each once, one after the other so none drowns another.
+        var delay = max(0, signalsEnd.timeIntervalSinceNow)
+        for signal in Signal.allCases {
+            let effect = Self.effect(signal)
+            for _ in 0..<max(0, snapshot.cues.count(signal) - old.cues.count(signal)) {
+                sound.play(effect, after: delay)
+                delay += sound.duration(effect) + 0.35
+                signalsEnd = Date().addingTimeInterval(delay)
+            }
+        }
+
         for (id, value) in snapshot.drums {
             let before = String(old.drum(id))
             let after = String(value)
@@ -276,6 +353,18 @@ public final class DeskDirector {
         }
 
         sound.buzzer(snapshot.buzzer)
+    }
+}
+
+extension DeskDirector {
+    nonisolated static func effect(_ signal: Signal) -> DeskSound.Effect {
+        switch signal {
+        case .done: .buzzOnce
+        case .wait: .buzzTwice
+        case .compact: .buzzThrice
+        case .block: .buzzLong
+        case .lowContext: .beep
+        }
     }
 }
 

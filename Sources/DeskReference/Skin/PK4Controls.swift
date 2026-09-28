@@ -146,7 +146,7 @@ struct Cap: View {
                 }
                 .overlay { Bevel(radius: 6, light: down ? 0.3 : 0.65, dark: 0.28) }
                 .shadow(color: .black.opacity(down ? 0 : 0.65), radius: 2, y: 3)
-                .shadow(color: glass.on.opacity(lit ? palette.spillOpacity : 0), radius: 11)
+                .shadow(color: glass.spill.opacity(lit ? palette.spillOpacity : 0), radius: 11)
                 .scaleEffect(down ? 0.89 : 1)
                 .brightness(down ? -0.2 : 0)
                 .overlay {
@@ -556,7 +556,7 @@ struct GuardedButton: View {
     }
 }
 
-/// F10's key switch: it turns 90° to ARMED and stays there until turned back. It sits in
+/// F12's key switch: it turns 90° to ARMED and stays there until turned back. It sits in
 /// the well under the guard, so it turns only with the guard up.
 struct KeySwitch: View {
     var id: InstrumentID

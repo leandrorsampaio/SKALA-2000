@@ -146,7 +146,7 @@ public struct ConsoleCommands {
         self.actions = actions
     }
 
-    /// F1 to F10 are to be defined. The round buttons arrive with the system commands;
+    /// F1 to F12 are to be defined. The round buttons arrive with the system commands;
     /// until then they too answer nothing.
     public static let unassigned = ConsoleCommands()
 

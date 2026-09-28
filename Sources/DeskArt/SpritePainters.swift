@@ -29,7 +29,7 @@ enum SpritePainters {
             pen.ctx.addPath(outside)
             pen.ctx.clip(using: .evenOdd)
             pen.blurred(
-                radius: palette.spillRadius / 2, color: glass.on.opacity(palette.spillOpacity)
+                radius: palette.spillRadius / 2, color: glass.spill.opacity(palette.spillOpacity)
             ) {
                 pen.fill(Pen.rect(rect.insetBy(dx: -5, dy: -5), radius: 4), rgb(0x000000))
             }
@@ -66,8 +66,9 @@ enum SpritePainters {
     static func lensLit(_ pen: Pen, rect: CGRect, color: LampColor, palette: Palette) {
         let glass = palette.glass(color)
         // The glow a lit lens spills on the paint, over the collar as in the reference.
-        pen.blurred(radius: palette.spillRadius / 2, color: glass.on.opacity(palette.spillOpacity))
-        {
+        pen.blurred(
+            radius: palette.spillRadius / 2, color: glass.spill.opacity(palette.spillOpacity)
+        ) {
             pen.fill(Pen.circle(rect.insetBy(dx: -5, dy: -5)), rgb(0x000000))
         }
         let pane = rect.insetBy(dx: 6, dy: 6)
@@ -186,8 +187,8 @@ enum SpritePainters {
     static func capGlow(_ pen: Pen, tone: CapTone, palette: Palette) {
         let glass = glass(tone, palette)
         let face = CGRect(x: 0, y: 0, width: 52, height: 52)
-        // A shadow in the lamp's colour, as the reference casts it; the face covers the rest.
-        pen.shadow(glass.on.opacity(palette.spillOpacity), radius: 11) {
+        // A shadow in the lamp's light, as the reference casts it; the face covers the rest.
+        pen.shadow(glass.spill.opacity(palette.spillOpacity), radius: 11) {
             pen.fill(Pen.rect(face, radius: 6), rgb(0x000000))
         }
         pen.save {
@@ -298,7 +299,7 @@ enum SpritePainters {
         }
     }
 
-    /// F10's key slot, upright; the layer turns it.
+    /// F12's key slot, upright; the layer turns it.
     static func keySlot(_ pen: Pen) {
         pen.fill(CGRect(x: 0, y: 0, width: 4, height: 22), rgb(0x111111))
     }

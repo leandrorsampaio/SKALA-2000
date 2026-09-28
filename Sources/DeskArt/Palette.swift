@@ -76,19 +76,23 @@ public struct Palette: Sendable, Hashable {
         switch color {
         case .red:
             LampGlass(
-                on: rgb(0xC8321F), hot: rgb(0xE8664F), off: pick(0x8E5A50, 0x5F3A33),
+                on: rgb(0xC8321F), hot: rgb(0xE8664F), spill: rgb(0xF4B3A7),
+                off: pick(0x8E5A50, 0x5F3A33),
                 inkOff: rgb(0xF6E8E4), inkOn: rgb(0xFFF3EC), lightInk: true)
         case .green:
             LampGlass(
-                on: rgb(0x25783E), hot: rgb(0x3F9A5A), off: pick(0x55705A, 0x34473A),
+                on: rgb(0x25783E), hot: rgb(0x3F9A5A), spill: rgb(0x9FCDAD),
+                off: pick(0x55705A, 0x34473A),
                 inkOff: rgb(0xE6F0E7), inkOn: rgb(0xF2FFF4), lightInk: true)
         case .amber:
             LampGlass(
-                on: rgb(0xF0B323), hot: rgb(0xFFD36B), off: pick(0xA08A4A, 0x9A8546),
+                on: rgb(0xF0B323), hot: rgb(0xFFD36B), spill: rgb(0xFFE9B5),
+                off: pick(0xA08A4A, 0x9A8546),
                 inkOff: rgb(0x1B1B19), inkOn: rgb(0x4A2F00), lightInk: false)
         case .white:
             LampGlass(
-                on: rgb(0xFFE9A8), hot: rgb(0xFFF8DC), off: pick(0xC2B88F, 0xA39A78),
+                on: rgb(0xFFE9A8), hot: rgb(0xFFF8DC), spill: rgb(0xFFFCEE),
+                off: pick(0xC2B88F, 0xA39A78),
                 inkOff: rgb(0x1B1B19), inkOn: rgb(0x4A3A12), lightInk: false)
         }
     }
@@ -118,6 +122,10 @@ public enum LampColor: String, Sendable, CaseIterable {
 struct LampGlass {
     let on: CGColor
     let hot: CGColor
+    /// The light a lit lamp throws on the paint: its hot colour halfway to white, so the
+    /// paint under it only ever gets lighter. In the glass's own colour, darker than the
+    /// paint in two channels of three, it read as a dark halo.
+    let spill: CGColor
     let off: CGColor
     let inkOff: CGColor
     let inkOn: CGColor

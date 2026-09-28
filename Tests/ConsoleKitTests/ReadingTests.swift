@@ -21,7 +21,8 @@ import Testing
         #expect(bench.lamp(.run, 1) == .off)
         #expect(bench.lamp(.busy, 1) == .off)
         #expect(bench.lamp(PK4.warning(.stale)) == .flash)
-        #expect(bench.snap.buzzer)
+        // The desk's own alarm: one long buzz.
+        #expect(bench.snap.cues.count(.block) == 1)
         // A stale number is never left standing.
         #expect(bench.snap.nixie(PK4.contextUsed) == "        ")
         // The slot is still held: stale is not the same as gone.
@@ -153,8 +154,6 @@ import Testing
                 ])
 
         #expect(abs(bench.snap.meter(PK4.contextMeter) - 0.62) < 1e-9)
-        #expect(bench.lamp(PK4.window1M) == .on)
-        #expect(bench.lamp(PK4.window200K) == .off)
         #expect(bench.snap.nixie(PK4.cacheRead) == "00261000")
         #expect(bench.snap.nixie(PK4.lastTurn) == "0002:05")
         #expect(bench.snap.nixie(PK4.uptime) == "0003:41")
@@ -162,15 +161,16 @@ import Testing
         #expect(bench.snap.meter(PK4.toolShareMeter) == 0.3)
         #expect(bench.lamp(PK4.permission(.auto)) == .on)
         #expect(bench.lamp(PK4.effort(.xhigh)) == .on)
-        #expect(bench.lamp(PK4.model(.opus)) == .on)
+        // Opus with a 1M window: the Opus 1M lamp, not the 200K one.
+        #expect(bench.lamp(PK4.model(.opus1m)) == .on)
+        #expect(bench.lamp(PK4.model(.opus200k)) == .off)
         #expect(bench.lamp(PK4.mode(.normal)) == .on)
         #expect(bench.lamp(PK4.kind(.interactive)) == .on)
         #expect(bench.lamp(PK4.tier(.standard)) == .on)
 
         bench.send(.selectorStep(1))
         #expect(abs(bench.snap.meter(PK4.contextMeter) - 0.245) < 1e-9)
-        #expect(bench.lamp(PK4.window200K) == .on)
-        #expect(bench.lamp(PK4.window1M) == .off)
+        #expect(bench.lamp(PK4.model(.opus1m)) == .off)
         #expect(bench.lamp(PK4.permission(.auto)) == .off)
     }
 

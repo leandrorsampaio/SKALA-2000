@@ -422,7 +422,7 @@ public struct StaticPainter {
         }
     }
 
-    /// F10's key switch body; the slot that turns is a layer.
+    /// F12's key switch body; the slot that turns is a layer.
     func keyPlate(_ rect: CGRect) {
         pen.radial(
             Pen.circle(rect),

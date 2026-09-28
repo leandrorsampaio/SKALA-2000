@@ -48,6 +48,11 @@ public final class ConsoleModel {
     @ObservationIgnored var testsShowUntil: [InstrumentID: Date] = [:]
     @ObservationIgnored var walk: SelectorWalk?
     @ObservationIgnored var cues = ConsoleCues()
+    /// SILENCE pressed, and not yet pressed again: no signal sounds.
+    @ObservationIgnored var silenceMode = false
+    /// Each slot's session and which of its signalled windows were lit when last looked
+    /// at, so that each sounds once as it comes on.
+    @ObservationIgnored var heard: [Int: (key: SessionKey, rows: Set<AnnunciatorRow>)] = [:]
     @ObservationIgnored var nextTicket = 1
     @ObservationIgnored var loggedOnce: Set<String> = []
     @ObservationIgnored var issuesLogged: [String: Date] = [:]

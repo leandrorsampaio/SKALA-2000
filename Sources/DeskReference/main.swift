@@ -277,10 +277,10 @@ MainActor.assumeIsolated {
             let out = URL(fileURLWithPath: arguments.dropFirst().first ?? "renders/states")
             try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
             let (model, clock) = Reference.model(atHour: 1.1)
+            model.send(.guard(PK4.f12, open: true))
             model.send(.guard(PK4.f10, open: true))
-            model.send(.guard(PK4.f8, open: true))
-            model.send(.key(PK4.f10, armed: true))
-            model.send(.press(PK4.f10))
+            model.send(.key(PK4.f12, armed: true))
+            model.send(.press(PK4.f12))
             for _ in 0..<2 { model.send(.selectorStep(1)) }
             clock.advance(by: 0.5)
             model.advance()
@@ -288,7 +288,7 @@ MainActor.assumeIsolated {
             s.pencils[2] = "Review root"
             let image = DeskPrinter.image(s, style: ArtStyle(), scale: 1)!
             try Compare.write(image, out.appendingPathComponent("guards-up.png"))
-            model.send(.release(PK4.f10))
+            model.send(.release(PK4.f12))
             model.send(.mains(false))
             clock.advance(by: 1)
             model.advance()

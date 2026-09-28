@@ -106,6 +106,9 @@ final class DeskLayers {
     private var mainsOn = true
     private var buzzing = false
     private var meterValues: [InstrumentID: Double] = [:]
+
+    /// The reading a meter's needle shows now, if it has been given one.
+    func shownMeter(_ id: InstrumentID) -> Double? { meterValues[id] }
     private var keysArmed: Set<InstrumentID> = []
 
     // Geometry from the layout.

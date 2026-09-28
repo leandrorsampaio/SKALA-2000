@@ -47,11 +47,9 @@ extension ConsoleModel {
                 out.lamps = lamps(now)
                 out.nixies = nixies(now)
             }
-            // LAMP TEST sounds nothing, and BUZZER MUTED silences the buzzer but never the
-            // flash. BUZZER TEST sounds it whatever the rest says: that is what it is for.
-            out.buzzer =
-                (alarms.isSounding && !saved.buzzerMuted && !testing)
-                || isTestShowing(PK4.buzzerTest, now)
+            // The buzzer sounds on its own only for BUZZER TEST, whatever else is set: that
+            // is what it is for. Alarms and states speak in signals, once each.
+            out.buzzer = isTestShowing(PK4.buzzerTest, now)
             return out
         }
     }
@@ -176,12 +174,8 @@ extension ConsoleModel {
         for id in PK4.meters { out[id] = Needle.leftStop }
 
         if case .live(_, let state) = selection(now) {
-            if let used = state.count(.contextUsed, at: now),
-                let window = state.count(.contextWindow, at: now), window > 0
-            {
-                // Room left, not room used: green on a panel has to mean "fine".
-                out[PK4.contextMeter] = min(1, max(0, 1 - Double(used) / Double(window)))
-            }
+            // Room left, not room used: green on a panel has to mean "fine".
+            if let left = contextLeft(state, now) { out[PK4.contextMeter] = left }
             if let total = state.seconds(.totalDuration, at: now), total > 0 {
                 if let api = state.seconds(.apiDuration, at: now) {
                     out[PK4.apiShareMeter] = min(1, max(0, api / total))
@@ -216,28 +210,28 @@ extension ConsoleModel {
             light(PK4.annunciator(.agent, slot: slot), state.fresh(.agentDone, at: now) != nil)
             light(PK4.annunciator(.bkgd, slot: slot), state.isJob(at: now))
             light(PK4.annunciator(.cmpct, slot: slot), state.isCompacting(at: now))
+            light(PK4.annunciator(.lowctx, slot: slot), isLowOnContext(state, now))
         }
 
         for id in PK4.alarmBoard {
             let state = alarms.state(id)
             if state != .off { out[id] = state }
         }
+        // Signals go unheard: SILENCE's mode is on, or the buzzer is muted in Settings.
+        light(PK4.silenced, silenceMode || saved.buzzerMuted)
 
         // Panel B: the selected session's groups. One window per group at most; a value
         // with no window of its own lights OTHER where there is one, and nothing where
         // there is not.
         if case .live(_, let state) = selection(now) {
-            let window = state.count(.contextWindow, at: now)
-            light(PK4.window200K, window == 200_000)
-            light(PK4.window1M, window == 1_000_000)
-
             if let permission = Self.permissionWindow(state.text(.permissionMode, at: now)) {
                 light(PK4.permission(permission), true)
             }
             if let effort = Self.effortWindow(state.text(.effort, at: now)) {
                 light(PK4.effort(effort), true)
             }
-            if let model = Self.modelWindow(state.text(.model, at: now)) {
+            let window = state.count(.contextWindow, at: now)
+            if let model = Self.modelWindow(state.text(.model, at: now), contextWindow: window) {
                 light(PK4.model(model), true)
             }
             if let mode = Self.modeWindow(state.text(.mode, at: now)) {
@@ -301,6 +295,9 @@ extension ConsoleModel {
                     // A test button burns while its test shows.
                     lamp = isTestShowing(id, now) ? .on : .off
                 } else if cycle.phase == .confirmed || cycle.latched {
+                    lamp = .on
+                } else if id == PK4.silence, silenceMode {
+                    // SILENCE burns while its mode is on.
                     lamp = .on
                 }
             }

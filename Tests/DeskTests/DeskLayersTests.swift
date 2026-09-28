@@ -131,9 +131,9 @@ struct DeskLayersTests {
     @Test func theGuardLiftsTo112AndFallsWithTwoBounces() throws {
         let layers = layers()
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f9]
+        s.guardsOpen = [PK4.f11]
         layers.apply(s, animated: true)
-        let g = try #require(layers.guards[PK4.f9])
+        let g = try #require(layers.guards[PK4.f11])
         let lift = try #require(g.flap.animation(forKey: "swing") as? CAKeyframeAnimation)
         #expect(lift.duration == 0.26)
         #expect(lift.values?.count == 3)
@@ -147,9 +147,9 @@ struct DeskLayersTests {
     @Test func theKeyTurnsNinetyDegrees() throws {
         let layers = layers()
         var s = ConsoleSnapshot()
-        s.keysArmed = [PK4.f10]
+        s.keysArmed = [PK4.f12]
         layers.apply(s, animated: true)
-        let key = try #require(layers.keys[PK4.f10])
+        let key = try #require(layers.keys[PK4.f12])
         #expect(abs(angle(key) - 90) < 0.01)
         #expect((key.animation(forKey: "turn") as? CABasicAnimation)?.duration == 0.14)
     }
@@ -236,11 +236,11 @@ struct DeskLayersTests {
         let layers = layers(reduceMotion: true)
         var s = ConsoleSnapshot()
         s.meters[PK4.toolShareMeter] = 0.5
-        s.guardsOpen = [PK4.f8]
+        s.guardsOpen = [PK4.f10]
         s.selector = 2
         layers.apply(s, animated: true)
         #expect(layers.needles[PK4.toolShareMeter]?.animation(forKey: "swing") == nil)
-        #expect(layers.guards[PK4.f8]?.flap.animation(forKey: "swing") == nil)
+        #expect(layers.guards[PK4.f10]?.flap.animation(forKey: "swing") == nil)
         #expect(layers.knob.animation(forKey: "detent") == nil)
     }
 }

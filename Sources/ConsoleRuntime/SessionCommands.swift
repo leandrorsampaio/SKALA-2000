@@ -121,17 +121,17 @@ public struct LiveSessionSystem: SessionSystem {
 ///
 /// The routine keys open things: F1 the session's folder, F2 a Terminal there, F4 the
 /// safety log, F5 the transcript; F3 puts the command that resumes the session on the
-/// clipboard. F10, behind its guard and its key, ends the session with `SIGTERM`, which
+/// clipboard. F12, behind its guard and its key, ends the session with `SIGTERM`, which
 /// Claude Code exits cleanly on and which F3's command undoes.
 ///
-/// F6 to F9 are left unassigned, on purpose. Freezing a session with `SIGSTOP` looked
-/// right for F8 and F9 and is not: a session in a terminal is the terminal's foreground
+/// F6 to F11 are left unassigned, on purpose. Freezing a session with `SIGSTOP` looked
+/// right for F10 and F11 and is not: a session in a terminal is the terminal's foreground
 /// job, so the shell takes the terminal back and `SIGCONT` resumes it in the background,
 /// where it stops again the moment it reads a key. A key that half works is worse than
 /// one that says it does nothing.
 ///
 /// None of them is confirmed by being sent: each reports what it observed afterwards, and
-/// F10 checks first that the pid still belongs to that session.
+/// F12 checks first that the pid still belongs to that session.
 public enum SessionCommands {
 
     public static func actions(
@@ -180,7 +180,7 @@ public enum SessionCommands {
                 NSWorkspace.shared.activateFileViewerSelecting([transcript])
                 reply(true)
             },
-            PK4.f10: process(
+            PK4.f12: process(
                 SIGTERM, details: details, system: system, passwordTimeout: passwordTimeout,
                 asking: { place in
                     place.map { "end the Claude Code session in “\($0)”" }

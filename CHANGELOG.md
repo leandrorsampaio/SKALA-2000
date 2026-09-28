@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.0
+
+The desk as its owner asked for it after the first day at it.
+
+- **Signals instead of a buzzer left sounding.** Each state speaks once as it begins:
+  DONE one buzz, WAIT two quick, CMPCT three quick, BLOCK and the desk's own alarms one
+  long, one after another and never over each other. Windows still flash until
+  ACKNOWLEDGE.
+- **LOW CONTEXT**, a ninth annunciator row: red under 5% of a session's context left,
+  with a beep of its own, a 1.6 kHz sine, higher and rounder than the buzzer.
+- **SILENCE is a mode**, on and off: while on, no signal sounds and its cap burns. A
+  SILENCED lamp under the buzzer burns while it is on, or while the buzzer is muted in
+  Settings.
+- **The model says Opus 200K or Opus 1M**, by the session's context window; the two
+  window lamps under the context meter are gone, and panel B's gaps take up their room.
+- **F8 and F9** replace the spare plates in panel C, with no job yet; the guarded keys
+  are now F10, F11 and F12, and F12, behind its key, ends a session.
+- **The needles drift.** About a fifth of the time each moving-coil needle wanders one to
+  three points off its reading and settles back, each on its own; never one resting on
+  its stop, or where a fresh session starts it, nor with Reduce Motion.
+- **A lit lamp's spill is light.** It was painted in the glass's own colour, darker than
+  the paint, and read as a dark halo; it is now the hot colour halfway to white, so the
+  paint under it only gets lighter.
+- SLEEP MODE's plate breaks over two lines like its neighbours'. The annunciator's rows
+  sit a little closer, to make room.
+
 ## 0.1.2
 
 The rest of the first outside review.

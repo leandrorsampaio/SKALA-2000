@@ -2,12 +2,13 @@ import Foundation
 
 /// The alarm logic shared by WAITING FOR OPERATOR, BLOCKED, BATT LOW and DATA STALE.
 ///
-/// | Event                    | Window                 | Buzzer                              |
+/// | Event                    | Window                 | Sound                               |
 /// | ------------------------ | ---------------------- | ----------------------------------- |
-/// | condition becomes true   | flash                  | sounds                              |
-/// | SILENCE                  | unchanged              | stops until the next new alarm      |
-/// | ACKNOWLEDGE              | every flashing → on    | stops                               |
-/// | condition clears         | off, acked or not      | stops if none left unacknowledged   |
+/// | condition becomes true   | flash                  | its signal, once                    |
+/// | ACKNOWLEDGE              | every flashing → on    | —                                   |
+/// | condition clears         | off, acked or not      | —                                   |
+///
+/// SILENCE is not here: it is a mode of the whole desk's sound, not of the board.
 ///
 /// LAMP TEST is not here: it overrides what every window shows without touching what the
 /// board knows.
@@ -24,15 +25,12 @@ struct AlarmBoard: Equatable {
     }
 
     private(set) var active: [InstrumentID: Entry] = [:]
-    private(set) var silenced = false
 
     /// Sets one condition and says what changed, so the caller can log it.
     mutating func set(_ id: InstrumentID, _ condition: Bool, at moment: Date) -> Change? {
         switch (condition, active[id] != nil) {
         case (true, false):
             active[id] = Entry(raisedAt: moment)
-            // A new alarm is heard even after SILENCE: silence lasts until the next one.
-            silenced = false
             return .raised
         case (false, true):
             active[id] = nil
@@ -40,10 +38,6 @@ struct AlarmBoard: Equatable {
         default:
             return nil
         }
-    }
-
-    mutating func silence() {
-        silenced = true
     }
 
     /// Returns the alarms that were flashing and now burn steady.
@@ -59,7 +53,6 @@ struct AlarmBoard: Equatable {
 
     mutating func reset() {
         active = [:]
-        silenced = false
     }
 
     func state(_ id: InstrumentID) -> LampState {
@@ -68,6 +61,4 @@ struct AlarmBoard: Equatable {
     }
 
     var hasUnacknowledged: Bool { active.values.contains { !$0.acknowledged } }
-
-    var isSounding: Bool { hasUnacknowledged && !silenced }
 }

@@ -59,16 +59,20 @@ swings and slows the flash to 1 Hz; Increase Contrast darkens unlit glass.
 
 | Panel | What it shows |
 | --- | --- |
-| **A · All sessions** | Four session columns, eight lamp rows (RUN, BUSY, WAIT, DONE, AGENT, BKGD, BLOCK, CMPCT), pencil strips for project names, sessions running and busy, the buzzer, SILENCE, ACKNOWLEDGE, LAMP TEST, BUZZER TEST |
-| **B · Selected session** | The selector and SELECTED, context remaining with its 200K/1M lamps, API and tool share of time, token and cost nixies, permission mode, effort, model, mode, kind, tier, warnings, drum totals, and the guarded F8–F10 (F10 ends the session after the key, a 2 s hold, and your password or Touch ID) |
-| **C · Control** | F1 open folder, F2 Terminal here, F3 copy the resume command, F4 safety log, F5 show transcript |
+| **A · All sessions** | Four session columns, nine lamp rows (RUN, BUSY, WAIT, DONE, AGENT, BKGD, BLOCK, CMPCT, LOW CTX under 5% of the context left), pencil strips for project names, sessions running and busy, the buzzer and its SILENCED lamp, SILENCE, ACKNOWLEDGE, LAMP TEST, BUZZER TEST |
+| **B · Selected session** | The selector and SELECTED, context remaining, API and tool share of time (the needles drift a point or three now and then, as a moving coil does), token and cost nixies, permission mode, effort, model (Opus 200K and Opus 1M told apart by the session's context window), mode, kind, tier, warnings, drum totals, and the guarded F10–F12 (F12 ends the session after the key, a 2 s hold, and your password or Touch ID) |
+| **C · Control** | F1 open folder, F2 Terminal here, F3 copy the resume command, F4 safety log, F5 show transcript; F6 to F9 have no job yet |
 | **D · Computer controls** | Sleep, monitor off, Keep Awake with the display on (FC1) or off (FC2), battery, power source |
 | **E · Power and service** | MAINS and the power-up sequence, hours in service, the fuses |
 
-A new alarm flashes and sounds the buzzer; SILENCE stops the buzzer, ACKNOWLEDGE turns
-flashing windows steady, and a window goes dark when its cause clears. A button's lamp
-lights when the machine confirms, never on the press. A source that stops reporting goes
-dark and raises DATA STALE.
+A new alarm flashes until ACKNOWLEDGE turns it steady, and goes dark when its cause
+clears. The buzzer speaks once as each state begins: one buzz for DONE, two quick for
+WAIT, three quick for CMPCT, one long for BLOCK and the desk's own alarms (DATA STALE,
+BATT LOW), and LOW CTX beeps, higher and rounder than the buzzer. SILENCE is a mode:
+pressed, every signal is held back and its cap and the SILENCED lamp burn; pressed again,
+the desk speaks again. Muting the buzzer in Settings does the same for good. A button's
+lamp lights when the machine confirms, never on the press. A source that stops reporting
+goes dark and raises DATA STALE.
 
 ## Privacy and security
 
@@ -88,7 +92,7 @@ Files: the desk's memory, the safety log and the text log in
 ## Development
 
 ```bash
-swift test                                        # 227 tests, about 30 s
+swift test                                        # 237 tests, about 30 s
 swift format lint --recursive --strict Sources Tests
 scripts/build-app.sh && scripts/bench.sh static   # CPU and memory in one scenario
 ```

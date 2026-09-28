@@ -71,7 +71,10 @@ import Testing
     }
 
     @Test func modelWindowsMatchOnTheIdAndIgnoreTheSuffix() {
-        #expect(ConsoleModel.modelWindow("claude-opus-5-5[1m]") == .opus)
+        // Opus by its window: 1M when the session reports one, else its standard 200K.
+        #expect(ConsoleModel.modelWindow("claude-opus-5-5", contextWindow: 1_000_000) == .opus1m)
+        #expect(ConsoleModel.modelWindow("claude-opus-5-5", contextWindow: 200_000) == .opus200k)
+        #expect(ConsoleModel.modelWindow("claude-opus-5-5[1m]") == .opus200k)
         #expect(ConsoleModel.modelWindow("claude-sonnet-5") == .sonnet)
         #expect(ConsoleModel.modelWindow("claude-haiku-4-5-20251001") == .haiku)
         #expect(ConsoleModel.modelWindow("claude-fable-5-1") == .fable)
@@ -79,10 +82,15 @@ import Testing
         #expect(ConsoleModel.modelWindow(nil) == nil)
     }
 
-    @Test func anUnknownWindowSizeLightsNeitherRangeLamp() {
-        let bench = selected { [$0.reading("a", .contextWindow, .count(500_000))] }
-        #expect(bench.lamp(PK4.window200K) == .off)
-        #expect(bench.lamp(PK4.window1M) == .off)
+    @Test func anUnknownWindowSizeIsLoggedAndOpusShowsItsStandardWindow() {
+        let bench = selected {
+            [
+                $0.reading("a", .model, .text("claude-opus-5-5")),
+                $0.reading("a", .contextWindow, .count(500_000)),
+            ]
+        }
+        #expect(bench.lamp(PK4.model(.opus200k)) == .on)
+        #expect(bench.lamp(PK4.model(.opus1m)) == .off)
         #expect(bench.log.events(.sourceError).count == 1)
     }
 

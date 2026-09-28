@@ -17,7 +17,7 @@ import Testing
                 bench.reading("a", .contextUsed, .count(1000)),
                 bench.reading("a", .contextWindow, .count(200_000)),
             ])
-        #expect(bench.snap.buzzer)
+        #expect(bench.snap.cues.count(.wait) == 1)
 
         bench.send(.mains(false))
         #expect(!bench.model.isPowered)

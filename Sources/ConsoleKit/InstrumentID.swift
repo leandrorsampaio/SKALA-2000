@@ -32,7 +32,7 @@ public struct InstrumentID: RawRepresentable, Hashable, Sendable, Codable, Compa
 
 /// One row of the panel A annunciator, top to bottom.
 public enum AnnunciatorRow: String, CaseIterable, Sendable {
-    case run, busy, wait, done, agent, bkgd, block, cmpct
+    case run, busy, wait, done, agent, bkgd, block, cmpct, lowctx
 
     /// Alarm rows flash and sound until acknowledged; the rest are plain on and off.
     public var isAlarm: Bool { self == .wait || self == .block }
@@ -57,6 +57,8 @@ public enum PK4 {
     public static let acknowledge: InstrumentID = "a.ack"
     public static let lampTest: InstrumentID = "a.test"
     public static let buzzerTest: InstrumentID = "a.buzzer.test"
+    /// Under the buzzer: burns while an alarm would not sound, silenced or muted.
+    public static let silenced: InstrumentID = "a.silenced"
     /// Test buttons act while held, on the desk alone, and send nothing anywhere.
     public static let tests: Set<InstrumentID> = [lampTest, buzzerTest]
 
@@ -69,8 +71,6 @@ public enum PK4 {
     public static let contextMeter: InstrumentID = "b.meter.context"
     public static let apiShareMeter: InstrumentID = "b.meter.api"
     public static let toolShareMeter: InstrumentID = "b.meter.tool"
-    public static let window200K: InstrumentID = "b.window.200k"
-    public static let window1M: InstrumentID = "b.window.1m"
 
     public static let contextUsed: InstrumentID = "b.nixie.contextUsed"
     public static let inputTokens: InstrumentID = "b.nixie.input"
@@ -92,7 +92,10 @@ public enum PK4 {
     public enum Effort: String, CaseIterable, Sendable {
         case low, medium, high, xhigh, max, ultracode
     }
-    public enum Model: String, CaseIterable, Sendable { case opus, sonnet, haiku, fable, other }
+    /// Opus by its context window, the one model the desk tells apart that way.
+    public enum Model: String, CaseIterable, Sendable {
+        case opus200k, opus1m, sonnet, haiku, fable, other
+    }
     public enum Mode: String, CaseIterable, Sendable { case normal, other }
     public enum Kind: String, CaseIterable, Sendable { case interactive, detached }
     public enum Tier: String, CaseIterable, Sendable { case standard, other }
@@ -128,9 +131,10 @@ public enum PK4 {
     public static let linesRemoved: InstrumentID = "b.drum.removed"
 
     public static let targetB: InstrumentID = "b.nixie.target"
-    public static let f8: InstrumentID = "b.f8"
-    public static let f9: InstrumentID = "b.f9"
+    /// The guarded keys. F10 and F11 have no job yet; F12, behind its key, ends a session.
     public static let f10: InstrumentID = "b.f10"
+    public static let f11: InstrumentID = "b.f11"
+    public static let f12: InstrumentID = "b.f12"
 
     // MARK: Panel C · control, selected session
 
@@ -169,11 +173,11 @@ public enum PK4 {
 
     // MARK: Groups
 
-    public static let routine: [InstrumentID] = (1...7).map(function)
-    public static let guarded: [InstrumentID] = [f8, f9, f10]
+    public static let routine: [InstrumentID] = (1...9).map(function)
+    public static let guarded: [InstrumentID] = [f10, f11, f12]
     public static let round: [InstrumentID] = [sleepMode, monitorOff, fc1, fc2]
-    /// Only F10 has a key switch.
-    public static let keyed: Set<InstrumentID> = [f10]
+    /// Only F12 has a key switch.
+    public static let keyed: Set<InstrumentID> = [f12]
     public static let alarmBoard: [InstrumentID] =
         slots.flatMap { [annunciator(.wait, slot: $0), annunciator(.block, slot: $0)] }
         + [warning(.stale), batteryLow]
@@ -212,7 +216,7 @@ public enum PK4 {
         for slot in slots {
             lamps += AnnunciatorRow.allCases.map { annunciator($0, slot: slot) }
         }
-        lamps += [window200K, window1M]
+        lamps.append(silenced)
         lamps += Permission.allCases.map(permission)
         lamps += Effort.allCases.map(effort)
         lamps += Model.allCases.map(model)

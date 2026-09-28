@@ -85,12 +85,12 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
             details: { _ in SessionDetails(cwd: "/tmp", pid: 4242, name: "x", isJob: false) },
             system: processes, safetyLog: URL(fileURLWithPath: "/tmp/none"))
 
-        let answer = try await run(actions[PK4.f10], request(PK4.f10, session: "s-1"))
+        let answer = try await run(actions[PK4.f12], request(PK4.f12, session: "s-1"))
         #expect(answer == true)
         #expect(processes.sent.map(\.1) == [SIGTERM])
         #expect(processes.asked == ["end the Claude Code session in “tmp”"])
         // Long enough to type a password in.
-        #expect((actions[PK4.f10]?.timeout ?? 0) > 60)
+        #expect((actions[PK4.f12]?.timeout ?? 0) > 60)
     }
 
     /// A wrong password, or Cancel, ends nothing.
@@ -100,7 +100,7 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
             details: { _ in SessionDetails(cwd: "/tmp", pid: 4242, name: "x", isJob: false) },
             system: processes, safetyLog: URL(fileURLWithPath: "/tmp/none"))
 
-        let answer = try await run(actions[PK4.f10], request(PK4.f10, session: "s-1"))
+        let answer = try await run(actions[PK4.f12], request(PK4.f12, session: "s-1"))
         #expect(answer == false)
         #expect(processes.sent.isEmpty)
     }
@@ -112,7 +112,7 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
             details: { _ in SessionDetails(cwd: "/tmp", pid: 4242, name: "x", isJob: false) },
             system: processes, safetyLog: URL(fileURLWithPath: "/tmp/none"))
 
-        let answer = try await run(actions[PK4.f10], request(PK4.f10, session: "s-1"))
+        let answer = try await run(actions[PK4.f12], request(PK4.f12, session: "s-1"))
         #expect(answer == false)
         #expect(processes.sent.isEmpty)
     }
@@ -126,7 +126,7 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
             system: processes, safetyLog: URL(fileURLWithPath: "/tmp/none"),
             passwordTimeout: 0.1)
 
-        let answer = try await run(actions[PK4.f10], request(PK4.f10, session: "s-1"))
+        let answer = try await run(actions[PK4.f12], request(PK4.f12, session: "s-1"))
         #expect(answer == false)
         #expect(processes.sent.isEmpty)
     }
@@ -138,9 +138,9 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
         let actions = SessionCommands.actions(
             details: { _ in SessionDetails(cwd: nil, pid: 4242, name: name, isJob: false) },
             system: processes, safetyLog: URL(fileURLWithPath: "/tmp/none"))
-        _ = try await run(actions[PK4.f10], request(PK4.f10, session: "s-1"))
+        _ = try await run(actions[PK4.f12], request(PK4.f12, session: "s-1"))
         name = nil
-        _ = try await run(actions[PK4.f10], request(PK4.f10, session: "s-1"))
+        _ = try await run(actions[PK4.f12], request(PK4.f12, session: "s-1"))
         #expect(
             processes.asked == [
                 "end the Claude Code session in “familyhub-3”",
@@ -182,16 +182,18 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
             details: { _ in SessionDetails(cwd: "/tmp", pid: 4242, name: "x", isJob: true) },
             system: processes, safetyLog: URL(fileURLWithPath: "/tmp/none"))
 
-        #expect(try await run(actions[PK4.f10], request(PK4.f10, session: "job")) == false)
-        #expect(try await run(actions[PK4.f10], request(PK4.f10, session: nil)) == false)
+        #expect(try await run(actions[PK4.f12], request(PK4.f12, session: "job")) == false)
+        #expect(try await run(actions[PK4.f12], request(PK4.f12, session: nil)) == false)
         #expect(processes.sent.isEmpty)
     }
 
-    @Test func f6ToF9AreLeftUnassigned() {
+    @Test func f6ToF11AreLeftUnassigned() {
         let actions = SessionCommands.actions(
             details: { _ in nil }, system: FakeProcesses(alive: [], owners: [:]),
             safetyLog: URL(fileURLWithPath: "/tmp/none"))
-        for id in [PK4.function(6), PK4.function(7), PK4.f8, PK4.f9] { #expect(actions[id] == nil) }
+        for id in [6, 7, 8, 9].map(PK4.function) + [PK4.f10, PK4.f11] {
+            #expect(actions[id] == nil)
+        }
     }
 
     /// An id that is not a plain one never becomes a path or a shell word.

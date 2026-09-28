@@ -195,7 +195,7 @@ final class ConsoleHost {
 
     // MARK: - Commands
 
-    /// Everything on the desk that reaches outside it. F6 to F9 stay unassigned; see
+    /// Everything on the desk that reaches outside it. F6 to F11 stay unassigned; see
     /// `SessionCommands` for why.
     ///
     /// A demo reaches no further than Keep Awake, which is harmless and undone by pressing

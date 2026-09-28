@@ -62,21 +62,25 @@ public struct PK4Palette: Sendable {
         case .red:
             LampGlass(
                 on: Color(hex: 0xC8321F), hot: Color(hex: 0xE8664F),
+                spill: Color(hex: 0xF4B3A7),
                 off: pick(0x8E5A50, 0x5F3A33),
                 inkOff: Color(hex: 0xF6E8E4), inkOn: Color(hex: 0xFFF3EC), lightInk: true)
         case .green:
             LampGlass(
                 on: Color(hex: 0x25783E), hot: Color(hex: 0x3F9A5A),
+                spill: Color(hex: 0x9FCDAD),
                 off: pick(0x55705A, 0x34473A),
                 inkOff: Color(hex: 0xE6F0E7), inkOn: Color(hex: 0xF2FFF4), lightInk: true)
         case .amber:
             LampGlass(
                 on: Color(hex: 0xF0B323), hot: Color(hex: 0xFFD36B),
+                spill: Color(hex: 0xFFE9B5),
                 off: pick(0xA08A4A, 0x9A8546),
                 inkOff: Color(hex: 0x1B1B19), inkOn: Color(hex: 0x4A2F00), lightInk: false)
         case .white:
             LampGlass(
                 on: Color(hex: 0xFFE9A8), hot: Color(hex: 0xFFF8DC),
+                spill: Color(hex: 0xFFFCEE),
                 off: pick(0xC2B88F, 0xA39A78),
                 inkOff: Color(hex: 0x1B1B19), inkOn: Color(hex: 0x4A3A12), lightInk: false)
         }
@@ -103,6 +107,9 @@ public enum LampColor: Sendable {
 public struct LampGlass: Sendable {
     public let on: Color
     public let hot: Color
+    /// The light a lit lamp throws on the paint: its hot colour halfway to white, so the
+    /// paint under it only ever gets lighter.
+    public let spill: Color
     public let off: Color
     public let inkOff: Color
     public let inkOn: Color
