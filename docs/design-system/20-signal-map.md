@@ -39,8 +39,8 @@ Slot assignment: a new session takes the lowest free slot and keeps it until it 
 | WARNINGS | PRICE UNKNOWN (red), DATA STALE (red), SUBAGENT ACTIVE, PRE-COMPACT (amber) | `hasUnknownModelCost`, TTL expiry, `isSidechain`, `PreCompact` |
 | TOTAL COST, TOTAL OUTPUT ×1000, LINES ADDED, LINES REMOVED | DrumCounter 6 | console-wide sums, persisted by the app |
 | RESERVED · QUOTA 5 H, QUOTA WEEK · RESET | blanking plates | not available on disk today |
-| F8, F9, F10 + COMMAND GOES TO SESSION | GuardedButton ×3, NixieReadout | disruptive commands, to be named; last row of panel B, acting on the selected session |
-| PRINT TEXT | PushButton, momentary | writes the selected session's strings (name, title, branch, needs, detail) to the app's log view / file |
+| F12 END SESSION | GuardedButton with key | the one disruptive command, alone at the foot of panel B, acting on the selected session |
+| PRINT TO LOG | PushButton, momentary | writes the selected session's strings (name, title, branch, needs, detail) to the app's log view / file |
 
 Unknown enum values light the OTHER window of their group; they never leave a group fully dark.
 

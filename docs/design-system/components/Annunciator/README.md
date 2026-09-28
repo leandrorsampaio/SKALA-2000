@@ -1,6 +1,6 @@
 The alarm board of panel A: one column per session (1 to 4), one row per condition, with the buzzer and the SILENCE, ACKNOWLEDGE and LAMP TEST buttons. It is the only part of the console meant to be read without touching anything.
 
-**Rows, top to bottom:** RUNNING (white), BUSY (green), WAITING FOR OPERATOR (red, alarm), TURN DONE (green), AGENT DONE (white), BACKGROUND JOB (white), BLOCKED (red, alarm), COMPACTING (amber), LOW CONTEXT (red, under 5% of the context left). BATTERY LOW and DATA STALE elsewhere on the console join the same alarm logic.
+**Rows, top to bottom:** RUNNING (white), BUSY (green), WAITING FOR OPERATOR (red, alarm), TURN DONE (green), AGENT DONE (white), BACKGROUND JOB (white), BLOCKED (red, alarm), COMPACTING (amber), LOW CONTEXT (red, under 5% of the context left), REMOTE CONTROL (white, while the session's Remote Control is on: read from the `bridge-session` record in its transcript, which carries the bridge's id while it is on and an empty one once it is turned off; only whether it is on is kept). BATTERY LOW and DATA STALE elsewhere on the console join the same alarm logic.
 
 **Alarm state machine, per window.**
 
@@ -9,7 +9,7 @@ The alarm board of panel A: one column per session (1 to 4), one row per conditi
 | Condition becomes true (alarm row) | `flash` 2 Hz, for as long as it holds | its signal, once: WAIT two quick buzzes, BLOCK one long |
 | ACKNOWLEDGE | panel A's red rows keep flashing; DATA STALE and BATT LOW → `on` | none |
 | Condition clears | `off`, whether acknowledged or not | none |
-| Condition becomes true (non-alarm row) | `on`; LOW CONTEXT, red, `flash` for as long as it holds | DONE one buzz, COMPACTING three quick, LOW CONTEXT a beep; the rest none |
+| Condition becomes true (non-alarm row) | `on`; LOW CONTEXT, red, `flash` for as long as it holds | DONE one buzz, COMPACTING three quick, LOW CONTEXT a beep; the rest, REMOTE CONTROL among them, none |
 | SILENCE | unchanged | a mode: no signal until pressed again, and SILENCED burns |
 | LAMP TEST held | every window and lens on the console `test` | none |
 

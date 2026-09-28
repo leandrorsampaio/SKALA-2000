@@ -1,6 +1,6 @@
 # Notes for the native macOS implementation
 
-**Stack.** Swift, SwiftUI for composition, `Canvas` or Core Animation layers for instruments. One fixed coordinate space 2500 units wide scaled with a single `scaleEffect` / layer transform; never re-lay-out for window size. Lock the aspect ratio (`window.contentAspectRatio`), minimum width 1280. Support full screen on a second display: that is the intended home of the console.
+**Stack.** Swift, SwiftUI for composition, `Canvas` or Core Animation layers for instruments. One fixed coordinate space 3352 units wide scaled with a single `scaleEffect` / layer transform; never re-lay-out for window size. Lock the aspect ratio (`window.contentAspectRatio`), minimum width 1280. Support full screen on a second display: that is the intended home of the console.
 
 **Do not use** `Button`, `Toggle`, `Gauge`, `ProgressView`, SF Symbols, materials/vibrancy, system accent colour, tooltips, context menus, popovers or alerts on the console surface. Preferences live in a normal macOS Settings window, which may look like macOS.
 

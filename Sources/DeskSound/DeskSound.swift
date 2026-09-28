@@ -271,7 +271,7 @@ public final class DeskSound {
 /// Hears the desk change and does what the machine does beyond drawing: a relay for every
 /// window that changes, a clunk per selector detent, a tick per drum wheel, the buzzer
 /// while an alarm is unacknowledged, an announcement when an alarm is raised, and the text
-/// log's window when PRINT TEXT asks for it. Buttons click by themselves; this is
+/// log's window when PRINT TO LOG asks for it. Buttons click by themselves; this is
 /// everything else.
 @MainActor
 public final class DeskDirector {

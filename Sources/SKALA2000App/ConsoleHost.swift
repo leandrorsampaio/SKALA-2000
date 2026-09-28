@@ -46,6 +46,10 @@ final class ConsoleHost {
     @ObservationIgnored var onConsoleChange: () -> Void = {}
 
     @ObservationIgnored let keepAwake = KeepAwake()
+    /// SPEAKERS: the Mac's own speakers, and back.
+    @ObservationIgnored let speakers = SpeakerSwitch()
+    /// The desk's window, for ON TOP, COMPUTER and MINIMIZE. Set by the app once it exists.
+    @ObservationIgnored weak var window: DeskWindowController?
     @ObservationIgnored private var hooks: HookServer?
     /// Why the hook receiver is not listening, if it isn't: for Settings.
     private(set) var hookProblem: String?
@@ -76,6 +80,8 @@ final class ConsoleHost {
                 self.console?.ingest(self.keepAwakeReadings())
             }
         }
+        // Whoever changed the output, the desk or the Mac's own sound menu.
+        speakers.onChange = { [weak self] in self?.deskChanged() }
     }
 
     /// The folder this desk keeps its memory and logs in.
@@ -96,13 +102,17 @@ final class ConsoleHost {
         weak var created: PK4Console?
         let console = PK4Console(
             directory: folder, commands: commands(for: { created }), readsMachine: !demo,
-            extras: { [weak self] in self?.keepAwakeReadings() ?? [] },
+            extras: { [weak self] in
+                guard let self else { return [] }
+                return self.keepAwakeReadings() + self.deskReadings()
+            },
             onPower: { [weak self] on in
                 self?.consolePowered = on
                 self?.updateFeeds()
             })
         created = console
         self.console = console
+        console.loadDetailed = window?.showsLoadPanel ?? false
         updateFeeds()
     }
 
@@ -118,6 +128,7 @@ final class ConsoleHost {
         close()
         hooks?.stop()
         keepAwake.releaseAll()
+        speakers.stop()
     }
 
     // MARK: - Hooks
@@ -186,7 +197,7 @@ final class ConsoleHost {
             if demoFeed == nil {
                 demoFeed = DemoFeed { [weak self] readings in
                     guard let self else { return }
-                    self.console?.ingest(readings + self.keepAwakeReadings())
+                    self.console?.ingest(readings + self.keepAwakeReadings() + self.deskReadings())
                 }
             }
         } else {
@@ -213,16 +224,27 @@ final class ConsoleHost {
 
     // MARK: - Commands
 
-    /// Everything on the desk that reaches outside it. F6 to F11 stay unassigned; see
+    /// Everything on the desk that reaches outside it. F6 and F7 stay unassigned; see
     /// `SessionCommands` for why.
     ///
     /// A demo reaches no further than Keep Awake, which is harmless and undone by pressing
     /// again: its sessions are made up, and a demo that put the Mac to sleep would be a
     /// poor demo. Everything else answers NO ANSWER, which is the truth.
     private func commands(for console: @escaping @MainActor () -> PK4Console?) -> ConsoleCommands {
+        // The desk's own window and the Mac's sound, which a demo may reach too: each is
+        // undone by pressing again.
         var actions: [InstrumentID: CommandAction] = [
             PK4.fc1: keepAwakeAction(.displayOn),
             PK4.fc2: keepAwakeAction(.displayOff),
+            PK4.onTop: windowAction { $0.setOnTop(!$0.isOnTop) },
+            PK4.computer: windowAction { $0.setShowsLoadPanel(!$0.showsLoadPanel) },
+            PK4.minimize: CommandAction { [weak self] _, reply in
+                reply(self?.window?.minimize() ?? false)
+            },
+            PK4.speakers: CommandAction { [weak self] _, reply in
+                guard let self, self.speakers.toggle() else { return reply(false) }
+                DispatchQueue.main.async { [weak self] in self?.deskChanged() }
+            },
         ]
         if !demo {
             actions[PK4.sleepMode] = SystemCommands.sleepMode()
@@ -246,6 +268,39 @@ final class ConsoleHost {
                 reply(false)
             }
         }
+    }
+
+    /// ON TOP and COMPUTER act on the window; its new state is the answer, reported as a
+    /// reading on the next turn of the run loop.
+    private func windowAction(
+        _ change: @escaping @MainActor (DeskWindowController) -> Void
+    ) -> CommandAction {
+        CommandAction { [weak self] _, reply in
+            guard let self, let window = self.window else { return reply(false) }
+            change(window)
+            DispatchQueue.main.async { [weak self] in self?.deskChanged() }
+        }
+    }
+
+    /// What ON TOP, SPEAKERS and COMPUTER show on their lenses.
+    func deskReadings() -> [Reading] {
+        let now = Date()
+        func flag(_ field: Field, _ value: Bool) -> Reading {
+            Reading(.machine, field, .flag(value), at: now, ttl: MachineSource.ttl)
+        }
+        var out = [flag(.builtInSpeakers, speakers.isOnSpeakers)]
+        if let window {
+            out += [flag(.windowOnTop, window.isOnTop), flag(.loadPanelShown, window.showsLoadPanel)]
+        }
+        return out
+    }
+
+    /// The window or the sound changed: the lenses hear at once, and the load source reads
+    /// in full only while panel F can be seen.
+    func deskChanged() {
+        console?.loadDetailed = window?.showsLoadPanel ?? false
+        guard consolePowered else { return }
+        console?.ingest(deskReadings())
     }
 
     /// Which Keep Awake mode is on, for FC1's and FC2's lenses.

@@ -3,7 +3,7 @@ import ConsoleKit
 import DeskArt
 import QuartzCore
 
-/// The desk as a tree of layers in desk units, 2500 × 1800, origin top left.
+/// The desk as a tree of layers in desk units, 3352 × 1800, origin top left.
 ///
 /// The art is drawn once, off the main thread, into an `ArtSet`; this class only places
 /// its images, then moves, swaps and fades them as snapshots arrive. Each apply touches
@@ -122,7 +122,9 @@ final class DeskLayers {
     private let programRect = DeskLayout.all("programText").first?.rect ?? .zero
 
     init() {
-        desk.bounds = CGRect(origin: .zero, size: DeskLayout.size)
+        // The part in view: without panel F until the view is told to show it. The art
+        // behind is the whole desk either way.
+        desk.bounds = CGRect(origin: .zero, size: DeskLayout.compactSize)
         desk.anchorPoint = .zero
         desk.isGeometryFlipped = false
         desk.masksToBounds = true
@@ -130,7 +132,7 @@ final class DeskLayers {
             layer.actions = DeskLayers.noActions
             desk.addSublayer(layer)
         }
-        background.frame = desk.bounds
+        background.frame = CGRect(origin: .zero, size: DeskLayout.size)
         background.contentsGravity = .resize
         background.minificationFilter = .trilinear
         background.isOpaque = true

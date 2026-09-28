@@ -27,6 +27,8 @@ extension ConsoleModel {
     // MARK: - Sessions
 
     func applySession(_ key: SessionKey, _ reading: Reading, now: Date) {
+        // Measured for a seated session: one that has left since is not brought back.
+        if reading.field.isProcessLoad, sessions[key] == nil { return }
         var state = sessions[key] ?? SessionState()
         var reading = reading
         // Two sources report the last compaction: the PostCompact hook at once, and the
@@ -432,7 +434,7 @@ extension ConsoleModel {
     }
 
     /// `max` sits above `xhigh` and has no window of its own: it lights the top of the
-    /// scale rather than leaving the group dark for the whole session. PRINT TEXT writes
+    /// scale rather than leaving the group dark for the whole session. PRINT TO LOG writes
     /// the exact value.
     static func effortWindow(_ raw: String?) -> PK4.Effort? {
         switch raw {
@@ -483,6 +485,21 @@ public struct SessionDetails: Sendable, Equatable {
 }
 
 extension ConsoleModel {
+    /// Each seated session's process, to measure what it costs the Mac. A background job
+    /// has no process of its own, and a session whose process is not known is left out.
+    public func seatedProcesses() -> [SessionKey: Int32] {
+        let now = clock.now
+        var out: [SessionKey: Int32] = [:]
+        for slot in PK4.slots {
+            guard let key = slots.key(in: slot), let state = sessions[key],
+                !state.isJob(at: now), let pid = state.readings[.pid]?.value.count,
+                pid > 0, pid <= Int(Int32.max)
+            else { continue }
+            out[key] = Int32(pid)
+        }
+        return out
+    }
+
     public func details(of key: SessionKey) -> SessionDetails? {
         guard let state = sessions[key] else { return nil }
         let now = clock.now

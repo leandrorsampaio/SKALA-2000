@@ -18,7 +18,8 @@ struct SessionState {
 
     mutating func store(_ reading: Reading) {
         readings[reading.field] = reading
-        lastHeard = max(lastHeard, reading.observedAt)
+        // A process still running says nothing of whether Claude Code still reports on it.
+        if !reading.field.isProcessLoad { lastHeard = max(lastHeard, reading.observedAt) }
     }
 
     mutating func clear(_ fields: [Field]) {
@@ -53,7 +54,8 @@ struct SessionState {
     /// Stale when the newest reading this session has had is no longer believed. Events
     /// that act on arrival carry no lifetime and do not count.
     func isStale(at moment: Date) -> Bool {
-        let newest = readings.values.filter { $0.ttl > 0 }.max { $0.observedAt < $1.observedAt }
+        let newest = readings.values.filter { $0.ttl > 0 && !$0.field.isProcessLoad }
+            .max { $0.observedAt < $1.observedAt }
         guard let newest else { return true }
         return !newest.isFresh(at: moment)
     }

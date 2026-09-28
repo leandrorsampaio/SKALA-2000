@@ -32,7 +32,7 @@ public struct InstrumentID: RawRepresentable, Hashable, Sendable, Codable, Compa
 
 /// One row of the panel A annunciator, top to bottom.
 public enum AnnunciatorRow: String, CaseIterable, Sendable {
-    case run, busy, wait, done, agent, bkgd, block, cmpct, lowctx
+    case run, busy, wait, done, agent, bkgd, block, cmpct, lowctx, remote
 
     /// Alarm rows flash and sound until acknowledged; the rest are plain on and off.
     public var isAlarm: Bool { self == .wait || self == .block }
@@ -130,14 +130,11 @@ public enum PK4 {
     public static let linesAdded: InstrumentID = "b.drum.added"
     public static let linesRemoved: InstrumentID = "b.drum.removed"
 
-    /// The guarded keys. F10 and F11 have no job yet; F12, behind its key, ends a session.
-    public static let f10: InstrumentID = "b.f10"
-    public static let f11: InstrumentID = "b.f11"
+    /// The one guarded key: F12, behind its key, ends a session.
     public static let f12: InstrumentID = "b.f12"
 
     // MARK: Panel C · control, selected session
 
-    public static let targetC: InstrumentID = "c.nixie.target"
 
     public static func function(_ number: Int) -> InstrumentID { InstrumentID("c.f\(number)") }
 
@@ -147,6 +144,14 @@ public enum PK4 {
     public static let monitorOff: InstrumentID = "d.monitor"
     public static let fc1: InstrumentID = "d.fc1"
     public static let fc2: InstrumentID = "d.fc2"
+    /// The desk's window above every other, or not.
+    public static let onTop: InstrumentID = "d.ontop"
+    /// The Mac's own speakers, and back to wherever the sound went before.
+    public static let speakers: InstrumentID = "d.speakers"
+    /// Panel F, the Mac's load, shown or hidden.
+    public static let computer: InstrumentID = "d.computer"
+    /// The desk's window into the Dock. A momentary button, with no lenses.
+    public static let minimize: InstrumentID = "d.minimize"
 
     /// The green ON lens above a round button.
     public static func lensOn(_ button: InstrumentID) -> InstrumentID {
@@ -176,11 +181,13 @@ public enum PK4 {
     public static func quotaMeter(_ quota: Quota) -> InstrumentID {
         InstrumentID("e.quota.\(quota.rawValue)")
     }
-    /// Hours and minutes until the five-hour window resets.
-    public static let sessionResets: InstrumentID = "e.nixie.quota.session"
-    /// Days, and hours past them, until the week resets: two readouts, DD and HH.
-    public static let weekResetDays: InstrumentID = "e.nixie.quota.week.days"
-    public static let weekResetHours: InstrumentID = "e.nixie.quota.week.hours"
+    /// One readout of a reset countdown: DD, HH or MM.
+    public enum ResetPart: String, CaseIterable, Sendable { case days, hours, minutes }
+    /// How long until a window resets, on three readouts, days, hours and minutes, the
+    /// same for the five hours as for the week.
+    public static func quotaReset(_ quota: Quota, _ part: ResetPart) -> InstrumentID {
+        InstrumentID("e.nixie.quota.\(quota.rawValue).\(part.rawValue)")
+    }
     /// Amber from 80% used.
     public static func quotaNear(_ quota: Quota) -> InstrumentID {
         InstrumentID("e.quota.\(quota.rawValue).near")
@@ -190,11 +197,64 @@ public enum PK4 {
         InstrumentID("e.quota.\(quota.rawValue).limit")
     }
 
+    // MARK: Panel F · the Mac
+
+    /// The four moving-coil meters: the processors and the GPU at work, the watts the Mac
+    /// draws, the memory in use.
+    public enum Load: String, CaseIterable, Sendable { case cpu, gpu, power, memory }
+    public static func loadMeter(_ load: Load) -> InstrumentID {
+        InstrumentID("f.meter.\(load.rawValue)")
+    }
+    /// Watts at the end of the POWER meter's scale.
+    public static let powerScale: Double = 100
+
+    /// macOS's thermal state, a lamp for each, at the foot of panel D.
+    public enum Thermal: String, CaseIterable, Sendable { case nominal, fair, serious, critical }
+    public static func thermal(_ state: Thermal) -> InstrumentID {
+        InstrumentID("d.thermal.\(state.rawValue)")
+    }
+    /// Memory pressure, a lamp for each level Activity Monitor colours, under the thermal
+    /// state.
+    public enum Pressure: String, CaseIterable, Sendable { case normal, warning, critical }
+    public static func pressure(_ level: Pressure) -> InstrumentID {
+        InstrumentID("d.pressure.\(level.rawValue)")
+    }
+
+    /// Panel F's tubes: temperatures in °C, fans in rpm, memory in GB, the startup disk's
+    /// room in GB, disk and network traffic in MB a second.
+    public enum Gauge: String, CaseIterable, Sendable {
+        case socTemp, ssdTemp, batteryTemp, fan1, fan2, diskRead, diskWrite
+        case memoryUsed, memoryWired, memoryCompressed, swap, diskFree, networkIn, networkOut
+
+        public var template: String {
+            switch self {
+            case .socTemp, .ssdTemp, .batteryTemp: "000"
+            case .fan1, .fan2, .diskFree: "0000"
+            case .diskRead, .diskWrite, .networkIn, .networkOut: "000.0"
+            case .memoryUsed, .memoryWired, .memoryCompressed, .swap: "00.0"
+            }
+        }
+    }
+    public static func gauge(_ gauge: Gauge) -> InstrumentID {
+        InstrumentID("f.nixie.\(gauge.rawValue)")
+    }
+    /// A seated session's processes: their share of the whole Mac's processors, in %, and
+    /// their memory, in GB.
+    public static func sessionCPU(slot: Int) -> InstrumentID { InstrumentID("f.nixie.cpu.\(slot)") }
+    public static func sessionMemory(slot: Int) -> InstrumentID {
+        InstrumentID("f.nixie.memory.\(slot)")
+    }
+
     // MARK: Groups
 
-    public static let routine: [InstrumentID] = (1...9).map(function)
-    public static let guarded: [InstrumentID] = [f10, f11, f12]
-    public static let round: [InstrumentID] = [sleepMode, monitorOff, fc1, fc2]
+    /// F1, beside PRINT TO LOG on panel B, and F2 to F7 on panel C.
+    public static let routine: [InstrumentID] = (1...7).map(function)
+    public static let guarded: [InstrumentID] = [f12]
+    public static let round: [InstrumentID] = [
+        sleepMode, monitorOff, fc1, fc2, onTop, speakers, computer, minimize,
+    ]
+    /// The round buttons with ON and OFF lenses: every one but MINIMIZE, which has no state.
+    public static let lensed: [InstrumentID] = round.filter { $0 != minimize }
     /// Only F12 has a key switch.
     public static let keyed: Set<InstrumentID> = [f12]
     public static let alarmBoard: [InstrumentID] =
@@ -206,20 +266,22 @@ public enum PK4 {
     /// it a string of exactly this length.
     public static let nixies: [InstrumentID: String] = [
         sessionsRunning: "0", sessionsBusy: "0",
-        selected: "0", targetC: "0",
+        selected: "0",
         contextUsed: "00000000", inputTokens: "00000000", outputTokens: "00000000",
         thinkingTokens: "00000000", cacheRead: "00000000", cacheWritten: "00000000",
         // The column beside the token rows: six tubes each, so all six line up with COST.
         queueDepth: "000000", toolCalls: "000000", lastTurn: "0000:00",
         turnMessages: "000000", uptime: "0000:00", cost: "0000.00",
-        // Hours and minutes to a session's reset; days and hours to the week's.
-        sessionResets: "00:00", weekResetDays: "00", weekResetHours: "00",
-    ]
+    ].merging(
+        // Days, hours and minutes to each window's reset, two tubes each.
+        Quota.allCases.flatMap { quota in ResetPart.allCases.map { (quotaReset(quota, $0), "00") } }
+            + Gauge.allCases.map { (gauge($0), $0.template) }
+            + slots.flatMap { [(sessionCPU(slot: $0), "000"), (sessionMemory(slot: $0), "00.0")] },
+        uniquingKeysWith: { first, _ in first })
 
     /// Top to bottom as the desk is drawn, for the power-up strike. Readouts on the same
     /// line strike together.
     public static let nixieRows: [[InstrumentID]] = [
-        [targetC],
         [selected],
         [contextUsed, queueDepth],
         [inputTokens, toolCalls],
@@ -228,9 +290,15 @@ public enum PK4 {
         [cacheRead, uptime],
         [cacheWritten, cost],
         [sessionsRunning, sessionsBusy],
-        [sessionResets],
-        [weekResetDays, weekResetHours],
-    ]
+    ] + Quota.allCases.map { quota in ResetPart.allCases.map { quotaReset(quota, $0) } }
+        // Panel F, two columns of tubes a line, then the sessions' two rows.
+        + [
+            [gauge(.socTemp), gauge(.memoryUsed)], [gauge(.ssdTemp), gauge(.memoryWired)],
+            [gauge(.batteryTemp), gauge(.memoryCompressed)], [gauge(.fan1), gauge(.swap)],
+            [gauge(.fan2), gauge(.diskFree)], [gauge(.diskRead), gauge(.networkIn)],
+            [gauge(.diskWrite), gauge(.networkOut)],
+            slots.map { sessionCPU(slot: $0) }, slots.map { sessionMemory(slot: $0) },
+        ]
 
     /// Every lamp window and lens on the desk, which is what LAMP TEST lights.
     public static var allLamps: [InstrumentID] {
@@ -246,9 +314,10 @@ public enum PK4 {
         lamps += Kind.allCases.map(kind)
         lamps += Tier.allCases.map(tier)
         lamps += Warning.allCases.map(warning)
-        lamps += round.flatMap { [lensOn($0), lensOff($0)] }
+        lamps += lensed.flatMap { [lensOn($0), lensOff($0)] }
         lamps += [onMains, onBattery, charging, batteryLow]
         lamps += Quota.allCases.flatMap { [quotaNear($0), quotaLimit($0)] }
+        lamps += Thermal.allCases.map(thermal) + Pressure.allCases.map(pressure)
         return lamps
     }
 
@@ -257,4 +326,5 @@ public enum PK4 {
         [silence, acknowledge, lampTest, buzzerTest, printText] + routine + guarded
 
     public static let meters: [InstrumentID] = [contextMeter, apiShareMeter, toolShareMeter]
+    public static let loadMeters: [InstrumentID] = Load.allCases.map(loadMeter)
 }

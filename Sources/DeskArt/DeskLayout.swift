@@ -1,14 +1,16 @@
 import CoreGraphics
 import Foundation
 
-/// Every primitive of the desk and its frame in desk units: 2500 × 1800, origin top left.
+/// Every primitive of the desk and its frame in desk units: 3352 × 1800, origin top left.
 ///
 /// Exported from the reference SwiftUI desk by `swift run DeskReference layout`, never
 /// placed by eye. The painters draw from it and the hit table is built from it, so the two
 /// can't disagree.
 public enum DeskLayout {
 
-    public static let size = CGSize(width: 2500, height: 1800)
+    public static let size = CGSize(width: 3352, height: 1800)
+    /// The desk without panel F, the fourth column: A to D, the width it had before F.
+    public static let compactSize = CGSize(width: 2500, height: 1800)
 
     public struct Element: Sendable, Hashable {
         public let kind: String

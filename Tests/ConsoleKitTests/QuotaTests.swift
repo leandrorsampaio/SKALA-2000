@@ -30,23 +30,30 @@ import Testing
         bench.feed(readings)
     }
 
+    /// The three readouts of a window's countdown, days, hours and minutes.
+    func resets(_ bench: Bench, _ quota: PK4.Quota) -> String {
+        PK4.ResetPart.allCases.map { bench.snap.nixie(PK4.quotaReset(quota, $0)) }
+            .joined(separator: " ")
+    }
+
     @Test func theMetersShowTheShareUsedAndTheTubesTheTimeLeft() {
         let bench = Bench()
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == Needle.leftStop)
-        #expect(bench.snap.nixie(PK4.sessionResets) == "     ")
-        #expect(bench.snap.nixie(PK4.weekResetDays) == "  ")
+        #expect(resets(bench, .session) == "        ")
+        #expect(resets(bench, .week) == "        ")
 
         quota(bench, session: 0.06, week: 0.725)
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == 0.06)
         #expect(bench.snap.meter(PK4.quotaMeter(.week)) == 0.725)
-        #expect(bench.snap.nixie(PK4.sessionResets) == "01:10")
-        // 108 h 30 min, rounded up to 109 hours: 4 days 13 hours.
-        #expect(bench.snap.nixie(PK4.weekResetDays) == "04")
-        #expect(bench.snap.nixie(PK4.weekResetHours) == "13")
+        #expect(resets(bench, .session) == "00 01 10")
+        // 108 h 30 min: 4 days, 12 hours and 30 minutes.
+        #expect(resets(bench, .week) == "04 12 30")
 
-        // A minute on, the countdowns have turned over by themselves.
+        // A minute on, the countdowns have turned over by themselves, rounded up: 68
+        // minutes and 59 seconds read 69 minutes.
         bench.run(for: 61)
-        #expect(bench.snap.nixie(PK4.sessionResets) == "01:09")
+        #expect(resets(bench, .session) == "00 01 09")
+        #expect(resets(bench, .week) == "04 12 29")
     }
 
     /// Past the reset, the old share is wrong: the meter drops to its stop.
@@ -56,7 +63,7 @@ import Testing
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == 0.5)
         bench.run(for: 31)
         #expect(bench.snap.meter(PK4.quotaMeter(.session)) == Needle.leftStop)
-        #expect(bench.snap.nixie(PK4.sessionResets) == "     ")
+        #expect(resets(bench, .session) == "        ")
     }
 
     @Test func amberFromEightyRedFromNinetyFiveEachWithABeep() {
@@ -90,7 +97,7 @@ import Testing
         let relaunched = Bench(saved: bench.store.state)
         #expect(relaunched.snap.meter(PK4.quotaMeter(.session)) == 0.4)
         #expect(relaunched.snap.meter(PK4.quotaMeter(.week)) == 0.7)
-        #expect(relaunched.snap.nixie(PK4.sessionResets) == "01:00")
+        #expect(resets(relaunched, .session) == "00 01 00")
 
         // Launched after the session window reset: only the week comes back.
         var later = bench.store.state

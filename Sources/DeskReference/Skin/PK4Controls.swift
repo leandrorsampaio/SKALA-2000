@@ -285,20 +285,23 @@ struct RoundPushButton: View {
     var face: ButtonFace
     var on: LampState
     var off: LampState
-    var codes: (on: String, off: String, button: String)
+    /// No lens codes: a button with no state to show, such as MINIMIZE, has no lenses.
+    var codes: (on: String?, off: String?, button: String)
 
     @Environment(\.pk4) private var palette
 
     var body: some View {
         VStack(spacing: 10) {
-            HStack(spacing: 16) {
-                Labelled(caption: "On", tag: codes.on) {
-                    LampLens(color: .green, state: on, id: PK4.lensOn(id).rawValue)
-                        .accessibilityHidden(true)
-                }
-                Labelled(caption: "Off", tag: codes.off) {
-                    LampLens(color: .white, state: off, id: PK4.lensOff(id).rawValue)
-                        .accessibilityHidden(true)
+            if let lensOn = codes.on, let lensOff = codes.off {
+                HStack(spacing: 16) {
+                    Labelled(caption: "On", tag: lensOn) {
+                        LampLens(color: .green, state: on, id: PK4.lensOn(id).rawValue)
+                            .accessibilityHidden(true)
+                    }
+                    Labelled(caption: "Off", tag: lensOff) {
+                        LampLens(color: .white, state: off, id: PK4.lensOff(id).rawValue)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
             Labelled(label: label, tag: codes.button, plateWidth: 118) {

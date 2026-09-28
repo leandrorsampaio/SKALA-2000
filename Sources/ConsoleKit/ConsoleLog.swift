@@ -49,12 +49,12 @@ public struct SafetyEntry: Codable, Equatable, Sendable {
 }
 
 /// Where the console writes. The safety log is for what happened; the text log is the
-/// console's only way to show a string, and it opens on PRINT TEXT.
+/// console's only way to show a string, and it opens on PRINT TO LOG.
 @MainActor
 public protocol ConsoleLog: AnyObject {
     func safety(_ entry: SafetyEntry)
     /// Appends lines to the text log. Returns false when they could not be written, so
-    /// PRINT TEXT reports no answer instead of a lamp it has not earned.
+    /// PRINT TO LOG reports no answer instead of a lamp it has not earned.
     func text(_ lines: [String]) -> Bool
 }
 
@@ -62,7 +62,7 @@ public protocol ConsoleLog: AnyObject {
 public final class MemoryConsoleLog: ConsoleLog {
     public private(set) var entries: [SafetyEntry] = []
     public private(set) var lines: [String] = []
-    /// Makes `text` fail, to test PRINT TEXT's no-answer path.
+    /// Makes `text` fail, to test PRINT TO LOG's no-answer path.
     public var textFails = false
 
     public init() {}
@@ -137,7 +137,7 @@ public struct CommandAction {
 }
 
 /// Every button that reaches outside the console. SILENCE, ACKNOWLEDGE, LAMP TEST and
-/// PRINT TEXT are the console's own and are not here.
+/// PRINT TO LOG are the console's own and are not here.
 public struct ConsoleCommands {
 
     public var actions: [InstrumentID: CommandAction]
@@ -164,5 +164,8 @@ public struct ConsoleCommands {
         PK4.monitorOff: .displayAsleep,
         PK4.fc1: .keepAwakeDisplayOn,
         PK4.fc2: .keepAwakeDisplayOff,
+        PK4.onTop: .windowOnTop,
+        PK4.speakers: .builtInSpeakers,
+        PK4.computer: .loadPanelShown,
     ]
 }

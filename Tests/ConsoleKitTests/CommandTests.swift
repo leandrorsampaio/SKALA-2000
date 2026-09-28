@@ -166,57 +166,59 @@ final class Recorder {
 
     @Test func aClosedGuardCoversTheButton() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: recorder.action()]))
-        bench.send(.press(PK4.f10))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f12: recorder.action()]))
+        bench.send(.press(PK4.f12))
         bench.run(for: 3)
-        bench.send(.release(PK4.f10))
+        bench.send(.release(PK4.f12))
         #expect(recorder.requests.isEmpty)
-        #expect(!bench.snap.button(PK4.f10).capDown)
+        #expect(!bench.snap.button(PK4.f12).capDown)
     }
 
     @Test func releasingAGuardedHoldEarlySendsNothingAndShowsNothing() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: recorder.action()]))
-        bench.send(.guard(PK4.f10, open: true))
-        bench.send(.press(PK4.f10))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f12: recorder.action()]))
+        bench.send(.guard(PK4.f12, open: true))
+        bench.send(.key(PK4.f12, armed: true))
+        bench.send(.press(PK4.f12))
         bench.run(for: 1.9)
-        #expect(bench.snap.button(PK4.f10).capDown)
-        bench.send(.release(PK4.f10))
+        #expect(bench.snap.button(PK4.f12).capDown)
+        bench.send(.release(PK4.f12))
         bench.run(for: 1)
 
         #expect(recorder.requests.isEmpty)
         #expect(bench.snap.cues.relay == 0)
-        #expect(bench.snap.button(PK4.f10).phase == .idle)
+        #expect(bench.snap.button(PK4.f12).phase == .idle)
         #expect(bench.log.events(.commandSent).isEmpty)
     }
 
     @Test func aTwoSecondHoldPullsTheRelayInAndSends() {
         let recorder = Recorder()
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f11: recorder.action()]))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f12: recorder.action()]))
         bench.feed(bench.poll(["a"]))
-        bench.send(.guard(PK4.f11, open: true))
-        bench.send(.press(PK4.f11))
+        bench.send(.guard(PK4.f12, open: true))
+        bench.send(.key(PK4.f12, armed: true))
+        bench.send(.press(PK4.f12))
         bench.run(for: 2)
 
         #expect(bench.snap.cues.relay == 1)
         #expect(recorder.requests.count == 1)
         #expect(recorder.requests.first?.session == "a")
         // The cap is still held down: letting go now changes nothing.
-        #expect(bench.snap.button(PK4.f11).capDown)
-        bench.send(.release(PK4.f11))
-        #expect(bench.snap.button(PK4.f11).phase == .sent)
+        #expect(bench.snap.button(PK4.f12).capDown)
+        bench.send(.release(PK4.f12))
+        #expect(bench.snap.button(PK4.f12).phase == .sent)
 
         // Confirmed: the cap glows for 1.5 s, then the guard falls shut.
         recorder.answer(true)
-        #expect(bench.snap.button(PK4.f11).lamp == .on)
+        #expect(bench.snap.button(PK4.f12).lamp == .on)
         bench.run(for: 1.4)
-        #expect(bench.snap.guardsOpen.contains(PK4.f11))
+        #expect(bench.snap.guardsOpen.contains(PK4.f12))
         bench.run(for: 0.2)
-        #expect(!bench.snap.guardsOpen.contains(PK4.f11))
+        #expect(!bench.snap.guardsOpen.contains(PK4.f12))
         #expect(bench.log.events(.guardLowered).last?.detail == "confirmed")
     }
 
-    @Test func f10NeedsItsKeyAndTheKeyNeedsTheGuardOpen() {
+    @Test func f12NeedsItsKeyAndTheKeyNeedsTheGuardOpen() {
         let recorder = Recorder()
         let bench = Bench(commands: ConsoleCommands(actions: [PK4.f12: recorder.action()]))
 
@@ -265,11 +267,12 @@ final class Recorder {
     /// guard falls, and the log says so at that moment, not when the button was pressed.
     @Test func aGuardFallingAfterNoAnswerIsLoggedAsItFalls() throws {
         let slow = CommandAction(timeout: 30) { _, _ in }
-        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f10: slow]))
-        bench.send(.guard(PK4.f10, open: true))
-        bench.send(.press(PK4.f10))
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.f12: slow]))
+        bench.send(.guard(PK4.f12, open: true))
+        bench.send(.key(PK4.f12, armed: true))
+        bench.send(.press(PK4.f12))
         bench.run(for: 2)
-        bench.send(.release(PK4.f10))
+        bench.send(.release(PK4.f12))
         bench.run(for: 40)
         let noAnswer = try #require(bench.log.events(.commandNoAnswer).last)
         let lowered = try #require(bench.log.events(.guardLowered).last)
@@ -278,16 +281,48 @@ final class Recorder {
 
     @Test func anOpenGuardFallsAfterFiveIdleSeconds() {
         let bench = Bench()
-        bench.send(.guard(PK4.f10, open: true))
+        bench.send(.guard(PK4.f12, open: true))
         bench.run(for: 4.9)
-        #expect(bench.snap.guardsOpen.contains(PK4.f10))
+        #expect(bench.snap.guardsOpen.contains(PK4.f12))
         bench.run(for: 0.2)
-        #expect(!bench.snap.guardsOpen.contains(PK4.f10))
+        #expect(!bench.snap.guardsOpen.contains(PK4.f12))
         #expect(bench.log.events(.guardLifted).count == 1)
         #expect(bench.log.events(.guardLowered).first?.detail == "idle")
     }
 
     // MARK: - Round buttons
+
+    /// ON TOP, SPEAKERS and COMPUTER show on their lenses what the window and the sound
+    /// report, and a press is confirmed only by that report changing.
+    @Test func theWindowAndSoundButtonsFollowWhatIsReported() {
+        let recorder = Recorder()
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.onTop: recorder.action()]))
+        bench.feed([
+            bench.machine(.windowOnTop, .flag(false)), bench.machine(.builtInSpeakers, .flag(true)),
+            bench.machine(.loadPanelShown, .flag(false)),
+        ])
+        #expect(bench.lamp(PK4.lensOff(PK4.onTop)) == .on)
+        #expect(bench.lamp(PK4.lensOn(PK4.speakers)) == .on)
+        #expect(bench.lamp(PK4.lensOff(PK4.computer)) == .on)
+
+        bench.tap(PK4.onTop)
+        recorder.answer(true)
+        #expect(bench.snap.button(PK4.onTop).phase == .sent)
+        bench.feed([bench.machine(.windowOnTop, .flag(true))])
+        #expect(bench.snap.button(PK4.onTop).phase == .confirmed)
+        #expect(bench.lamp(PK4.lensOn(PK4.onTop)) == .on)
+    }
+
+    /// MINIMIZE has no state to show: its own answer confirms it, and it has no lenses.
+    @Test func minimizeIsAMomentaryRoundButton() {
+        let recorder = Recorder()
+        let bench = Bench(commands: ConsoleCommands(actions: [PK4.minimize: recorder.action()]))
+        bench.tap(PK4.minimize)
+        recorder.answer(true)
+        #expect(bench.snap.button(PK4.minimize).phase == .confirmed)
+        #expect(!PK4.lensed.contains(PK4.minimize))
+        #expect(!PK4.allLamps.contains(PK4.lensOn(PK4.minimize)))
+    }
 
     @Test func aRoundButtonConfirmsOnlyOnTheObservedState() {
         let recorder = Recorder()

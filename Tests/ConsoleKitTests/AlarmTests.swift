@@ -78,6 +78,18 @@ import Testing
         #expect(bench.snap.cues.count(.lowContext) == 1)
     }
 
+    /// REMOTE burns while the session's Remote Control is on, and never makes a sound.
+    @Test func remoteBurnsWhileRemoteControlIsOn() {
+        let bench = twoSessions()
+        let heard = bench.snap.cues.signals
+        bench.feed([bench.reading("b", .remoteControl, .flag(true))])
+        #expect(bench.lamp(.remote, 2) == .on)
+        #expect(bench.lamp(.remote, 1) == .off)
+        #expect(bench.snap.cues.signals == heard)
+        bench.feed([bench.reading("b", .remoteControl, .flag(false))])
+        #expect(bench.lamp(.remote, 2) == .off)
+    }
+
     /// A session that takes its slot already done did not just finish: no signal.
     @Test func aSessionSeatedAsItIsSaysNothing() {
         let bench = Bench()

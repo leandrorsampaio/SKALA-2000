@@ -70,7 +70,14 @@ public final class PK4Console {
     private let readsMachine: Bool
     private let onPower: @MainActor (Bool) -> Void
     private var machine: MachineSource?
+    private var load: LoadSource?
     private var sourcesRunning = false
+
+    /// Whether panel F is in view, so the Mac's load is read in full; hidden, only what
+    /// panel D shows is.
+    public var loadDetailed = false {
+        didSet { load?.detailed = loadDetailed }
+    }
 
     /// - Parameters:
     ///   - directory: where the desk's memory and its logs are kept.
@@ -154,6 +161,12 @@ public final class PK4Console {
             }
             machine.start()
             self.machine = machine
+            let load = LoadSource(
+                processes: { [weak self] in self?.model.seatedProcesses() ?? [:] },
+                deliver: { [weak self] readings in self?.ingest(readings) })
+            load.detailed = loadDetailed
+            load.start()
+            self.load = load
         }
         onPower(true)
     }
@@ -163,6 +176,8 @@ public final class PK4Console {
         sourcesRunning = false
         machine?.stop()
         machine = nil
+        load?.stop()
+        load = nil
         onPower(false)
     }
 }

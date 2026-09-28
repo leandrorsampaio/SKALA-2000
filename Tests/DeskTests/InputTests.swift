@@ -243,25 +243,38 @@ final class DeskViewInputTests {
         #expect(sent == [.press(PK4.silence), .release(PK4.silence)])
     }
 
+    /// Panel F is outside the view until COMPUTER shows it: the view fits A to D, and then
+    /// the whole desk.
+    @Test func panelFIsOutOfViewUntilShown() {
+        let view = DeskView(frame: NSRect(x: 0, y: 0, width: 1250, height: 900))
+        #expect(view.visibleSize == DeskLayout.compactSize)
+        #expect(abs(view.deskScale - 0.5) < 0.0001)
+        #expect(view.layers.desk.bounds.width == 2500)
+        view.showsLoadPanel = true
+        #expect(view.visibleSize == DeskLayout.size)
+        #expect(abs(view.deskScale - 1250 / 3352) < 0.0001)
+        #expect(view.layers.desk.bounds.width == 3352)
+    }
+
     @Test func aClosedGuardsButtonIsNotATabStop() {
-        #expect(!view.focusable.contains { $0.id == PK4.f11 && $0.kind == .button })
-        #expect(view.focusable.contains { $0.id == PK4.f11 && $0.kind == .flap })
+        #expect(!view.focusable.contains { $0.id == PK4.f12 && $0.kind == .button })
+        #expect(view.focusable.contains { $0.id == PK4.f12 && $0.kind == .flap })
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f11]
+        s.guardsOpen = [PK4.f12]
         view.apply(s)
-        #expect(view.focusable.contains { $0.id == PK4.f11 && $0.kind == .button })
+        #expect(view.focusable.contains { $0.id == PK4.f12 && $0.kind == .button })
     }
 
     /// The guard falls over the button that has the keyboard: the focus goes to the flap.
     @Test func aFallingGuardTakesTheFocusWithIt() throws {
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f11]
+        s.guardsOpen = [PK4.f12]
         view.apply(s)
         let cap = try #require(
-            view.hitTable.controls.first { $0.id == PK4.f11 && $0.kind == .button })
+            view.hitTable.controls.first { $0.id == PK4.f12 && $0.kind == .button })
         view.setFocus(cap)
         view.apply(ConsoleSnapshot())
-        #expect(view.keyboardFocus?.id == PK4.f11)
+        #expect(view.keyboardFocus?.id == PK4.f12)
         #expect(view.keyboardFocus?.kind == .flap)
     }
 
@@ -307,8 +320,14 @@ struct AccessibilityTests {
         let panels = (view.accessibilityChildren() as? [NSAccessibilityElement] ?? []).compactMap {
             $0.accessibilityLabel()
         }
+        // Panel F is out of view until COMPUTER shows it, and then it is read last.
         #expect(panels.count == 6)
         #expect(panels.dropFirst().map { String($0.prefix(1)) } == ["A", "B", "C", "D", "E"])
+        view.showsLoadPanel = true
+        let shown = (view.accessibilityChildren() as? [NSAccessibilityElement] ?? []).compactMap {
+            $0.accessibilityLabel()
+        }
+        #expect(shown.dropFirst().map { String($0.prefix(1)) } == ["A", "B", "C", "D", "E", "F"])
         _ = window
     }
 
@@ -331,8 +350,12 @@ struct AccessibilityTests {
         #expect(value("Total cost") == "27 dollars")
         #expect(value("Permission mode, bypass") == "dark")
         #expect(value("Session selector") == "Session 1")
-        // 72 lamps, 18 nixie rows, 6 meters, 5 drums, 30 controls, the buzzer, the build card.
-        #expect(all.count == 133)
+        // Every lamp, lens, nixie readout, meter, drum and control, the buzzer and the build
+        // card, with panel F out of view. Shown, F brings 26 more: four meters, fourteen
+        // gauges, and each session's CPU and memory.
+        #expect(all.count == 144)
+        view.showsLoadPanel = true
+        #expect(elements(view).count == 170)
         _ = window
     }
 
@@ -348,8 +371,8 @@ struct AccessibilityTests {
         #expect(selector.accessibilityPerformIncrement())
         #expect(sent == [.press(PK4.acknowledge), .release(PK4.acknowledge), .selectorStep(1)])
         // Under a closed guard there is nothing to press.
-        let f10 = try #require(all.first { $0.accessibilityLabel() == "End session" })
-        #expect(!f10.accessibilityPerformPress())
+        let endSession = try #require(all.first { $0.accessibilityLabel() == "End session" })
+        #expect(!endSession.accessibilityPerformPress())
         _ = window
     }
 
@@ -359,17 +382,17 @@ struct AccessibilityTests {
         var sent: [ConsoleIntent] = []
         view.send = { sent.append($0) }
         var s = ConsoleSnapshot()
-        s.guardsOpen = [PK4.f11]
+        s.guardsOpen = [PK4.f12]
         view.apply(s)
-        let f9 = try #require(
-            elements(view).first { $0.accessibilityLabel() == "Function 11, unassigned" })
-        #expect(f9.accessibilityPerformPress())
-        #expect(sent == [.press(PK4.f11)])
+        let endSession = try #require(
+            elements(view).first { $0.accessibilityLabel() == "End session" })
+        #expect(endSession.accessibilityPerformPress())
+        #expect(sent == [.press(PK4.f12)])
         // Released about 2.2 s later: waited for, as other suites share the main thread.
         let asked = Date()
         let deadline = asked.addingTimeInterval(10)
         while sent.count < 2, Date() < deadline { try await Task.sleep(for: .milliseconds(50)) }
-        #expect(sent == [.press(PK4.f11), .release(PK4.f11)])
+        #expect(sent == [.press(PK4.f12), .release(PK4.f12)])
         #expect(Date().timeIntervalSince(asked) >= ConsoleTiming.holdToFire)
         _ = window
     }

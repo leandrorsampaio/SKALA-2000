@@ -63,6 +63,8 @@ public enum Field: String, Sendable, CaseIterable, Codable {
     case status, aiTitle, permissionMode, mode, queueDepth, lastPrompt, toolCalls, toolMix
     /// A subagent wrote something. Lives 30 s, which is what SUBAGENT ACTIVE means.
     case subagentActivity
+    /// Remote Control is on: the session can be continued from claude.ai or the phone.
+    case remoteControl
 
     // C · context and tokens
     case contextUsed, contextWindow
@@ -88,29 +90,53 @@ public enum Field: String, Sendable, CaseIterable, Codable {
     case batteryFraction, onMains, charging, displayAsleep, systemAsleep
     /// Mac Command Center's own Keep Awake modes, which FC1 and FC2 switch.
     case keepAwakeDisplayOn, keepAwakeDisplayOff
+    /// The desk's window floats above every other; the Mac's sound goes to its own
+    /// speakers; panel F is shown. What ON TOP, SPEAKERS and COMPUTER report.
+    case windowOnTop, builtInSpeakers, loadPanelShown
 
     // J · the plan's usage limits, from the status line: the share of each window used,
     // 0 to 1, and when it resets
     case quotaSession, quotaSessionResets, quotaWeek, quotaWeekResets
+
+    // K · what the Mac is doing, every two seconds: the share of its processors and of its
+    // GPU at work (0 to 1), what it draws in watts, macOS's thermal state and memory
+    // pressure as words, memory and disk in bytes, disk and network traffic in bytes a
+    // second, temperatures in °C and fans in rpm
+    case cpuLoad, gpuLoad, systemPower, thermalState, memoryPressure
+    case memoryTotal, memoryUsed, memoryWired, memoryCompressed, swapUsed
+    case diskFree, diskRead, diskWrite, networkIn, networkOut
+    case socTemperature, ssdTemperature, batteryTemperature, fan1Speed, fan2Speed
+    /// A session's own processes, it and everything it started: their share of the whole
+    /// Mac's processors (0 to 1), and their memory in bytes, as Activity Monitor counts it.
+    case processCPU, processMemory
+
+    /// Measured from outside the session, so no sign that Claude Code still reports on it.
+    public var isProcessLoad: Bool { self == .processCPU || self == .processMemory }
 
     public var kind: Value.Kind {
         switch self {
         case .roster: .keys
         case .name, .cwd, .kind, .version, .gitBranch, .status, .aiTitle, .permissionMode, .mode,
             .lastPrompt, .model, .serviceTier, .effort, .jobState, .jobTempo, .jobNeeds,
-            .jobDetail, .jobName, .jobBackend, .toolUsed:
+            .jobDetail, .jobName, .jobBackend, .toolUsed, .thermalState, .memoryPressure:
             .text
         case .pid, .queueDepth, .toolCalls, .contextUsed, .contextWindow, .inputTokens,
             .outputTokens, .thinkingTokens, .cacheReadTokens, .cacheCreationTokens, .linesAdded,
             .linesRemoved, .turnMessages:
             .count
-        case .costUSD, .batteryFraction, .quotaSession, .quotaWeek: .amount
+        case .costUSD, .batteryFraction, .quotaSession, .quotaWeek, .cpuLoad, .gpuLoad,
+            .systemPower, .memoryTotal, .memoryUsed, .memoryWired, .memoryCompressed, .swapUsed,
+            .diskFree, .diskRead, .diskWrite, .networkIn, .networkOut, .socTemperature,
+            .ssdTemperature, .batteryTemperature, .fan1Speed, .fan2Speed, .processCPU,
+            .processMemory:
+            .amount
         case .turnDuration, .totalDuration, .apiDuration, .toolDuration: .seconds
         case .startedAt, .compactBoundary, .quotaSessionResets, .quotaWeekResets: .time
         case .toolMix: .tally
         case .modelUsage: .lines
         case .unknownModelCost, .onMains, .charging, .displayAsleep, .systemAsleep,
-            .keepAwakeDisplayOn, .keepAwakeDisplayOff:
+            .keepAwakeDisplayOn, .keepAwakeDisplayOff, .remoteControl, .windowOnTop,
+            .builtInSpeakers, .loadPanelShown:
             .flag
         case .subagentActivity, .waiting, .turnDone, .agentDone, .promptSubmitted,
             .sessionStarted, .sessionEnded, .preCompact:

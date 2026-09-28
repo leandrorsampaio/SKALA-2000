@@ -15,6 +15,8 @@ extension DeskView {
     public override func mouseDown(with event: NSEvent) {
         let point = deskPoint(convert(event.locationInWindow, from: nil))
         guard let control = hitTable.control(at: point, guardsOpen: snapshot.guardsOpen) else {
+            // The window has no title bar: bare steel is where it is picked up and moved.
+            window?.performDrag(with: event)
             return
         }
         act(on: control, at: point)

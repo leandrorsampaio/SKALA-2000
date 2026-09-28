@@ -187,13 +187,16 @@ final class FakeProcesses: SessionSystem, @unchecked Sendable {
         #expect(processes.sent.isEmpty)
     }
 
-    @Test func f6ToF11AreLeftUnassigned() {
+    @Test func f6AndF7AreLeftUnassigned() {
         let actions = SessionCommands.actions(
             details: { _ in nil }, system: FakeProcesses(alive: [], owners: [:]),
             safetyLog: URL(fileURLWithPath: "/tmp/none"))
-        for id in [6, 7, 8, 9].map(PK4.function) + [PK4.f10, PK4.f11] {
+        #expect(PK4.routine == (1...7).map(PK4.function))
+        for id in [6, 7].map(PK4.function) {
             #expect(actions[id] == nil)
         }
+        // The guarded keys are F12 alone.
+        #expect(PK4.guarded == [PK4.f12])
     }
 
     /// An id that is not a plain one never becomes a path or a shell word.

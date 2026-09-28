@@ -1,6 +1,6 @@
 import AppKit
 
-/// The text log PRINT TEXT writes to, in an ordinary window: the console itself has no way
+/// The text log PRINT TO LOG writes to, in an ordinary window: the console itself has no way
 /// to show a string. Read-only, monospaced, scrolled to the end.
 @MainActor
 final class TextLogWindowController: NSObject, NSWindowDelegate {

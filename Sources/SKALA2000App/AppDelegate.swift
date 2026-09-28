@@ -59,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         follow()
 
         let desk = DeskWindowController(host: host, sound: sound, director: director)
+        host.window = desk
         desk.firstArt = { art in
             let seconds = Date().timeIntervalSince(ProcessStart.date)
             let line =

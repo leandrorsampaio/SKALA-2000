@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.5.0
+
+- **Panel F, the Mac itself**, in a fourth column: the desk is 3352 units wide now. Four
+  moving-coil meters, CPU load, GPU load, the watts the whole Mac draws and memory used;
+  tubes for the hottest point of the processor die, the SSD and the battery, both fans,
+  memory used, wired, compressed and swap, room on the startup disk, disk and network
+  traffic; and each seated session's own CPU and memory, everything it started included,
+  in panel A's four columns. All read on the Mac, every two seconds, without privileges;
+  the temperatures every ten. A session's processes still running never keep it from
+  going stale. The scripted day has figures of its own for it.
+- **THERMAL STATE and MEMORY PRESSURE** at the foot of panel D, under the power source: a
+  lamp for each of macOS's levels, red ones flashing while they hold.
+- **Panel F is hidden until COMPUTER STATUS shows it**, and the window grows to the right to
+  take it, or back; the desk remembers which. While it is hidden, only the thermal state
+  and memory pressure are read, and the desk costs what it did before panel F.
+- **A second row of round buttons in panel D**: WINDOW ON TOP, off at every launch; MAC
+  SPEAKERS, which sends the sound to the Mac's own speakers and, pressed again, back to the
+  device it came from, remembered across a relaunch; COMPUTER STATUS; and MINIMIZE WINDOW,
+  which lets go of ON TOP first. Each lens shows what the window or the sound reports, the
+  sound whoever changed it.
+- **No title bar.** The desk reaches the window's edges, and dragging bare steel moves it.
+- **F1 moves to panel B**, beside PRINT TO LOG. Panel C keeps F2 to F7, and COMMAND GOES TO
+  SESSION is gone: SELECTED already says it. Panel C is shorter and panel D taller.
+- **REMOTE CONTROL**, a tenth annunciator row: white, burning while a session's Remote
+  Control is on, so it can be carried on from claude.ai or the phone, and dark again when
+  it is turned off. Claude Code tells no status line or hook this; the session's
+  transcript records it, and only whether it is on is read, never the link or its id. It
+  makes no sound. The scripted day turns it on for one session.
+- **F10 and F11 are gone.** They had no job; F12, behind its guard and key, stands alone
+  under DISRUPTIVE COMMANDS. Compacting a session or turning its Remote Control on from the
+  desk was looked at and left out: Claude Code takes both only as commands typed at the
+  session's own prompt.
+- **SILENCED stands beside the buzzer**, level with the grille's middle, to give panel A
+  the room for the new row.
+- **Panel B, rearranged.** F12 moves up into the first row, at its right end, beside the
+  session selector, SELECTED and PRT; the selector's plate goes under the knob to make the
+  room. The row, the three meters and the two columns of tubes each span the panel from
+  edge to edge, so the meters line up with the tubes under them. Every lamp group has a
+  line of its own, KIND and WARNINGS too, their plates one below the other. The height F12
+  gave up goes between the sections.
+- **PRINT TO LOG**, where the button said PRINT TEXT: it writes the selected session's
+  text to the text log and opens it.
+- **Both plan windows count down in days, hours and minutes**, on three readouts each.
+  Claude Code gives the moment a window resets; the time left is counted on the Mac's
+  clock. NEAR LIMIT and AT LIMIT stand one above the other.
+
 ## 0.4.2
 
 Panel E, when it has nothing to show.

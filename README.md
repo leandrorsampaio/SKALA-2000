@@ -72,11 +72,16 @@ swings and slows the flash to 1 Hz; Increase Contrast darkens unlit glass.
 
 | Panel | What it shows |
 | --- | --- |
-| **A · All sessions** | Four session columns, nine lamp rows (RUN, BUSY, WAIT, DONE, AGENT, BKGD, BLOCK, CMPCT, LOW CTX under 5% of the context left), pencil strips for project names, sessions running and busy, the buzzer and its SILENCED lamp, the alarm buttons SILENCE and ACKNOWLEDGE, and the tests, LAMP TEST and BUZZER TEST |
-| **B · Selected session** | A row of the session selector, SELECTED and PRINT TEXT; context remaining, API and tool share of time (the needles drift a point or three now and then, as a moving coil does), token and cost nixies, one line of lamps each for permission mode, effort, model (Opus 200K and Opus 1M told apart by the session's context window), mode, kind, tier, warnings, drum totals, and the guarded F10–F12 (F12 ends the session after the key, a 2 s hold, and your password or Touch ID) |
-| **C · Control** | F1 open folder, F2 Terminal here, F3 copy the resume command, F4 safety log, F5 show transcript; F6 to F9 have no job yet |
-| **D · Computer controls** | Sleep, monitor off, Keep Awake with the display on (FC1) or off (FC2), battery, power source. MAINS, which powers the desk up and down, is in the Console menu (⇧⌘M) |
-| **E · Power and service** | Your plan's usage, the five-hour window and the week side by side, each in one row: a horizontal edgewise meter red from 80%, the time to its reset on nixies (hours and minutes for the session, days and hours for the week), and an amber NEAR LIMIT lamp from 80% and a red AT LIMIT from 95%, flashing, each beeping once as it comes on; hours in service |
+| **A · All sessions** | Four session columns, ten lamp rows (RUN, BUSY, WAIT, DONE, AGENT, BKGD, BLOCK, CMPCT, LOW CTX under 5% of the context left, REMOTE while Remote Control is on), pencil strips for project names, sessions running and busy, the buzzer with its SILENCED lamp beside it, the alarm buttons SILENCE and ACKNOWLEDGE, and the tests, LAMP TEST and BUZZER TEST |
+| **B · Selected session** | A row of the session selector, SELECTED, PRINT TO LOG, F1 to open the session's folder, and the guarded F12, which ends the session after the key, a 2 s hold, and your password or Touch ID; context remaining, API and tool share of time (the needles drift a point or three now and then, as a moving coil does), token and cost nixies, one line of lamps each for permission mode, effort, model (Opus 200K and Opus 1M told apart by the session's context window), mode, kind, tier and warnings, and drum totals |
+| **C · Control** | F2 Terminal here, F3 copy the resume command, F4 safety log (the desk's own, every session's), F5 show transcript; F6 and F7 have no job yet. F2, F3 and F5 act on the selected session |
+| **D · Computer controls** | Sleep, monitor off, Keep Awake with the display on (FC1) or off (FC2); WINDOW ON TOP (off at every launch), MAC SPEAKERS (the sound to the Mac's own speakers, and pressed again back to the device it came from, which it remembers across a relaunch), COMPUTER STATUS (shows or hides panel F) and MINIMIZE WINDOW (which lets go of ON TOP first); battery, power source, and at its foot macOS's thermal state (NOMINAL, FAIR, SERIOUS, CRITICAL) and memory pressure (NORMAL, WARNING, CRITICAL), red ones flashing while they hold. MAINS, which powers the desk up and down, is in the Console menu (⇧⌘M) |
+| **F · Computer load** | Hidden until COMPUTER STATUS shows it, then as you last left it: a column of its own to the right, and the window widens to take it. What the Mac itself is doing, read every two seconds: CPU load, GPU load, the watts the whole Mac draws and memory used on four moving-coil meters; on nixies, the hottest point of the processor die, the SSD and the battery in °C, both fans in rpm, memory used, wired, compressed and swap in GB, room on the startup disk, disk read and write and network in and out in MB/s; and, in panel A's four columns, each seated session's CPU (its share of the whole Mac) and memory, counting everything it started |
+| **E · Power and service** | Your plan's usage, the five-hour window and the week side by side, each in one row: a horizontal edgewise meter red from 80%, the time to its reset on three nixie readouts, days, hours and minutes, counted on the Mac's clock to the moment Claude Code gives, and, one above the other, an amber NEAR LIMIT lamp from 80% and a red AT LIMIT from 95%, flashing, each beeping once as it comes on; hours in service |
+
+The window has no title bar: the desk reaches its edges, and dragging any bare part of it
+moves the window. ⌘W closes it, ⌘M or MINIMIZE WINDOW sends it to the Dock, and the View
+menu takes it full screen.
 
 Panel A's red windows, WAIT, BLOCK and LOW CTX, flash for as long as their cause holds,
 and so does AT LIMIT in panel E; DATA STALE and BATT LOW flash until ACKNOWLEDGE turns them
@@ -93,11 +98,17 @@ goes dark and raises DATA STALE.
 - Session ids and pids are join keys: they go to the safety log and are never displayed.
 - `ide.authToken`, `~/.claude/ide/*.lock`, `~/.claude/sessions/*.key` and job
   `providerEnv` are never opened, read, stored or logged.
-- Prompt text reaches only the text log, and only on PRINT TEXT.
+- Prompt text reaches only the text log, and only on PRINT TO LOG.
 - The hook socket is mode 0600 and checks its peer's uid, requires an `X-SKALA-Client`
   header, refuses any request carrying `Origin`, and caps bodies at 8 MB.
 - Nothing is sent anywhere. SKALA-2000 is not sandboxed, because it has to read
   `~/.claude`, and is distributed directly.
+- Panel F reads only what macOS keeps for any program to see, without privileges: CPU
+  ticks, memory and swap figures, the GPU driver's and the battery controller's own
+  statistics, disk and network counters, and the CPU time, memory and children of your own
+  sessions' processes. The temperatures come from the HID sensors and the fan speeds from
+  the SMC, both undocumented: they are only read, never written, and a macOS that changes
+  them leaves those tubes dark.
 
 Files: the desk's memory, the safety log and the text log in
 `~/Library/Application Support/SKALA-2000/`; the rendered art in

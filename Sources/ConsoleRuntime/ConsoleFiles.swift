@@ -73,7 +73,7 @@ public final class FileConsoleStore: ConsoleStore {
 /// becomes `safety.1.log` and a new one starts, so it never fills a disk and the last
 /// stretch is always kept.
 ///
-/// `text.log` is what PRINT TEXT writes: the console's only way to show a string. Each
+/// `text.log` is what PRINT TO LOG writes: the console's only way to show a string. Each
 /// line is stamped with local time, because a person reads it.
 @MainActor
 public final class FileConsoleLog: ConsoleLog {

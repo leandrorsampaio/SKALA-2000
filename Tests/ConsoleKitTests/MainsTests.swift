@@ -48,20 +48,18 @@ import Testing
 
         // Power reaches the desk at 250 ms, and the first row strikes on all eights.
         at(0.2)
-        #expect(bench.snap.nixie(PK4.targetC) == " ")
+        #expect(bench.snap.nixie(PK4.selected) == " ")
         at(0.26)
         // The first row strikes on all eights; the next has not yet.
-        #expect(bench.snap.nixie(PK4.targetC) == "8")
-        #expect(bench.snap.nixie(PK4.selected) == " ")
-        at(0.30)
         #expect(bench.snap.nixie(PK4.selected) == "8")
-        at(0.34)
+        #expect(bench.snap.nixie(PK4.contextUsed) == "        ")
+        at(0.30)
         #expect(bench.snap.nixie(PK4.contextUsed) == "88888888")
         #expect(bench.snap.nixie(PK4.queueDepth) == "888888")
         #expect(bench.snap.nixie(PK4.cost) == "       ")
-        at(0.42)
+        at(0.38)
         #expect(bench.snap.nixie(PK4.lastTurn) == "8888:88")
-        #expect(bench.snap.nixie(PK4.targetC) == " ")
+        #expect(bench.snap.nixie(PK4.selected) == " ")
         // Needles on the stop until the last row has struck.
         #expect(bench.snap.meter(PK4.contextMeter) == Needle.leftStop)
 

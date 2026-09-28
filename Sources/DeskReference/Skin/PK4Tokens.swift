@@ -242,7 +242,7 @@ enum PK4Size {
     static let wheel = CGSize(width: 22, height: 32)
 
     /// The whole desk is one drawing this wide, scaled to the window.
-    static let deskWidth: CGFloat = 2500
+    static let deskWidth: CGFloat = 3352
     static let deskHeight: CGFloat = 1800
 }
 

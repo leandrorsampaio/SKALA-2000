@@ -68,7 +68,7 @@ public struct ConsoleCues: Sendable, Equatable {
     public var relay = 0
     /// The 80 ms buzzer chirp of the power-up lamp test.
     public var chirp = 0
-    /// PRINT TEXT wrote to the text log and wants its window open.
+    /// PRINT TO LOG wrote to the text log and wants its window open.
     public var openLog = 0
     /// How many of each signal have been given, so none is lost however the desk's
     /// changes are coalesced before the sound layer hears them.

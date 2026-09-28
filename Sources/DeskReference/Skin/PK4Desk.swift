@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The assembled PK-4 desk, scaled to its window.
 ///
-/// The desk is one fixed drawing 2500 units wide and 1800 tall, scaled uniformly with a
+/// The desk is one fixed drawing 3352 units wide and 1800 tall, scaled uniformly with a
 /// single transform: it never re-lays itself out for the window's size. The window's
 /// aspect ratio is locked to match, so nothing is ever cropped or letterboxed.
 public struct PK4ConsoleScreen: View {
@@ -68,6 +68,7 @@ public struct PK4Desk: View {
             panel("C · Control", PanelC(s: s))
             panel("D · Computer controls", PanelD(s: s))
             panel("E · Power and service", PanelE(s: s))
+            panel("F · Computer load", PanelF(s: s))
         }
         .padding(22)
         .mark("desk")
@@ -92,16 +93,16 @@ extension PK4Desk {
     }
 }
 
-/// Three columns, five panels, listed in reading order: A, B, C, D, E.
+/// Four columns, six panels, listed in reading order: A, B, C, D, E, F.
 ///
 /// VoiceOver and the Tab key go through the panels in the order they are listed, not the
 /// order they are drawn, and a column of stacks would list E, at the foot of the first
 /// column, before B. So the desk is one layout that puts each panel where it belongs: A
-/// over E on the left, B in the middle, C over D on the right. A and D take whatever
-/// height their column leaves; B takes it all.
+/// over E on the left, B in the middle, C over D beside it, and F, the Mac's own load, on
+/// the right. A and D take whatever height their column leaves; B and F take it all.
 struct DeskLayout: Layout {
-    // B as narrow as its lamp groups allow; A and E have the rest.
-    static let columns: [CGFloat] = [836, 1004, 580]
+    // B as narrow as its lamp groups allow; A and E have the rest. F as wide as A.
+    static let columns: [CGFloat] = [836, 1004, 580, 836]
     static let gap: CGFloat = 16
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -111,7 +112,7 @@ struct DeskLayout: Layout {
     func placeSubviews(
         in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
     ) {
-        guard subviews.count == 6 else { return }
+        guard subviews.count == 7 else { return }
         let gap = Self.gap
         let widths = Self.columns
         func natural(_ index: Int, width: CGFloat) -> CGFloat {
@@ -122,13 +123,16 @@ struct DeskLayout: Layout {
                 at: CGPoint(x: x, y: y), proposal: ProposedViewSize(width: width, height: height))
         }
 
-        let header = natural(0, width: bounds.width)
-        place(0, bounds.minX, bounds.minY, bounds.width, header)
+        // The header spans A to D only, so it is whole whether F is shown or not.
+        let headerWidth = widths[0] + widths[1] + widths[2] + 2 * gap
+        let header = natural(0, width: headerWidth)
+        place(0, bounds.minX, bounds.minY, headerWidth, header)
         let top = bounds.minY + header + gap
         let height = bounds.maxY - top
         let left = bounds.minX
         let middle = left + widths[0] + gap
         let right = middle + widths[1] + gap
+        let far = right + widths[2] + gap
 
         let e = natural(5, width: widths[0])
         place(1, left, top, widths[0], height - e - gap)
@@ -137,6 +141,8 @@ struct DeskLayout: Layout {
         let c = natural(3, width: widths[2])
         place(3, right, top, widths[2], c)
         place(4, right, top + c + gap, widths[2], height - c - gap)
+        // F is a cabinet of its own beside the desk: the whole height, header row too.
+        place(6, far, bounds.minY, widths[3], bounds.maxY - bounds.minY)
     }
 }
 
@@ -240,12 +246,21 @@ private struct PanelA: View {
         (.wait, "Waiting for operator", "Wait", .red), (.done, "Turn done", "Done", .green),
         (.agent, "Agent done", "Agent", .white), (.bkgd, "Background job", "Bkgd", .white),
         (.block, "Blocked", "Block", .red), (.cmpct, "Compacting", "Cmpct", .amber),
-        (.lowctx, "Low context", "Low ctx", .red),
+        (.lowctx, "Low context", "Low ctx", .red), (.remote, "Remote control", "Remote", .white),
     ]
 
+    /// HL33 on went to panel B first: LOW CONTEXT is HL76 to HL79, REMOTE HL84 to HL87.
+    private static func code(row index: Int, slot: Int) -> String {
+        switch index {
+        case ..<8: "HL\(index * 4 + slot)"
+        case 8: "HL\(75 + slot)"
+        default: "HL\(83 + slot)"
+        }
+    }
+
     var body: some View {
-        PK4Panel(title: "A · All sessions — annunciator", spacing: 26) {
-            // 11: nine rows of windows packed as an annunciator is, to leave the buzzer room.
+        PK4Panel(title: "A · All sessions — annunciator", spacing: 25) {
+            // 11: ten rows of windows packed as an annunciator is, to leave the buzzer room.
             Grid(horizontalSpacing: 26, verticalSpacing: 11) {
                 GridRow {
                     Plate(text: "Session", width: 190)
@@ -269,9 +284,7 @@ private struct PanelA: View {
                             let id = PK4.annunciator(row.0, slot: slot)
                             LampWindow(
                                 label: row.2, color: row.3, state: s.lamp(id),
-                                // HL33 on went to panel B first: LOW CONTEXT is HL76 to HL79.
-                                code: "HL\(index < 8 ? index * 4 + slot : 75 + slot)",
-                                id: id.rawValue
+                                code: Self.code(row: index, slot: slot), id: id.rawValue
                             )
                             .equatable()
                             .accessibilityElement()
@@ -301,14 +314,18 @@ private struct PanelA: View {
                 .accessibilityValue(PK4Words.digits(s.nixie(PK4.sessionsBusy)))
             }
             HStack(alignment: .top, spacing: 0) {
-                VStack(spacing: 14) {
+                // SILENCED beside the buzzer rather than under it: the row it gave up is
+                // REMOTE's.
+                HStack(alignment: .top, spacing: 14) {
                     Labelled(label: "Buzzer", tag: "HA1") { BuzzerGrille(sounding: s.buzzer) }
                     // Burns while an alarm would go unheard: silenced, or muted in Settings.
+                    // Level with the grille's middle.
                     LampWindow(
                         label: "Silenced", color: .amber, state: s.lamp(PK4.silenced),
                         code: "HL75", id: PK4.silenced.rawValue
                     )
                     .equatable()
+                    .padding(.top, 25)
                     .accessibilityElement()
                     .accessibilityLabel("Silenced")
                     .accessibilityValue(PK4Words.lamp(s.lamp(PK4.silenced)))
@@ -402,61 +419,71 @@ private struct PanelB: View {
 
     var body: some View {
         PK4Panel(
-            title: "B · Selected session — instruments", spacing: 18,
+            title: "B · Selected session — instruments", spacing: 36,
             padding: EdgeInsets(top: 18, leading: 26, bottom: 18, trailing: 26),
             tightBottom: true
         ) {
-            // The knob that chooses the session, which one it chose, and PRINT TEXT: a row.
-            HStack(alignment: .center, spacing: 44) {
-                HStack(spacing: 12) {
-                    VStack(spacing: 6) {
-                        Plate(text: "Session selector")
-                        Tag(text: "SA1")
-                    }
+            // The knob that chooses the session, which one it chose, PRINT TO LOG, F1 to open
+            // its folder, and the one disruptive command: a row, spread from edge to edge.
+            HStack(alignment: .center, spacing: 0) {
+                VStack(spacing: 8) {
                     RotarySelector(position: s.selector)
+                    Plate(text: "Session selector")
+                    Tag(text: "SA1")
                 }
+                Spacer(minLength: 20)
                 NixieReadout(
                     label: "Selected", template: "0", value: s.nixie(PK4.selected), xl: true,
                     code: "HG4", id: PK4.selected.rawValue
                 )
                 .accessibilityHidden(true)
+                Spacer(minLength: 20)
                 PushButton(
-                    id: PK4.printText, cap: "Prt", label: "Print text",
+                    id: PK4.printText, cap: "Prt", label: "Print to log",
                     face: s.button(PK4.printText), code: "SB7")
+                Spacer(minLength: 20)
+                PushButton(
+                    id: PK4.function(1), cap: "F1", label: PanelC.functions[1] ?? "",
+                    face: s.button(PK4.function(1)), code: "SB8")
+                Spacer(minLength: 20)
+                VStack(spacing: 16) {
+                    Plate(text: "Disruptive commands")
+                    guarded(PK4.f12, "F12", "End session", keyed: true, code: "SB6")
+                }
             }
-            HStack(alignment: .top, spacing: 30) {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(alignment: .top, spacing: 36) {
-                        meter("Context remaining", PK4.contextMeter, red: 0...0.2, code: "PA1")
-                        meter("API share of time", PK4.apiShareMeter, code: "PA2")
-                        meter("Tool share of time", PK4.toolShareMeter, code: "PA3")
+            VStack(spacing: 14) {
+                // The meters spread over the width of the tubes below, edge to edge.
+                HStack(alignment: .top, spacing: 0) {
+                    meter("Context remaining", PK4.contextMeter, red: 0...0.2, code: "PA1")
+                    Spacer(minLength: 20)
+                    meter("API share of time", PK4.apiShareMeter, code: "PA2")
+                    Spacer(minLength: 20)
+                    meter("Tool share of time", PK4.toolShareMeter, code: "PA3")
+                }
+                HStack(alignment: .top, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        nixie("Context used", PK4.contextUsed, "tok", "HG5", unitWidth: 34)
+                        nixie("Input tokens", PK4.inputTokens, "tok", "HG6", unitWidth: 34)
+                        nixie("Output tokens", PK4.outputTokens, "tok", "HG7", unitWidth: 34)
+                        nixie("Thinking tokens", PK4.thinkingTokens, "tok", "HG8", unitWidth: 34)
+                        nixie("Cache read", PK4.cacheRead, "×1000", "HG9", unitWidth: 34)
+                        nixie("Cache written", PK4.cacheWritten, "×1000", "HG10", unitWidth: 34)
                     }
-                    HStack(alignment: .top, spacing: 30) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            nixie("Context used", PK4.contextUsed, "tok", "HG5", unitWidth: 34)
-                            nixie("Input tokens", PK4.inputTokens, "tok", "HG6", unitWidth: 34)
-                            nixie("Output tokens", PK4.outputTokens, "tok", "HG7", unitWidth: 34)
-                            nixie(
-                                "Thinking tokens", PK4.thinkingTokens, "tok", "HG8", unitWidth: 34)
-                            nixie("Cache read", PK4.cacheRead, "×1000", "HG9", unitWidth: 34)
-                            nixie("Cache written", PK4.cacheWritten, "×1000", "HG10", unitWidth: 34)
-                        }
-                        // Left-aligned, so these tubes line up whatever their units say.
-                        VStack(alignment: .leading, spacing: 10) {
-                            let span = PK4.nixies[PK4.cost]
-                            nixie("Queue depth", PK4.queueDepth, nil, "HG11", span: span)
-                            nixie("Tool calls", PK4.toolCalls, nil, "HG12", span: span)
-                            nixie("Last turn", PK4.lastTurn, "min:s", "HG13", span: span)
-                            nixie("Turn messages", PK4.turnMessages, nil, "HG14", span: span)
-                            nixie("Session uptime", PK4.uptime, "h:min", "HG15", span: span)
-                            nixie("Cost, last checkpoint", PK4.cost, "$", "HG16", span: span)
-                        }
+                    Spacer(minLength: 30)
+                    // Left-aligned, so these tubes line up whatever their units say.
+                    VStack(alignment: .leading, spacing: 10) {
+                        let span = PK4.nixies[PK4.cost]
+                        nixie("Queue depth", PK4.queueDepth, nil, "HG11", span: span)
+                        nixie("Tool calls", PK4.toolCalls, nil, "HG12", span: span)
+                        nixie("Last turn", PK4.lastTurn, "min:s", "HG13", span: span)
+                        nixie("Turn messages", PK4.turnMessages, nil, "HG14", span: span)
+                        nixie("Session uptime", PK4.uptime, "h:min", "HG15", span: span)
+                        nixie("Cost, last checkpoint", PK4.cost, "$", "HG16", span: span)
                     }
                 }
             }
 
-            // Each group on one line, its plate on the left, as panel A's rows are; the
-            // short groups two to a line, so the second plates line up too.
+            // Each group on a line of its own, its plate on the left, as panel A's rows are.
             VStack(alignment: .leading, spacing: 10) {
                 LampRow(
                     title: "Permission mode",
@@ -487,37 +514,34 @@ private struct PanelB: View {
                         ("Fable", .white, PK4.model(.fable), "HL71"),
                         ("Other", .amber, PK4.model(.other), "HL47"),
                     ], s: s)
-                HStack(spacing: 30) {
-                    LampRow(
-                        title: "Mode",
-                        windows: [
-                            ("Normal", .white, PK4.mode(.normal), "HL48"),
-                            ("Other mode", .amber, PK4.mode(.other), "HL49"),
-                        ], s: s)
-                    LampRow(
-                        title: "Kind", titleWidth: nil,
-                        windows: [
-                            ("Interactive", .white, PK4.kind(.interactive), "HL50"),
-                            ("Detached", .white, PK4.kind(.detached), "HL51"),
-                        ], s: s)
-                }
-                HStack(spacing: 30) {
-                    LampRow(
-                        title: "Service tier",
-                        windows: [
-                            ("Standard", .white, PK4.tier(.standard), "HL52"),
-                            ("Other tier", .amber, PK4.tier(.other), "HL53"),
-                        ], s: s)
-                    LampRow(
-                        title: "Warnings", titleWidth: nil,
-                        windows: [
-                            ("Price\nunknown", .red, PK4.warning(.price), "HL54"),
-                            ("Data stale", .red, PK4.warning(.stale), "HL55"),
-                            ("Subagent\nactive", .white, PK4.warning(.subagent), "HL56"),
-                            ("Pre-compact", .amber, PK4.warning(.precompact), "HL57"),
-                        ], s: s)
-                }
+                LampRow(
+                    title: "Mode",
+                    windows: [
+                        ("Normal", .white, PK4.mode(.normal), "HL48"),
+                        ("Other mode", .amber, PK4.mode(.other), "HL49"),
+                    ], s: s)
+                LampRow(
+                    title: "Kind",
+                    windows: [
+                        ("Interactive", .white, PK4.kind(.interactive), "HL50"),
+                        ("Detached", .white, PK4.kind(.detached), "HL51"),
+                    ], s: s)
+                LampRow(
+                    title: "Service tier",
+                    windows: [
+                        ("Standard", .white, PK4.tier(.standard), "HL52"),
+                        ("Other tier", .amber, PK4.tier(.other), "HL53"),
+                    ], s: s)
+                LampRow(
+                    title: "Warnings",
+                    windows: [
+                        ("Price\nunknown", .red, PK4.warning(.price), "HL54"),
+                        ("Data stale", .red, PK4.warning(.stale), "HL55"),
+                        ("Subagent\nactive", .white, PK4.warning(.subagent), "HL56"),
+                        ("Pre-compact", .amber, PK4.warning(.precompact), "HL57"),
+                    ], s: s)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(spacing: 16) {
                 Plate(text: "Electromechanical totals · hold reading on power loss")
@@ -534,15 +558,6 @@ private struct PanelB: View {
                     DrumCounter(
                         label: "Lines removed", value: s.drum(PK4.linesRemoved), code: "PC4",
                         id: PK4.linesRemoved.rawValue)
-                }
-            }
-
-            VStack(spacing: 16) {
-                Plate(text: "Disruptive commands")
-                HStack(alignment: .top, spacing: 36) {
-                    guarded(PK4.f10, "F10", "[Function 10]", keyed: false, code: "SB4")
-                    guarded(PK4.f11, "F11", "[Function 11]", keyed: false, code: "SB5")
-                    guarded(PK4.f12, "F12", "End session", keyed: true, code: "SB6")
                 }
             }
         }
@@ -648,8 +663,9 @@ private struct LampGroup: View {
 private struct PanelC: View {
     let s: ConsoleSnapshot
 
-    /// What the routine keys do, on their plates. F6 to F9 keep the placeholder until
-    /// they have a job: a key labelled with a promise it cannot keep is worse.
+    /// What the routine keys do, on their plates. F6 and F7 keep the placeholder until
+    /// they have a job: a key labelled with a promise it cannot keep is worse. F1 stands
+    /// on panel B, beside PRINT TO LOG.
     static let functions: [Int: String] = [
         1: "Open folder", 2: "Terminal here", 3: "Copy resume", 4: "Safety log",
         5: "Show transcript",
@@ -657,26 +673,17 @@ private struct PanelC: View {
 
     var body: some View {
         PK4Panel(title: "C · Control — selected session", spacing: 26) {
-            NixieReadout(
-                label: "Command goes to session", template: "0", value: s.nixie(PK4.targetC),
-                xl: true,
-                code: "HG17", id: PK4.targetC.rawValue
-            )
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Command goes to session")
-            .accessibilityValue(PK4Words.digits(s.nixie(PK4.targetC)))
             Plate(text: "Routine commands")
+            // F2 to F7, two rows of three: SB9 to SB14.
             Grid(horizontalSpacing: 18, verticalSpacing: 22) {
-                ForEach(0..<3, id: \.self) { row in
+                ForEach(0..<2, id: \.self) { row in
                     GridRow {
                         ForEach(0..<3, id: \.self) { column in
-                            let number = row * 3 + column + 1
-                            // SB8 to SB14 for F1 to F7; SB15 on went to panel D first.
+                            let number = row * 3 + column + 2
                             PushButton(
                                 id: PK4.function(number), cap: "F\(number)",
                                 label: Self.functions[number] ?? "[Function \(number)]",
-                                face: s.button(PK4.function(number)),
-                                code: "SB\(number <= 7 ? 7 + number : 12 + number)")
+                                face: s.button(PK4.function(number)), code: "SB\(7 + number)")
                         }
                     }
                 }
@@ -693,7 +700,9 @@ private struct PanelD: View {
     let s: ConsoleSnapshot
 
     var body: some View {
-        PK4Panel(title: "D · Computer controls", spacing: 30) {
+        // The screws sit on the bottom padding, as B's and F's do: the two lamp rows take the
+        // room the spacer's gaps had.
+        PK4Panel(title: "D · Computer controls", spacing: 30, tightBottom: true) {
             HStack(alignment: .top) {
                 round(PK4.sleepMode, "Slp", "Sleep\nmode", codes: ("HL63", "HL64", "SB15"))
                 Spacer()
@@ -702,6 +711,17 @@ private struct PanelD: View {
                 round(PK4.fc1, "FC1", "Awake · display on", codes: ("HL67", "HL68", "SB17"))
                 Spacer()
                 round(PK4.fc2, "FC2", "Awake · display off", codes: ("HL69", "HL70", "SB18"))
+            }
+            // The desk's own window and the Mac's sound. The caps line up; MINIMIZE has no
+            // lenses, having no state.
+            HStack(alignment: .bottom) {
+                round(PK4.onTop, "Top", "Window\non top", codes: ("HL95", "HL96", "SB22"))
+                Spacer()
+                round(PK4.speakers, "Spk", "Mac\nspeakers", codes: ("HL97", "HL98", "SB23"))
+                Spacer()
+                round(PK4.computer, "F", "Computer\nstatus", codes: ("HL99", "HL100", "SB24"))
+                Spacer()
+                round(PK4.minimize, "Min", "Minimize\nwindow", codes: (nil, nil, "SB25"))
             }
             HStack(alignment: .center, spacing: 44) {
                 EdgewiseMeter(
@@ -725,11 +745,32 @@ private struct PanelD: View {
             }
             // Well clear of the buttons above: a group of its own.
             .padding(.top, 30)
+
+            // How the Mac is coping, under its power: plates on two lines, as SLEEP MODE's,
+            // so four lamps fit the panel's width.
+            VStack(alignment: .leading, spacing: 10) {
+                LampRow(
+                    title: "Thermal\nstate", titleWidth: 100,
+                    windows: [
+                        ("Nominal", .green, PK4.thermal(.nominal), "HL88"),
+                        ("Fair", .amber, PK4.thermal(.fair), "HL89"),
+                        ("Serious", .red, PK4.thermal(.serious), "HL90"),
+                        ("Critical", .red, PK4.thermal(.critical), "HL91"),
+                    ], s: s)
+                LampRow(
+                    title: "Memory\npressure", titleWidth: 100,
+                    windows: [
+                        ("Normal", .green, PK4.pressure(.normal), "HL92"),
+                        ("Warning", .amber, PK4.pressure(.warning), "HL93"),
+                        ("Critical", .red, PK4.pressure(.critical), "HL94"),
+                    ], s: s)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private func round(
-        _ id: InstrumentID, _ cap: String, _ label: String, codes: (String, String, String)
+        _ id: InstrumentID, _ cap: String, _ label: String, codes: (String?, String?, String)
     ) -> some View {
         RoundPushButton(
             id: id, cap: cap, label: label, face: s.button(id), on: s.lamp(PK4.lensOn(id)),
@@ -756,26 +797,10 @@ private struct PanelE: View {
 
     var body: some View {
         PK4Panel(title: "E · Power and service", spacing: 18) {
-            quota(.session, "Quota · 5 h", meter: "PA5", lamps: ("HL80", "HL81")) {
-                NixieReadout(
-                    label: "Resets in", template: PK4.nixies[PK4.sessionResets] ?? "",
-                    value: s.nixie(PK4.sessionResets), unit: "h:min", labelWidth: 90,
-                    code: "HG18", id: PK4.sessionResets.rawValue)
-            }
+            quota(.session, "Quota · 5 h", meter: "PA5", resets: "HG18", lamps: ("HL80", "HL81"))
             // Apart, so the two windows read as two.
-            quota(.week, "Quota · week", meter: "PA6", lamps: ("HL82", "HL83")) {
-                HStack(spacing: 14) {
-                    NixieReadout(
-                        label: "Resets in", template: PK4.nixies[PK4.weekResetDays] ?? "",
-                        value: s.nixie(PK4.weekResetDays), unit: "d", labelWidth: 90,
-                        code: "HG19", unitWidth: 12, id: PK4.weekResetDays.rawValue)
-                    NixieReadout(
-                        template: PK4.nixies[PK4.weekResetHours] ?? "",
-                        value: s.nixie(PK4.weekResetHours), unit: "h", unitWidth: 12,
-                        id: PK4.weekResetHours.rawValue)
-                }
-            }
-            .padding(.top, 18)
+            quota(.week, "Quota · week", meter: "PA6", resets: "HG19", lamps: ("HL82", "HL83"))
+                .padding(.top, 18)
             // Apart from the two windows, its label on the left like theirs.
             DrumCounter(
                 label: "Hours in service", value: s.drum(PK4.hoursInService), code: "PC5",
@@ -785,13 +810,14 @@ private struct PanelE: View {
         }
     }
 
-    /// One of the plan's usage windows, in one row: its meter, and beside it how long until
-    /// it resets, the label on the left, with the lamps that warn at 80% and 95% under it.
-    private func quota<Readout: View>(
-        _ quota: PK4.Quota, _ label: String, meter: String, lamps: (String, String),
-        @ViewBuilder readout: () -> Readout
+    /// One of the plan's usage windows, in one row: its meter; how long until it resets, in
+    /// days, hours and minutes, the label on the left; and the lamps that warn at 80% and
+    /// 95%, one above the other.
+    private func quota(
+        _ quota: PK4.Quota, _ label: String, meter: String, resets code: String,
+        lamps: (String, String)
     ) -> some View {
-        HStack(alignment: .center, spacing: 14) {
+        HStack(alignment: .center, spacing: 12) {
             HorizontalEdgewiseMeter(
                 label: label, value: s.meter(PK4.quotaMeter(quota)), code: meter,
                 id: PK4.quotaMeter(quota).rawValue
@@ -799,16 +825,28 @@ private struct PanelE: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(label)
             .accessibilityValue(PK4Words.meter(s.meter(PK4.quotaMeter(quota))))
-            readout()
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(label), resets in")
-                // The same width in both rows, so the lamps line up.
-                .frame(width: 322, alignment: .leading)
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
+                tube(quota, .days, "d", label: "Resets in", code: code)
+                tube(quota, .hours, "h")
+                tube(quota, .minutes, "m")
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(label), resets in")
+            VStack(spacing: 8) {
                 window("Near limit", .amber, PK4.quotaNear(quota), lamps.0)
                 window("At limit", .red, PK4.quotaLimit(quota), lamps.1)
             }
         }
+    }
+
+    private func tube(
+        _ quota: PK4.Quota, _ part: PK4.ResetPart, _ unit: String, label: String? = nil,
+        code: String? = nil
+    ) -> some View {
+        let id = PK4.quotaReset(quota, part)
+        return NixieReadout(
+            label: label, template: PK4.nixies[id] ?? "", value: s.nixie(id), unit: unit,
+            labelWidth: label == nil ? nil : 84, code: code, unitWidth: 12, id: id.rawValue)
     }
 
     private func window(
@@ -819,6 +857,121 @@ private struct PanelE: View {
             .accessibilityElement()
             .accessibilityLabel(label)
             .accessibilityValue(PK4Words.lamp(s.lamp(id)))
+    }
+}
+
+// MARK: - Panel F · computer load
+
+/// What the Mac is doing: its processors, GPU, power and memory on meters; temperatures,
+/// fans, memory, disk and network on tubes; and each seated session's own processes, in
+/// panel A's four columns. Its thermal state and memory pressure are lamps at the foot of
+/// panel D.
+private struct PanelF: View {
+    let s: ConsoleSnapshot
+
+    var body: some View {
+        PK4Panel(
+            title: "F · Computer — load and heat", spacing: 72,
+            padding: EdgeInsets(top: 18, leading: 26, bottom: 18, trailing: 26),
+            tightBottom: true
+        ) {
+            // Four meters in a block of their own, two by two.
+            Grid(horizontalSpacing: 56, verticalSpacing: 40) {
+                GridRow {
+                    meter("CPU load", .cpu, code: "PA7")
+                    meter("GPU load", .gpu, code: "PA8")
+                }
+                GridRow {
+                    meter("Power drawn", .power, unit: "W", code: "PA9")
+                    meter("Memory used", .memory, red: 0.9...1, code: "PA10")
+                }
+            }
+
+
+            // Heat, fans and the disk's traffic on the left; memory, the disk's room and the
+            // network on the right. Each column's glass the width of its widest readout.
+            HStack(alignment: .top, spacing: 0) {
+                VStack(alignment: .leading, spacing: 24) {
+                    gauge("SoC temp", .socTemp, "°C", "HG20")
+                    gauge("SSD temp", .ssdTemp, "°C", "HG21")
+                    gauge("Battery temp", .batteryTemp, "°C", "HG22")
+                    gauge("Fan 1", .fan1, "rpm", "HG23")
+                    gauge("Fan 2", .fan2, "rpm", "HG24")
+                    gauge("Disk read", .diskRead, "MB/s", "HG25")
+                    gauge("Disk write", .diskWrite, "MB/s", "HG26")
+                }
+                Spacer(minLength: 30)
+                VStack(alignment: .leading, spacing: 24) {
+                    gauge("Memory used", .memoryUsed, "GB", "HG27")
+                    gauge("Wired", .memoryWired, "GB", "HG28")
+                    gauge("Compressed", .memoryCompressed, "GB", "HG29")
+                    gauge("Swap used", .swap, "GB", "HG30")
+                    gauge("Disk free", .diskFree, "GB", "HG31")
+                    gauge("Network in", .networkIn, "MB/s", "HG32")
+                    gauge("Network out", .networkOut, "MB/s", "HG33")
+                }
+            }
+
+            // Each seated session's processes, in panel A's columns.
+            Grid(horizontalSpacing: 22, verticalSpacing: 24) {
+                GridRow {
+                    Plate(text: "Session", width: 170)
+                    ForEach(PK4.slots, id: \.self) { slot in
+                        Text(String(slot)).font(PK4Type.label(30, bold: true))
+                            .mark("numeral", "", ["text": String(slot)])
+                            .accessibilityHidden(true)
+                    }
+                }
+                GridRow {
+                    Plate(text: "CPU · % of Mac", width: 170)
+                    ForEach(PK4.slots, id: \.self) { slot in
+                        session(PK4.sessionCPU(slot: slot), "CPU, session \(slot)")
+                    }
+                }
+                GridRow {
+                    Plate(text: "Memory · GB", width: 170)
+                    ForEach(PK4.slots, id: \.self) { slot in
+                        session(PK4.sessionMemory(slot: slot), "Memory, session \(slot)")
+                    }
+                }
+            }
+        }
+    }
+
+    private func meter(
+        _ label: String, _ load: PK4.Load, unit: String = "%", red: ClosedRange<Double>? = nil,
+        code: String
+    ) -> some View {
+        let id = PK4.loadMeter(load)
+        return MovingCoilMeter(
+            label: label, value: s.meter(id), red: red, unit: unit, powered: s.mains, code: code,
+            id: id.rawValue
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(PK4Words.meter(s.meter(id)))
+    }
+
+    private func gauge(_ label: String, _ gauge: PK4.Gauge, _ unit: String, _ code: String)
+        -> some View
+    {
+        let id = PK4.gauge(gauge)
+        return NixieReadout(
+            label: label, template: gauge.template, value: s.nixie(id), unit: unit,
+            labelWidth: 150, code: code, unitWidth: 40, span: "000.0", id: id.rawValue
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(PK4Words.digits(s.nixie(id)))
+    }
+
+    private func session(_ id: InstrumentID, _ label: String) -> some View {
+        NixieReadout(
+            template: PK4.nixies[id] ?? "", value: s.nixie(id), span: "00.0", id: id.rawValue
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(PK4Words.digits(s.nixie(id)))
     }
 }
 

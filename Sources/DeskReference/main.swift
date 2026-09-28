@@ -65,7 +65,7 @@ enum Reference {
         let (model, _) = model(atHour: 1.1)
         let collector = Collector()
         let desk = PK4Desk(snapshot: model.snapshot)
-            .frame(width: 2500, height: 1800)
+            .frame(width: PK4Size.deskWidth, height: PK4Size.deskHeight)
             .overlayPreferenceValue(DeskMarks.self) { marks in
                 GeometryReader { proxy in
                     let _ = {
@@ -142,7 +142,7 @@ enum Reference {
             _ night: Bool = false, _ finish: Finish = .greyGreen, _ s: ConsoleSnapshot
         ) -> some View {
             themed(
-                PK4Desk(snapshot: s).frame(width: 2500, height: 1800), night: night, finish: finish)
+                PK4Desk(snapshot: s).frame(width: PK4Size.deskWidth, height: PK4Size.deskHeight), night: night, finish: finish)
         }
         let live = model.snapshot
         try render(desk(false, .greyGreen, live), "day.png", scale: scale, folder: folder)
@@ -278,7 +278,6 @@ MainActor.assumeIsolated {
             try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
             let (model, clock) = Reference.model(atHour: 1.1)
             model.send(.guard(PK4.f12, open: true))
-            model.send(.guard(PK4.f10, open: true))
             model.send(.key(PK4.f12, armed: true))
             model.send(.press(PK4.f12))
             for _ in 0..<2 { model.send(.selectorStep(1)) }

@@ -26,6 +26,8 @@ public enum DeskPrinter {
 
         guard let art = ArtSet.render(style: style, scale: scale) else { return nil }
         let layers = DeskLayers()
+        // The whole desk, panel F included, whatever a window would show.
+        layers.desk.bounds = CGRect(origin: .zero, size: DeskLayout.size)
         layers.install(art)
         layers.apply(snapshot, animated: false)
 

@@ -19,6 +19,12 @@ public enum DeskWords {
         value < 0 ? "no reading" : "\(Int((value * 100).rounded())) percent"
     }
 
+    /// POWER DRAWN reads watts on a scale of 0 to `PK4.powerScale`, not a share.
+    public static func meter(_ value: Double, of id: InstrumentID) -> String {
+        guard id == PK4.loadMeter(.power), value >= 0 else { return meter(value) }
+        return "\(Int((value * PK4.powerScale).rounded())) watts"
+    }
+
     /// Spoken when an alarm is raised.
     public static func alarm(_ id: InstrumentID, selector: Int) -> String? {
         for slot in PK4.slots {

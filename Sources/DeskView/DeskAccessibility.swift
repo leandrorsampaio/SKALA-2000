@@ -3,7 +3,7 @@ import ConsoleKit
 import DeskArt
 
 /// VoiceOver's view of the desk: every instrument one element, labelled with its plate and
-/// valued in words, grouped by panel A to E in that order. Buttons press, the selector is
+/// valued in words, grouped by panel A to F in that order, F only while it is in view. Buttons press, the selector is
 /// adjustable, MAINS toggles, a pencil strip opens its field.
 ///
 /// Elements read their value from the view's current snapshot when asked, so a snapshot
@@ -18,7 +18,13 @@ final class DeskAccessibility {
 
     func update(_ snapshot: ConsoleSnapshot) {}
 
-    /// The five panels, and the header, in reading order.
+    /// Panel F came into view or left it.
+    func rebuild() {
+        built = nil
+        view?.window.map { NSAccessibility.post(element: $0, notification: .layoutChanged) }
+    }
+
+    /// The six panels, and the header, in reading order.
     var children: [NSAccessibilityElement] {
         if let built { return built }
         guard let view else { return [] }
@@ -49,13 +55,14 @@ final class DeskAccessibility {
         let rows: [AnnunciatorRow: String] = [
             .run: "Running", .busy: "Busy", .wait: "Waiting for operator", .done: "Turn done",
             .agent: "Agent done", .bkgd: "Background job", .block: "Blocked", .cmpct: "Compacting",
-            .lowctx: "Low context",
+            .lowctx: "Low context", .remote: "Remote control",
         ]
         let groups = [
             "b.perm.": "Permission mode", "b.effort.": "Effort", "b.model.": "Model",
             "b.mode.": "Mode",
             "b.kind.": "Kind", "b.tier.": "Service tier", "b.warn.": "Warnings",
             "e.quota.session.": "Quota, 5 hours", "e.quota.week.": "Quota, week",
+            "d.thermal.": "Thermal state", "d.pressure.": "Memory pressure",
         ]
         for lamp in DeskLayout.all("lamp") where !lamp.id.isEmpty {
             let id = InstrumentID(lamp.id)
@@ -76,17 +83,38 @@ final class DeskAccessibility {
         // does, so they are left out, as in the reference.
         let nixieLabels: [InstrumentID: String] = [
             PK4.sessionsRunning: "Sessions running", PK4.sessionsBusy: "Sessions busy",
-            PK4.targetC: "Command goes to session", PK4.contextUsed: "Context used",
+            PK4.contextUsed: "Context used",
             PK4.inputTokens: "Input tokens", PK4.outputTokens: "Output tokens",
             PK4.thinkingTokens: "Thinking tokens", PK4.cacheRead: "Cache read, thousands",
             PK4.cacheWritten: "Cache written, thousands", PK4.queueDepth: "Queue depth",
             PK4.toolCalls: "Tool calls", PK4.lastTurn: "Last turn, minutes and seconds",
             PK4.turnMessages: "Turn messages", PK4.uptime: "Session uptime, hours and minutes",
             PK4.cost: "Cost, last checkpoint, dollars",
-            PK4.sessionResets: "Quota, 5 hours, resets in hours and minutes",
-            PK4.weekResetDays: "Quota, week, resets in days",
-            PK4.weekResetHours: "Quota, week, and hours",
-        ]
+            PK4.quotaReset(.session, .days): "Quota, 5 hours, resets in days",
+            PK4.quotaReset(.session, .hours): "Quota, 5 hours, and hours",
+            PK4.quotaReset(.session, .minutes): "Quota, 5 hours, and minutes",
+            PK4.quotaReset(.week, .days): "Quota, week, resets in days",
+            PK4.quotaReset(.week, .hours): "Quota, week, and hours",
+            PK4.quotaReset(.week, .minutes): "Quota, week, and minutes",
+            PK4.gauge(.socTemp): "Processor temperature, degrees",
+            PK4.gauge(.ssdTemp): "SSD temperature, degrees",
+            PK4.gauge(.batteryTemp): "Battery temperature, degrees",
+            PK4.gauge(.fan1): "Fan 1, rpm", PK4.gauge(.fan2): "Fan 2, rpm",
+            PK4.gauge(.diskRead): "Disk read, megabytes a second",
+            PK4.gauge(.diskWrite): "Disk write, megabytes a second",
+            PK4.gauge(.memoryUsed): "Memory used, gigabytes",
+            PK4.gauge(.memoryWired): "Memory wired, gigabytes",
+            PK4.gauge(.memoryCompressed): "Memory compressed, gigabytes",
+            PK4.gauge(.swap): "Swap used, gigabytes", PK4.gauge(.diskFree): "Disk free, gigabytes",
+            PK4.gauge(.networkIn): "Network in, megabytes a second",
+            PK4.gauge(.networkOut): "Network out, megabytes a second",
+        ].merging(
+            PK4.slots.flatMap { slot in
+                [
+                    (PK4.sessionCPU(slot: slot), "Session \(slot), CPU, percent of the Mac"),
+                    (PK4.sessionMemory(slot: slot), "Session \(slot), memory, gigabytes"),
+                ]
+            }, uniquingKeysWith: { first, _ in first })
         for nixie in DeskLayout.all("nixie") {
             let id = InstrumentID(nixie.id)
             guard let label = nixieLabels[id] else { continue }
@@ -98,6 +126,8 @@ final class DeskAccessibility {
             PK4.toolShareMeter: "Tool share of time", PK4.batteryMeter: "Battery",
             PK4.quotaMeter(.session): "Quota, 5 hours, used",
             PK4.quotaMeter(.week): "Quota, week, used",
+            PK4.loadMeter(.cpu): "CPU load", PK4.loadMeter(.gpu): "GPU load",
+            PK4.loadMeter(.power): "Power drawn", PK4.loadMeter(.memory): "Memory used",
         ]
         for meter in DeskLayout.all("meter") + DeskLayout.all("edgewise")
             + DeskLayout.all("hEdgewise")
@@ -130,13 +160,14 @@ final class DeskAccessibility {
             add(program.rect, ProgramElement(view: view))
         }
 
-        // Panels in reading order, and their instruments top to bottom, left to right.
-        let order = ["header", "A", "B", "C", "D", "E"]
+        // Panels in reading order, and their instruments top to bottom, left to right. F only
+        // while it can be seen.
+        let order = ["header", "A", "B", "C", "D", "E"] + (view.showsLoadPanel ? ["F"] : [])
         let names = [
             "header": "Header", "A": "A · All sessions, annunciator",
             "B": "B · Selected session, instruments",
             "C": "C · Control, selected session", "D": "D · Computer controls",
-            "E": "E · Power and service",
+            "E": "E · Power and service", "F": "F · Computer, load and heat",
         ]
         return order.compactMap { key -> NSAccessibilityElement? in
             let members = items.filter { $0.panel == key }.sorted { a, b in
@@ -160,16 +191,17 @@ final class DeskAccessibility {
     static func label(for control: HitTable.Control) -> String {
         let names: [InstrumentID: String] = [
             PK4.silence: "Silence", PK4.acknowledge: "Acknowledge", PK4.lampTest: "Lamp test",
-            PK4.buzzerTest: "Buzzer test", PK4.printText: "Print text",
+            PK4.buzzerTest: "Buzzer test", PK4.printText: "Print to log",
             PK4.function(1): "Open folder",
             PK4.function(2): "Terminal here", PK4.function(3): "Copy resume",
             PK4.function(4): "Safety log",
             PK4.function(5): "Show transcript", PK4.function(6): "Function 6, unassigned",
-            PK4.function(7): "Function 7, unassigned", PK4.function(8): "Function 8, unassigned",
-            PK4.function(9): "Function 9, unassigned", PK4.f10: "Function 10, unassigned",
-            PK4.f11: "Function 11, unassigned", PK4.f12: "End session", PK4.sleepMode: "Sleep mode",
+            PK4.function(7): "Function 7, unassigned", PK4.f12: "End session",
+            PK4.sleepMode: "Sleep mode",
             PK4.monitorOff: "Turn off monitor", PK4.fc1: "Keep awake, display on",
-            PK4.fc2: "Keep awake, display off", PK4.selector: "Session selector",
+            PK4.fc2: "Keep awake, display off", PK4.onTop: "Window on top",
+            PK4.speakers: "Mac speakers", PK4.computer: "Computer status, panel F",
+            PK4.minimize: "Minimize window", PK4.selector: "Session selector",
             PK4.mains: "Mains 220 volts 50 hertz",
         ]
         switch control.kind {
@@ -246,7 +278,7 @@ final class MeterElement: DeskElement {
         setAccessibilityRole(.levelIndicator)
         setAccessibilityLabel(label)
     }
-    override func accessibilityValue() -> Any? { DeskWords.meter(snapshot.meter(id)) }
+    override func accessibilityValue() -> Any? { DeskWords.meter(snapshot.meter(id), of: id) }
 }
 
 final class DrumElement: DeskElement {

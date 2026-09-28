@@ -102,6 +102,27 @@ import Testing
         #expect(readings.contains { $0.field == .contextWindow && $0.value == .count(1_000_000) })
     }
 
+    /// Remote Control: the `bridge-session` record carries the bridge's id while it is on,
+    /// and an empty one once it is turned off. Nothing is said until a record turns up.
+    @Test func remoteControlFollowsTheBridgeRecord() {
+        let on =
+            #"{"type":"bridge-session","sessionId":"s","bridgeSessionId":"cse_01abc","lastSequenceNum":0}"#
+        let off =
+            #"{"type":"bridge-session","sessionId":"s","bridgeSessionId":"","lastSequenceNum":0}"#
+        let active =
+            #"{"type":"system","subtype":"bridge_status","content":"/remote-control is active","url":"https://claude.ai/code/x","timestamp":"2026-09-25T11:34:18.627Z"}"#
+        #expect(read([assistant(request: "r", output: 1)]).remoteControl == nil)
+        #expect(read([on]).remoteControl == true)
+        #expect(read([active]).remoteControl == true)
+        #expect(read([on, active, on, off]).remoteControl == false)
+        #expect(read([on, active, on, off, on]).remoteControl == true)
+
+        let readings = read([on, active]).readings(for: "s", at: Date(), ttl: 6)
+        #expect(readings.contains { $0.field == .remoteControl && $0.value == .flag(true) })
+        // Whether it is on, and nothing more: the bridge's id and its link go nowhere.
+        #expect(!readings.contains { "\($0.value)".contains("cse_") || "\($0.value)".contains("claude.ai") })
+    }
+
     /// After a `/model` switch the newer record wins, whichever kind it is.
     @Test func theNewestRecordNamingTheModelWins() {
         let checkpoint =

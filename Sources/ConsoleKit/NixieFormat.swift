@@ -29,6 +29,17 @@ public enum NixieFormat {
         return String(repeating: "0", count: width - text.count) + text
     }
 
+    /// A figure with a point in it, `whole` tubes before and `fraction` after: rounded to
+    /// its last tube, and all nines when it is too large for them.
+    public static func decimal(_ value: Double, whole: Int, fraction: Int) -> String {
+        let scale = Int(pow(10, Double(fraction)))
+        let limit = Int(pow(10, Double(whole + fraction))) - 1
+        let scaled = min(Double(limit), (value.isFinite ? max(0, value) : 0) * Double(scale))
+        let tenths = Int(scaled.rounded())
+        return digits(tenths / scale, width: whole) + "."
+            + digits(tenths % scale, width: fraction)
+    }
+
     /// Divided by a thousand and floored, for the ×1000 rows.
     public static func thousands(_ value: Int, width: Int) -> String {
         digits(max(0, value) / 1000, width: width)

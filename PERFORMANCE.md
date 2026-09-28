@@ -19,10 +19,14 @@ which is where the Claude Code feed spends its time (`claude agents --json`).
 | Real Claude Code feed, this session busy | — | **0.10%** (0.53% with children) | `bench.sh real` |
 | Hidden (minimised), real feed | ≤ 0.3% | **0.10%** (0.54% with children) | the feed's `claude agents` runs are the rest; the reference measured 0.52% in total |
 | Hidden, no feed | ≤ 0.3% | **0.02%** | |
+| Real feed with panel F reading the Mac (0.5.0) | — | **0.42%** | 60 s, settled; four needles and some twenty tubes change every 2 s. A pass of the load source is about 1 ms; the temperature sensors, read every 10 s, are 32 ms of waiting but 1 ms of CPU; the rest is drawing what changed |
 | Live resize, 1280 wide to the widest the screen allows | no dropped frames; ≤ 2 ms main thread per frame | **0 of 272 frames missed**; DeskView **0.04 ms** per frame (max 0.12) | the whole `NSWindow.setFrame` step is 2.2 ms, of which an *empty* AppKit window takes 1.44 ms (p95 4.4 ms) |
 | Click → cap visibly down | next frame | cap transform set inside `mouseDown`, committed with that turn of the run loop | see "Input" |
 | Launch → interactive desk | ≤ 0.5 s warm, ≤ 1.5 s cold | **0.37–0.40 s warm**, **1.17 s** first launch after a build | from `exec` to the art on screen; the art comes from the disk cache in 12 ms |
 | Memory, 5K full screen | ≤ 250 MB | **161 MB** | was 346 MB before the art moved into IOSurfaces |
+
+The rows above panel F were measured on the 2500-unit desk, before it had a fourth
+column.
 
 The reference app as it runs on this Mac right now (Mac Command Center, console window
 closed, menu bar panel only): **11.09%** of one core.

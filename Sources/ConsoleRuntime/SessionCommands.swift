@@ -124,11 +124,13 @@ public struct LiveSessionSystem: SessionSystem {
 /// clipboard. F12, behind its guard and its key, ends the session with `SIGTERM`, which
 /// Claude Code exits cleanly on and which F3's command undoes.
 ///
-/// F6 to F11 are left unassigned, on purpose. Freezing a session with `SIGSTOP` looked
-/// right for F10 and F11 and is not: a session in a terminal is the terminal's foreground
-/// job, so the shell takes the terminal back and `SIGCONT` resumes it in the background,
-/// where it stops again the moment it reads a key. A key that half works is worse than
-/// one that says it does nothing.
+/// F6 and F7 are left unassigned, on purpose; F8 and F9, and the guarded F10 and F11, that
+/// had no job, are gone. Freezing a session with `SIGSTOP` looked right for them and is not: a session
+/// in a terminal is the terminal's foreground job, so the shell takes the terminal back and
+/// `SIGCONT` resumes it in the background, where it stops again the moment it reads a key.
+/// A key that half works is worse than one that says it does nothing. Compacting a session
+/// or turning its Remote Control on from outside is not offered either: Claude Code takes
+/// both only as commands typed at the session's own prompt.
 ///
 /// None of them is confirmed by being sent: each reports what it observed afterwards, and
 /// F12 checks first that the pid still belongs to that session.

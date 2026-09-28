@@ -91,7 +91,6 @@ extension ConsoleModel {
 
         let selected = String(saved.selector)
         out[PK4.selected] = selected
-        out[PK4.targetC] = selected
 
         if let listed = freshRosterKeys(now) {
             let busy = listed.filter { sessions[$0]?.isBusy(at: now) == true }
@@ -99,18 +98,18 @@ extension ConsoleModel {
             out[PK4.sessionsBusy] = NixieFormat.digits(busy.count, width: 1)
         }
 
-        // Panel E: how long until each plan window resets, while one is known, rounded up
-        // as a countdown reads. The session in hours and minutes: 01:10 until under 69
-        // minutes. The week in days and hours: 74.2 hours reads 03 days 03 hours.
-        if let left = quotaResets(.session, now) {
-            out[PK4.sessionResets] = NixieFormat.hoursMinutes(
-                (left / 60).rounded(.up) * 60, leading: 2)
+        // Panel E: how long until each plan window resets, while one is known, in days,
+        // hours and minutes. Claude Code gives the moment it resets; the time left is
+        // counted on the Mac's clock and rounded up as a countdown reads: 69 minutes and
+        // a half read 00 01 10.
+        for quota in PK4.Quota.allCases {
+            guard let left = quotaResets(quota, now) else { continue }
+            let minutes = NixieFormat.whole((left / 60).rounded(.up))
+            out[PK4.quotaReset(quota, .days)] = NixieFormat.digits(minutes / 1440, width: 2)
+            out[PK4.quotaReset(quota, .hours)] = NixieFormat.digits(minutes % 1440 / 60, width: 2)
+            out[PK4.quotaReset(quota, .minutes)] = NixieFormat.digits(minutes % 60, width: 2)
         }
-        if let left = quotaResets(.week, now) {
-            let hours = NixieFormat.whole((left / 3600).rounded(.up))
-            out[PK4.weekResetDays] = NixieFormat.digits(hours / 24, width: 2)
-            out[PK4.weekResetHours] = NixieFormat.digits(hours % 24, width: 2)
-        }
+        out.merge(loadNixies(now)) { _, measured in measured }
 
         let panelB: [InstrumentID] = [
             PK4.contextUsed, PK4.inputTokens, PK4.outputTokens, PK4.thinkingTokens,
@@ -202,6 +201,76 @@ extension ConsoleModel {
         for quota in PK4.Quota.allCases {
             out[PK4.quotaMeter(quota)] = quotaUsed(quota, now) ?? Needle.leftStop
         }
+
+        // Panel F: what the Mac is doing. A figure not read lies on the stop.
+        func share(_ value: Double?) -> Double? { value.map { min(1, max(0, $0)) } }
+        out[PK4.loadMeter(.cpu)] = share(machineAmount(.cpuLoad, now))
+        out[PK4.loadMeter(.gpu)] = share(machineAmount(.gpuLoad, now))
+        out[PK4.loadMeter(.power)] = share(machineAmount(.systemPower, now).map { $0 / PK4.powerScale })
+        if let used = machineAmount(.memoryUsed, now),
+            let total = machineAmount(.memoryTotal, now), total > 0
+        {
+            out[PK4.loadMeter(.memory)] = share(used / total)
+        }
+        return out
+    }
+
+    func machineAmount(_ field: Field, _ now: Date) -> Double? {
+        guard let reading = machine[field], reading.isFresh(at: now) else { return nil }
+        return reading.value.amount
+    }
+
+    func machineText(_ field: Field, _ now: Date) -> String? {
+        guard let reading = machine[field], reading.isFresh(at: now) else { return nil }
+        return reading.value.text
+    }
+
+    // MARK: - Panel F's tubes
+
+    func loadNixies(_ now: Date) -> [InstrumentID: String] {
+        var out: [InstrumentID: String] = [:]
+        let gigabyte = 1_073_741_824.0
+        func put(_ gauge: PK4.Gauge, _ field: Field, _ format: (Double) -> String) {
+            if let value = machineAmount(field, now) { out[PK4.gauge(gauge)] = format(value) }
+        }
+        func whole(_ width: Int, per unit: Double = 1) -> (Double) -> String {
+            { NixieFormat.digits(NixieFormat.whole(($0 / unit).rounded()), width: width) }
+        }
+        func decimal(_ whole: Int, per unit: Double) -> (Double) -> String {
+            { NixieFormat.decimal($0 / unit, whole: whole, fraction: 1) }
+        }
+        put(.socTemp, .socTemperature, whole(3))
+        put(.ssdTemp, .ssdTemperature, whole(3))
+        put(.batteryTemp, .batteryTemperature, whole(3))
+        put(.fan1, .fan1Speed, whole(4))
+        put(.fan2, .fan2Speed, whole(4))
+        // Memory in the gigabytes Activity Monitor uses, disks in the Finder's.
+        put(.memoryUsed, .memoryUsed, decimal(2, per: gigabyte))
+        put(.memoryWired, .memoryWired, decimal(2, per: gigabyte))
+        put(.memoryCompressed, .memoryCompressed, decimal(2, per: gigabyte))
+        put(.swap, .swapUsed, decimal(2, per: gigabyte))
+        put(.diskFree, .diskFree) {
+            NixieFormat.digits(NixieFormat.whole($0 / 1_000_000_000), width: 4)
+        }
+        put(.diskRead, .diskRead, decimal(3, per: 1_000_000))
+        put(.diskWrite, .diskWrite, decimal(3, per: 1_000_000))
+        put(.networkIn, .networkIn, decimal(3, per: 1_000_000))
+        put(.networkOut, .networkOut, decimal(3, per: 1_000_000))
+
+        // Each seated session's processes, in its own column, as panel A's windows are.
+        for slot in PK4.slots {
+            guard let key = slots.key(in: slot), let state = sessions[key],
+                !state.isStale(at: now)
+            else { continue }
+            if let share = state.amount(.processCPU, at: now) {
+                out[PK4.sessionCPU(slot: slot)] = NixieFormat.digits(
+                    NixieFormat.whole((share * 100).rounded()), width: 3)
+            }
+            if let bytes = state.amount(.processMemory, at: now) {
+                out[PK4.sessionMemory(slot: slot)] = NixieFormat.decimal(
+                    bytes / gigabyte, whole: 2, fraction: 1)
+            }
+        }
         return out
     }
 
@@ -224,8 +293,19 @@ extension ConsoleModel {
             light(PK4.annunciator(.agent, slot: slot), state.fresh(.agentDone, at: now) != nil)
             light(PK4.annunciator(.bkgd, slot: slot), state.isJob(at: now))
             light(PK4.annunciator(.cmpct, slot: slot), state.isCompacting(at: now))
+            light(
+                PK4.annunciator(.remote, slot: slot), state.flag(.remoteControl, at: now) == true)
             // Red, and flashing for as long as it holds, like WAIT and BLOCK.
             if isLowOnContext(state, now) { out[PK4.annunciator(.lowctx, slot: slot)] = .flash }
+        }
+
+        // Panel D's foot: the Mac's thermal state and memory pressure, a lamp for each; red
+        // ones flash for as long as they hold, as panel A's do.
+        if let state = machineText(.thermalState, now).flatMap(PK4.Thermal.init) {
+            out[PK4.thermal(state)] = state == .serious || state == .critical ? .flash : .on
+        }
+        if let level = machineText(.memoryPressure, now).flatMap(PK4.Pressure.init) {
+            out[PK4.pressure(level)] = level == .critical ? .flash : .on
         }
 
         // Panel A's red rows flash for as long as they hold: ACKNOWLEDGE steadies only the
@@ -278,7 +358,7 @@ extension ConsoleModel {
         }
 
         // Panel D.
-        for id in PK4.round {
+        for id in PK4.lensed {
             guard let reported = roundState(id, now) else { continue }
             out[reported ? PK4.lensOn(id) : PK4.lensOff(id)] = .on
         }

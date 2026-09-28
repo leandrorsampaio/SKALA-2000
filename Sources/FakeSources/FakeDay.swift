@@ -109,7 +109,46 @@ public struct FakeDay: Sendable {
             Reading(.machine, .systemAsleep, .flag(false), at: moment, ttl: 30),
         ]
         out += quota(at: moment, day: t)
+        out += load(at: moment, day: t)
         return out
+    }
+
+    /// What the Mac is doing, as the load source reports it: busier the more sessions work,
+    /// warm through the compaction at 09:10, short of memory for ten minutes at 10:10. Worked
+    /// out from the clock alone, never the day's randomness, so the rest of the day plays as
+    /// it always has; and in whole units, so a replay is not a stream of tiny changes.
+    func load(at moment: Date, day t: TimeInterval) -> [Reading] {
+        let working = Double(sessions.filter(\.isWorking).count)
+        let wave = sin(t / 97)
+        let gigabyte = 1_073_741_824.0
+        func percent(_ share: Double) -> Double { min(1, max(0, (share * 100).rounded() / 100)) }
+        func reading(_ field: Field, _ value: Value) -> Reading {
+            Reading(.machine, field, value, at: moment, ttl: Self.pollTTL)
+        }
+        let soc = (41 + 7 * working + 3 * wave).rounded()
+        let fan = soc >= 60 ? (2300 + (soc - 60) * 180).rounded() : 0
+        return [
+            reading(.cpuLoad, .amount(percent(0.07 + 0.12 * working + 0.03 * wave))),
+            reading(.gpuLoad, .amount(percent(0.04 + 0.03 * working))),
+            reading(.systemPower, .amount((7 + 9 * working + 2 * wave).rounded())),
+            reading(.thermalState, .text((4200..<4800).contains(t) ? "fair" : "nominal")),
+            reading(.memoryPressure, .text((7800..<8400).contains(t) ? "warning" : "normal")),
+            reading(.memoryTotal, .amount(24 * gigabyte)),
+            reading(.memoryUsed, .amount((14.2 + 0.8 * working) * gigabyte)),
+            reading(.memoryWired, .amount(3.1 * gigabyte)),
+            reading(.memoryCompressed, .amount((1.4 + 0.3 * working) * gigabyte)),
+            reading(.swapUsed, .amount(0.9 * gigabyte)),
+            reading(.diskFree, .amount((33_000 - (t / 60).rounded(.down)) * 1_000_000)),
+            reading(.diskRead, .amount((0.4 + 2.5 * working).rounded() * 1_000_000)),
+            reading(.diskWrite, .amount((0.2 + 1.5 * working).rounded() * 1_000_000)),
+            reading(.networkIn, .amount((0.3 + 0.6 * working).rounded() * 100_000)),
+            reading(.networkOut, .amount((0.1 + 0.2 * working).rounded() * 100_000)),
+            reading(.socTemperature, .amount(soc)),
+            reading(.ssdTemperature, .amount(33)),
+            reading(.batteryTemperature, .amount(30)),
+            reading(.fan1Speed, .amount(fan)),
+            reading(.fan2Speed, .amount(fan)),
+        ]
     }
 
     /// The plan's usage, as the status line reports it: the five-hour window fills through
@@ -167,6 +206,8 @@ struct SimSession: Sendable {
     var compactsAt: TimeInterval?
     var costRestartsAt: TimeInterval?
     var effortChange: (at: TimeInterval, to: String)?
+    /// Remote Control on for this stretch of the day, and off either side of it.
+    var remote: ClosedRange<TimeInterval>?
 
     var phase = Phase.notStarted
     var pid: Int
@@ -330,6 +371,13 @@ struct SimSession: Sendable {
         if let lastTurn { add(.turnDuration, .seconds(lastTurn)) }
         if let turnMessages { add(.turnMessages, .count(turnMessages)) }
         if let compactedAt { add(.compactBoundary, .time(compactedAt)) }
+        if let remote { add(.remoteControl, .flag(remote.contains(t))) }
+        // What its processes cost the Mac; a background job has none of its own.
+        if kind != "background" {
+            let gigabyte = 1_073_741_824.0
+            add(.processCPU, .amount(isWorking ? Double(4 + pid % 5) / 100 : 0))
+            add(.processMemory, .amount(Double(4 + pid % 5) / 10 * gigabyte))
+        }
 
         let checkpoint = FakeDay.checkpointTTL
         add(.costUSD, .amount(cost), ttl: checkpoint)
@@ -368,7 +416,7 @@ struct SimSession: Sendable {
                 key: "8e1f-tax", name: "tax-1", cwd: "/Users/operator/Projects/tax",
                 title: "Tax return reply", kind: "interactive", model: "claude-sonnet-5",
                 billed: "claude-sonnet-5", version: "2.1.280", startsAt: 600, endsAt: 5400,
-                effort: "medium", permission: "acceptEdits", pid: 40_202),
+                effort: "medium", permission: "acceptEdits", remote: 900...4500, pid: 40_202),
             SimSession(
                 key: "00fb-review", name: "Review root project markdown files",
                 cwd: "/Users/operator/Projects/pk4", title: "Review root project markdown files",

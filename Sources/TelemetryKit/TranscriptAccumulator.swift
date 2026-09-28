@@ -23,6 +23,10 @@ public struct TranscriptAccumulator: Sendable, Equatable {
     public private(set) var aiTitle: String?
     public private(set) var lastPrompt: String?
     public private(set) var gitBranch: String?
+    /// Remote Control, from the session's `bridge-session` record: written with the
+    /// bridge's id while it is on, again and again, and once more with an empty id when it
+    /// is turned off. `nil` until one turns up. Only whether the id is empty is kept.
+    public private(set) var remoteControl: Bool?
 
     /// Everything occupying the window on the last turn: fresh input, cache writes and
     /// cache reads.
@@ -71,7 +75,7 @@ public struct TranscriptAccumulator: Sendable, Equatable {
 
     private static let known: Set<String> = [
         "assistant", "cost-state", "permission-mode", "mode", "ai-title", "last-prompt",
-        "queue-operation", "system",
+        "queue-operation", "system", "bridge-session",
     ]
 
     public init() {}
@@ -125,6 +129,9 @@ public struct TranscriptAccumulator: Sendable, Equatable {
         case "mode": mode = json["mode"] as? String ?? mode
         case "ai-title": aiTitle = json["aiTitle"] as? String ?? aiTitle
         case "last-prompt": lastPrompt = json["lastPrompt"] as? String ?? lastPrompt
+        case "bridge-session":
+            guard let bridge = json["bridgeSessionId"] as? String else { return }
+            remoteControl = !bridge.isEmpty
         case "queue-operation":
             switch json["operation"] as? String {
             case "enqueue": queueDepth += 1
@@ -140,6 +147,9 @@ public struct TranscriptAccumulator: Sendable, Equatable {
                 turnMessages = json["messageCount"] as? Int ?? turnMessages
             case "compact_boundary":
                 compactedAt = Self.timestamp(json["timestamp"]) ?? compactedAt
+            case "bridge_status":
+                // "/remote-control is active", written as it comes on.
+                remoteControl = true
             default:
                 break
             }
@@ -203,6 +213,7 @@ public struct TranscriptAccumulator: Sendable, Equatable {
         add(.aiTitle, aiTitle.map(Value.text))
         add(.lastPrompt, lastPrompt.map(Value.text))
         add(.gitBranch, gitBranch.map(Value.text))
+        add(.remoteControl, remoteControl.map(Value.flag))
         add(.contextUsed, contextUsed.map(Value.count))
         add(.inputTokens, .count(inputTokens))
         add(.outputTokens, .count(outputTokens))

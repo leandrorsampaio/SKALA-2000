@@ -56,8 +56,8 @@ final class Scratch {
         let moment = Date(timeIntervalSince1970: 1_800_000_000.25)
         log.safety(
             SafetyEntry(
-                at: moment, event: .commandSent, instrument: PK4.f10, slot: 2, session: "s-2"))
-        log.safety(SafetyEntry(at: moment, event: .guardLifted, instrument: PK4.f10))
+                at: moment, event: .commandSent, instrument: PK4.f12, slot: 2, session: "s-2"))
+        log.safety(SafetyEntry(at: moment, event: .guardLifted, instrument: PK4.f12))
 
         let lines = try String(contentsOf: log.safetyURL, encoding: .utf8)
             .split(separator: "\n").map(String.init)
@@ -65,7 +65,7 @@ final class Scratch {
         let first = try #require(
             JSONSerialization.jsonObject(with: Data(lines[0].utf8)) as? [String: Any])
         #expect(first["event"] as? String == "command.sent")
-        #expect(first["instrument"] as? String == "b.f10")
+        #expect(first["instrument"] as? String == "b.f12")
         #expect(first["slot"] as? Int == 2)
         #expect(first["session"] as? String == "s-2")
         #expect(first["at"] as? String == "2027-01-15T08:00:00.250Z")

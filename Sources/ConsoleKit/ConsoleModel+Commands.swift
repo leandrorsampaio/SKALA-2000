@@ -363,7 +363,7 @@ extension ConsoleModel {
         record(.mainsOff, at: moment)
     }
 
-    // MARK: - PRINT TEXT
+    // MARK: - PRINT TO LOG
 
     /// The selected slot's strings. They are what the session last said, fresh or not:
     /// this is a log, not an instrument.

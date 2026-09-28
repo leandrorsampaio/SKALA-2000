@@ -7,7 +7,7 @@ import os
 /// The console's one view: a layer-hosting `NSView` that renders a `ConsoleSnapshot` and
 /// turns the operator's hand and keyboard into `ConsoleIntent`s.
 ///
-/// - **Scaling is a transform.** The desk is 2500 × 1800 units, fitted and centred in the
+/// - **Scaling is a transform.** The desk is 3352 × 1800 units, fitted and centred in the
 ///   view. A size change sets one scale on the desk layer and draws nothing; the art is
 ///   re-rendered at the exact new pixel size off the main thread when the resize ends.
 /// - **Nothing draws on the main thread.** `drawRect` is never called; every image is
@@ -30,6 +30,25 @@ public final class DeskView: NSView {
     }
     public var lampCodes = true {
         didSet { if lampCodes != oldValue { styleChanged() } }
+    }
+    /// Whether panel F, the fourth column, is in view. Hidden, the view shows the desk's
+    /// first 2500 units and F lies outside them, clipped: nothing is laid out again, and
+    /// the art is the same.
+    public var showsLoadPanel = false {
+        didSet {
+            guard showsLoadPanel != oldValue else { return }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layers.desk.bounds = CGRect(origin: .zero, size: visibleSize)
+            CATransaction.commit()
+            accessibility.rebuild()
+            setFrameSize(bounds.size)
+        }
+    }
+
+    /// The part of the desk in view, in desk units.
+    public var visibleSize: CGSize {
+        showsLoadPanel ? DeskLayout.size : DeskLayout.compactSize
     }
 
     let layers = DeskLayers()
@@ -116,14 +135,16 @@ public final class DeskView: NSView {
     var deskScale: CGFloat {
         let size = bounds.size
         guard size.width > 0, size.height > 0 else { return 1 }
-        return min(size.width / DeskLayout.size.width, size.height / DeskLayout.size.height)
+        let desk = visibleSize
+        return min(size.width / desk.width, size.height / desk.height)
     }
 
     var deskOrigin: CGPoint {
         let k = deskScale
+        let desk = visibleSize
         return CGPoint(
-            x: ((bounds.width - DeskLayout.size.width * k) / 2).rounded(),
-            y: ((bounds.height - DeskLayout.size.height * k) / 2).rounded())
+            x: ((bounds.width - desk.width * k) / 2).rounded(),
+            y: ((bounds.height - desk.height * k) / 2).rounded())
     }
 
     /// Main-thread time spent in `setFrameSize`, for the resize bench.
