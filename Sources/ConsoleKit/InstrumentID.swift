@@ -279,26 +279,20 @@ public enum PK4 {
         uniquingKeysWith: { first, _ in first })
 
     /// Top to bottom as the desk is drawn, for the power-up strike. Readouts on the same
-    /// line strike together.
-    public static let nixieRows: [[InstrumentID]] =
-        [
-            [selected],
-            [contextUsed, queueDepth],
-            [inputTokens, toolCalls],
-            [outputTokens, lastTurn],
-            [thinkingTokens, turnMessages],
-            [cacheRead, uptime],
-            [cacheWritten, cost],
-            [sessionsRunning, sessionsBusy],
-        ] + Quota.allCases.map { quota in ResetPart.allCases.map { quotaReset(quota, $0) } }
-        // Panel F, two columns of tubes a line, then the sessions' two rows.
-        + [
-            [gauge(.socTemp), gauge(.memoryUsed)], [gauge(.ssdTemp), gauge(.memoryWired)],
-            [gauge(.batteryTemp), gauge(.memoryCompressed)], [gauge(.fan1), gauge(.swap)],
-            [gauge(.fan2), gauge(.diskFree)], [gauge(.diskRead), gauge(.networkIn)],
-            [gauge(.diskWrite), gauge(.networkOut)],
-            slots.map { sessionCPU(slot: $0) }, slots.map { sessionMemory(slot: $0) },
-        ]
+    /// line strike together: panel F's tubes with panel B's and E's beside them, so the
+    /// fourth column adds nothing to how long the desk takes to come up.
+    public static let nixieRows: [[InstrumentID]] = [
+        [selected],
+        [contextUsed, queueDepth, gauge(.socTemp), gauge(.memoryUsed)],
+        [inputTokens, toolCalls, gauge(.ssdTemp), gauge(.memoryWired)],
+        [outputTokens, lastTurn, gauge(.batteryTemp), gauge(.memoryCompressed)],
+        [thinkingTokens, turnMessages, gauge(.fan1), gauge(.swap)],
+        [cacheRead, uptime, gauge(.fan2), gauge(.diskFree)],
+        [cacheWritten, cost, gauge(.diskRead), gauge(.networkIn)],
+        [sessionsRunning, sessionsBusy, gauge(.diskWrite), gauge(.networkOut)],
+        ResetPart.allCases.map { quotaReset(.session, $0) } + slots.map { sessionCPU(slot: $0) },
+        ResetPart.allCases.map { quotaReset(.week, $0) } + slots.map { sessionMemory(slot: $0) },
+    ]
 
     /// Every lamp window and lens on the desk, which is what LAMP TEST lights.
     public static var allLamps: [InstrumentID] {

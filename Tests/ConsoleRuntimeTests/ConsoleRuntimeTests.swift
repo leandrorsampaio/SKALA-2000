@@ -202,7 +202,12 @@ final class FakePmset: CommandRunning, @unchecked Sendable {
             directory: scratch.url, commands: .unassigned,
             extras: { [Reading(.machine, .keepAwakeDisplayOff, .flag(true), at: Date(), ttl: 30)] })
         defer { console.shutDown() }
-        try await Task.sleep(for: .seconds(2.2))
+        // Once the power-up's lamp test is over: waited for, as other suites share the
+        // main thread and a fixed wait is a guess.
+        let deadline = Date().addingTimeInterval(10)
+        while console.model.snapshot.lamp(PK4.lensOn(PK4.fc2)) != .on, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
         #expect(console.model.snapshot.lamp(PK4.lensOn(PK4.fc2)) == .on)
         #expect(console.model.snapshot.lamp(PK4.lensOff(PK4.fc1)) == .off)
     }

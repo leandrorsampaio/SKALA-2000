@@ -388,9 +388,10 @@ struct AccessibilityTests {
             elements(view).first { $0.accessibilityLabel() == "End session" })
         #expect(endSession.accessibilityPerformPress())
         #expect(sent == [.press(PK4.f12)])
-        // Released about 2.2 s later: waited for, as other suites share the main thread.
+        // Released about 2.2 s later: waited for, as other suites share the main thread,
+        // and generously, as a Mac busy with something else can hold it up for seconds.
         let asked = Date()
-        let deadline = asked.addingTimeInterval(10)
+        let deadline = asked.addingTimeInterval(30)
         while sent.count < 2, Date() < deadline { try await Task.sleep(for: .milliseconds(50)) }
         #expect(sent == [.press(PK4.f12), .release(PK4.f12)])
         #expect(Date().timeIntervalSince(asked) >= ConsoleTiming.holdToFire)

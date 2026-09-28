@@ -28,6 +28,8 @@ public struct FakeDay: Sendable {
     public static let length: TimeInterval = 10 * 3600
     public static let pollTTL = TTL.polled(every: tick)
     public static let checkpointTTL = TTL.polled(every: 5)
+    /// The Mac's load, reported every ten seconds.
+    public static let loadTTL = TTL.polled(every: 10)
 
     public let start: Date
     public private(set) var elapsed: TimeInterval = 0
@@ -109,7 +111,8 @@ public struct FakeDay: Sendable {
             Reading(.machine, .systemAsleep, .flag(false), at: moment, ttl: 30),
         ]
         out += quota(at: moment, day: t)
-        out += load(at: moment, day: t)
+        // Every ten seconds, not every tick: a replayed day is thousands of ticks.
+        if Int(t) % 10 == 0 { out += load(at: moment, day: t) }
         return out
     }
 
@@ -123,7 +126,7 @@ public struct FakeDay: Sendable {
         let gigabyte = 1_073_741_824.0
         func percent(_ share: Double) -> Double { min(1, max(0, (share * 100).rounded() / 100)) }
         func reading(_ field: Field, _ value: Value) -> Reading {
-            Reading(.machine, field, value, at: moment, ttl: Self.pollTTL)
+            Reading(.machine, field, value, at: moment, ttl: Self.loadTTL)
         }
         let soc = (41 + 7 * working + 3 * wave).rounded()
         let fan = soc >= 60 ? (2300 + (soc - 60) * 180).rounded() : 0
