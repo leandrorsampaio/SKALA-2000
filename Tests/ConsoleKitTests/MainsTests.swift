@@ -78,16 +78,19 @@ import Testing
         #expect(bench.snap.cues.chirp == 1)
     }
 
+    /// What the board knew goes with the power: an alarm still true is raised, and
+    /// signalled, again.
     @Test func alarmsStillTrueAreRaisedAgainAfterPowerUp() {
         let bench = Bench()
         bench.feed(bench.poll(["a"]) + [bench.hook("a", .waiting, ttl: TTL.waiting)])
-        bench.tap(PK4.acknowledge)
-        #expect(bench.lamp(.wait, 1) == .on)
+        #expect(bench.snap.cues.count(.wait) == 1)
 
         bench.send(.mains(false))
+        #expect(bench.lamp(.wait, 1) == .off)
         bench.send(.mains(true))
         bench.keepPolling(["a"], for: 3)
         #expect(bench.lamp(.wait, 1) == .flash)
+        #expect(bench.log.events(.alarmRaised).count == 2)
     }
 
     @Test func telemetryPublishesAtMostTenTimesASecond() {

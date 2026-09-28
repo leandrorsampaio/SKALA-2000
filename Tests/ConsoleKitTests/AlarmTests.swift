@@ -72,7 +72,7 @@ import Testing
         ])
         #expect(bench.lamp(.lowctx, 1) == .off)
         bench.feed([bench.reading("a", .contextUsed, .count(191_000))])
-        #expect(bench.lamp(.lowctx, 1) == .on)
+        #expect(bench.lamp(.lowctx, 1) == .flash)
         #expect(bench.snap.cues.count(.lowContext) == 1)
         bench.feed([bench.reading("a", .contextUsed, .count(192_000))])
         #expect(bench.snap.cues.count(.lowContext) == 1)
@@ -86,7 +86,9 @@ import Testing
         #expect(bench.snap.cues.count(.done) == 0)
     }
 
-    @Test func acknowledgeTurnsEveryFlashingWindowSteady() {
+    /// Panel A's red rows flash for as long as they hold; ACKNOWLEDGE is logged, and
+    /// steadies only the desk's own alarms (see `batteryLowJoinsTheAlarmLogic`).
+    @Test func panelAsRedRowsFlashWhateverAcknowledgeSays() {
         let bench = twoSessions()
         bench.feed([
             bench.hook("a", .waiting, ttl: TTL.waiting),
@@ -94,8 +96,8 @@ import Testing
         ])
         bench.tap(PK4.acknowledge)
 
-        #expect(bench.lamp(.wait, 1) == .on)
-        #expect(bench.lamp(.wait, 2) == .on)
+        #expect(bench.lamp(.wait, 1) == .flash)
+        #expect(bench.lamp(.wait, 2) == .flash)
         #expect(!bench.snap.buzzer)
         #expect(bench.log.events(.alarmAcknowledged).first?.detail == "a.wait.1 a.wait.2")
     }
@@ -107,7 +109,7 @@ import Testing
         bench.feed([bench.hook("b", .waiting, ttl: TTL.waiting)])
         #expect(bench.snap.cues.count(.wait) == 2)
 
-        // The acknowledged one clears: the unacknowledged one still flashes.
+        // The one acknowledged clears; the other still flashes.
         bench.feed([bench.reading("a", .promptSubmitted, .event, ttl: TTL.instant)])
         #expect(bench.lamp(.wait, 1) == .off)
         #expect(bench.lamp(.wait, 2) == .flash)

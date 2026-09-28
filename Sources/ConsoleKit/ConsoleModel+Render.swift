@@ -224,17 +224,26 @@ extension ConsoleModel {
             light(PK4.annunciator(.agent, slot: slot), state.fresh(.agentDone, at: now) != nil)
             light(PK4.annunciator(.bkgd, slot: slot), state.isJob(at: now))
             light(PK4.annunciator(.cmpct, slot: slot), state.isCompacting(at: now))
-            light(PK4.annunciator(.lowctx, slot: slot), isLowOnContext(state, now))
+            // Red, and flashing for as long as it holds, like WAIT and BLOCK.
+            if isLowOnContext(state, now) { out[PK4.annunciator(.lowctx, slot: slot)] = .flash }
         }
 
+        // Panel A's red rows flash for as long as they hold: ACKNOWLEDGE steadies only the
+        // desk's own alarms, DATA STALE and BATT LOW.
+        let panelA = Set(
+            PK4.slots.flatMap {
+                [PK4.annunciator(.wait, slot: $0), PK4.annunciator(.block, slot: $0)]
+            })
         for id in PK4.alarmBoard {
             let state = alarms.state(id)
-            if state != .off { out[id] = state }
+            guard state != .off else { continue }
+            out[id] = panelA.contains(id) ? .flash : state
         }
         for quota in PK4.Quota.allCases {
             let used = quotaUsed(quota, now) ?? 0
             light(PK4.quotaNear(quota), used >= ConsoleTiming.quotaNear)
-            light(PK4.quotaLimit(quota), used >= ConsoleTiming.quotaLimit)
+            // AT LIMIT flashes for as long as it holds.
+            if used >= ConsoleTiming.quotaLimit { out[PK4.quotaLimit(quota)] = .flash }
         }
 
         // Signals go unheard: SILENCE's mode is on, or the buzzer is muted in Settings.

@@ -100,7 +100,8 @@ extension PK4Desk {
 /// over E on the left, B in the middle, C over D on the right. A and D take whatever
 /// height their column leaves; B takes it all.
 struct DeskLayout: Layout {
-    static let columns: [CGFloat] = [650, 1190, 580]
+    // B as narrow as its lamp groups allow; A and E have the rest.
+    static let columns: [CGFloat] = [836, 1004, 580]
     static let gap: CGFloat = 16
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -245,7 +246,7 @@ private struct PanelA: View {
     var body: some View {
         PK4Panel(title: "A · All sessions — annunciator", spacing: 26) {
             // 11: nine rows of windows packed as an annunciator is, to leave the buzzer room.
-            Grid(horizontalSpacing: 8, verticalSpacing: 11) {
+            Grid(horizontalSpacing: 26, verticalSpacing: 11) {
                 GridRow {
                     Plate(text: "Session", width: 190)
                     ForEach(PK4.slots, id: \.self) { slot in
@@ -282,7 +283,7 @@ private struct PanelA: View {
             }
             InstructionPlate(
                 text:
-                    "New alarm flashes until acknowledged, then burns steady until cause clears. SIL silences every signal"
+                    "Red windows flash while their cause holds. SIL silences every signal"
             )
             HStack(alignment: .top) {
                 NixieReadout(
@@ -394,35 +395,37 @@ private struct PanelB: View {
 
     var body: some View {
         PK4Panel(
-            // 44: the 56 units the context window lamps took, spread over its four gaps.
-            title: "B · Selected session — instruments", spacing: 44,
+            title: "B · Selected session — instruments", spacing: 18,
             padding: EdgeInsets(top: 18, leading: 26, bottom: 18, trailing: 26),
             tightBottom: true
         ) {
-            HStack(alignment: .top, spacing: 30) {
-                VStack(spacing: 18) {
-                    // Which session feeds the panel, over the knob that chooses it.
-                    Labelled(label: "Selected", tag: "HG4") {
-                        NixieReadout(
-                            template: "0", value: s.nixie(PK4.selected), xl: true,
-                            id: PK4.selected.rawValue)
+            // The knob that chooses the session, which one it chose, and PRINT TEXT: a row.
+            HStack(alignment: .center, spacing: 44) {
+                HStack(spacing: 12) {
+                    VStack(spacing: 6) {
+                        Plate(text: "Session selector")
+                        Tag(text: "SA1")
                     }
-                    .accessibilityHidden(true)
-                    Labelled(label: "Session selector", tag: "SA1") {
-                        RotarySelector(position: s.selector)
-                    }
-                    PushButton(
-                        id: PK4.printText, cap: "Prt", label: "Print text",
-                        face: s.button(PK4.printText), code: "SB7")
+                    RotarySelector(position: s.selector)
                 }
-                VStack(alignment: .leading, spacing: 30) {
+                NixieReadout(
+                    label: "Selected", template: "0", value: s.nixie(PK4.selected), xl: true,
+                    code: "HG4", id: PK4.selected.rawValue
+                )
+                .accessibilityHidden(true)
+                PushButton(
+                    id: PK4.printText, cap: "Prt", label: "Print text",
+                    face: s.button(PK4.printText), code: "SB7")
+            }
+            HStack(alignment: .top, spacing: 30) {
+                VStack(alignment: .leading, spacing: 14) {
                     HStack(alignment: .top, spacing: 36) {
                         meter("Context remaining", PK4.contextMeter, red: 0...0.2, code: "PA1")
                         meter("API share of time", PK4.apiShareMeter, code: "PA2")
                         meter("Tool share of time", PK4.toolShareMeter, code: "PA3")
                     }
                     HStack(alignment: .top, spacing: 30) {
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 10) {
                             nixie("Context used", PK4.contextUsed, "tok", "HG5", unitWidth: 34)
                             nixie("Input tokens", PK4.inputTokens, "tok", "HG6", unitWidth: 34)
                             nixie("Output tokens", PK4.outputTokens, "tok", "HG7", unitWidth: 34)
@@ -432,7 +435,7 @@ private struct PanelB: View {
                             nixie("Cache written", PK4.cacheWritten, "×1000", "HG10", unitWidth: 34)
                         }
                         // Left-aligned, so these tubes line up whatever their units say.
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 10) {
                             let span = PK4.nixies[PK4.cost]
                             nixie("Queue depth", PK4.queueDepth, nil, "HG11", span: span)
                             nixie("Tool calls", PK4.toolCalls, nil, "HG12", span: span)
@@ -445,7 +448,7 @@ private struct PanelB: View {
                 }
             }
 
-            Grid(alignment: .topLeading, horizontalSpacing: 40, verticalSpacing: 26) {
+            Grid(alignment: .topLeading, horizontalSpacing: 20, verticalSpacing: 16) {
                 GridRow {
                     LampGroup(
                         title: "Permission mode",
@@ -511,26 +514,19 @@ private struct PanelB: View {
 
             VStack(spacing: 16) {
                 Plate(text: "Electromechanical totals · hold reading on power loss")
-                HStack(alignment: .top) {
+                HStack(alignment: .top, spacing: 56) {
                     DrumCounter(
                         label: "Total cost", value: s.drum(PK4.totalCost), unit: "$", code: "PC1",
                         id: PK4.totalCost.rawValue)
-                    Spacer()
                     DrumCounter(
                         label: "Total output", value: s.drum(PK4.totalOutput), unit: "×1000 tok",
                         code: "PC2", id: PK4.totalOutput.rawValue)
-                    Spacer()
                     DrumCounter(
                         label: "Lines added", value: s.drum(PK4.linesAdded), code: "PC3",
                         id: PK4.linesAdded.rawValue)
-                    Spacer()
                     DrumCounter(
                         label: "Lines removed", value: s.drum(PK4.linesRemoved), code: "PC4",
                         id: PK4.linesRemoved.rawValue)
-                    Spacer()
-                    BlankingPlate(text: "Reserved", size: CGSize(width: 200, height: 84))
-                    Spacer()
-                    BlankingPlate(text: "Reserved", size: CGSize(width: 200, height: 84))
                 }
             }
 
@@ -761,7 +757,7 @@ private struct PanelE: View {
         _ quota: PK4.Quota, _ label: String, meter: String, lamps: (String, String),
         @ViewBuilder readout: () -> Readout
     ) -> some View {
-        HStack(alignment: .top, spacing: 20) {
+        HStack(alignment: .center, spacing: 14) {
             HorizontalEdgewiseMeter(
                 label: label, value: s.meter(PK4.quotaMeter(quota)), code: meter,
                 id: PK4.quotaMeter(quota).rawValue
@@ -769,17 +765,15 @@ private struct PanelE: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(label)
             .accessibilityValue(PK4Words.meter(s.meter(PK4.quotaMeter(quota))))
-            VStack(alignment: .leading, spacing: 4) {
-                readout()
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(label), resets in")
-                HStack(spacing: 8) {
-                    window("Near limit", .amber, PK4.quotaNear(quota), lamps.0)
-                    window("At limit", .red, PK4.quotaLimit(quota), lamps.1)
-                }
+            readout()
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(label), resets in")
+                // The same width in both rows, so the lamps line up.
+                .frame(width: 322, alignment: .leading)
+            HStack(spacing: 8) {
+                window("Near limit", .amber, PK4.quotaNear(quota), lamps.0)
+                window("At limit", .red, PK4.quotaLimit(quota), lamps.1)
             }
-            // The same width in both rows, so the two line up.
-            .frame(width: 320, alignment: .leading)
         }
     }
 
@@ -802,7 +796,7 @@ enum PK4Words {
         switch state {
         case .off: "dark"
         case .on: "lit"
-        case .flash: "alarm, unacknowledged"
+        case .flash: "alarm, flashing"
         case .test: "lamp test"
         }
     }

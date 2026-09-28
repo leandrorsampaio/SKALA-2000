@@ -515,9 +515,9 @@ struct HorizontalEdgewiseMeter: View {
     var id: String = ""
 
     /// The face, and where on it the scale starts and ends.
-    static let size = CGSize(width: 240, height: 44)
+    static let size = CGSize(width: 216, height: 44)
     static let left: CGFloat = 16
-    static let right: CGFloat = 224
+    static let right: CGFloat = 200
 
     @Environment(\.pk4) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

@@ -6,7 +6,7 @@ public enum DeskWords {
         switch state {
         case .off: "dark"
         case .on: "lit"
-        case .flash: "alarm, unacknowledged"
+        case .flash: "alarm, flashing"
         case .test: "lamp test"
         }
     }

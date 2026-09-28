@@ -127,12 +127,14 @@ struct GoldenTests {
                 // Bright lettering on black bakelite turns half a unit of placement into a
                 // large difference. A lit lens is 22 pixels here and mostly glow, a blur in
                 // both pipelines: two outside runs saw one reach 18 and 20, which this Mac
-                // never has. Everything else must match closely; a lens painted wrong
-                // differs by far more than 24.
+                // never has. A lit cap's spill is the same kind of blur: PRINT TEXT, beside
+                // the lit SELECTED tube, reaches 16.5. Everything else must match closely;
+                // a lens or cap painted wrong differs by far more than 24.
                 let limit: Double =
                     switch kind {
                     case "plate": 30
                     case "lens": 24
+                    case "cap": 20
                     default: 16
                     }
                 #expect(

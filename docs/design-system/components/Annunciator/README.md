@@ -6,10 +6,10 @@ The alarm board of panel A: one column per session (1 to 4), one row per conditi
 
 | Event | Window | Sound |
 | --- | --- | --- |
-| Condition becomes true (alarm row) | `flash` 2 Hz | its signal, once: WAIT two quick buzzes, BLOCK one long |
-| ACKNOWLEDGE | every flashing window → `on` | none |
+| Condition becomes true (alarm row) | `flash` 2 Hz, for as long as it holds | its signal, once: WAIT two quick buzzes, BLOCK one long |
+| ACKNOWLEDGE | panel A's red rows keep flashing; DATA STALE and BATT LOW → `on` | none |
 | Condition clears | `off`, whether acknowledged or not | none |
-| Condition becomes true (non-alarm row) | `on` | DONE one buzz, COMPACTING three quick, LOW CONTEXT a beep; the rest none |
+| Condition becomes true (non-alarm row) | `on`; LOW CONTEXT, red, `flash` for as long as it holds | DONE one buzz, COMPACTING three quick, LOW CONTEXT a beep; the rest none |
 | SILENCE | unchanged | a mode: no signal until pressed again, and SILENCED burns |
 | LAMP TEST held | every window and lens on the console `test` | none |
 

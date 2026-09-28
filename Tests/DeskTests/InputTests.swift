@@ -329,7 +329,7 @@ struct AccessibilityTests {
         func value(_ label: String) -> String? {
             all.first { $0.accessibilityLabel() == label }?.accessibilityValue() as? String
         }
-        #expect(value("Waiting for operator, session 2") == "alarm, unacknowledged")
+        #expect(value("Waiting for operator, session 2") == "alarm, flashing")
         #expect(value("Context remaining") == "62 percent")
         #expect(value("API share of time") == "no reading")
         #expect(value("Queue depth") == "000003")

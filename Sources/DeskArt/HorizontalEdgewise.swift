@@ -4,5 +4,5 @@ import CoreGraphics
 /// as the reference desk draws it.
 public enum HorizontalEdgewise {
     public static let left: CGFloat = 16
-    public static let right: CGFloat = 224
+    public static let right: CGFloat = 200
 }

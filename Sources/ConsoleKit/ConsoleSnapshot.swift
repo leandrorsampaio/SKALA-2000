@@ -4,7 +4,8 @@ import Foundation
 public enum LampState: String, Sendable, Equatable, Codable {
     case off
     case on
-    /// An unacknowledged alarm. The view flashes it from one shared 2 Hz clock.
+    /// An alarm: until ACKNOWLEDGE for the desk's own, for as long as it holds for panel A's
+    /// red rows and AT LIMIT. The view flashes it from one shared 2 Hz clock.
     case flash
     /// LAMP TEST is held, or the power-up test is running.
     case test

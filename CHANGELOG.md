@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0
+
+A narrower panel B, and room for A and E.
+
+- **Panel B** starts with a row: the session selector, SELECTED and PRINT TEXT, where they
+  had a column to themselves. The two reserved plates are gone, the four totals drums
+  stand centred, and the panel is 1004 units wide instead of 1190.
+- **Panels A and E** take the width, 836 instead of 650. The annunciator's four columns
+  stand further apart, and each plan window in panel E is one row: meter, countdown,
+  NEAR LIMIT and AT LIMIT.
+- **Red windows flash for as long as their cause holds**: WAIT, BLOCK and LOW CTX, and AT
+  LIMIT. ACKNOWLEDGE still steadies DATA STALE and BATT LOW. Panel A's plate says so.
+
 ## 0.3.2
 
 Panels B, D and E, tidied.

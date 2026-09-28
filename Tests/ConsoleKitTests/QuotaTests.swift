@@ -71,7 +71,8 @@ import Testing
 
         quota(bench, session: 0.96, week: 0.5)
         #expect(bench.lamp(PK4.quotaNear(.session)) == .on)
-        #expect(bench.lamp(PK4.quotaLimit(.session)) == .on)
+        // AT LIMIT flashes for as long as it holds.
+        #expect(bench.lamp(PK4.quotaLimit(.session)) == .flash)
         #expect(bench.snap.cues.count(.quota) == 2)
 
         // Still past 95%: nothing more to say.
