@@ -53,9 +53,12 @@ write.
 Your plan's usage limits, the five-hour window and the week, reach a local program only
 through Claude Code's status line. **Settings ▸ Claude Code status line** installs one: it
 posts the status line's JSON to the same socket, and prints the line the app answers with,
-for example `Opus 1M · ctx 37% · 5h 6% · week 72%`. Panel E shows both windows. They are
-there on Pro and Max plans once a session has had its first answer, and update while a
-session runs. A status line someone else configured is never replaced. Like any status
+for example `Opus 1M · ctx 37% · 5h 6% · week 72%`. Panel E shows both windows, and the
+desk remembers them across a relaunch until they reset. They are there on Pro and Max plans
+once a session has had its first answer; Claude Code runs the status line after each answer
+and every 30 seconds while a terminal session is open. Sessions started before it was
+installed need a restart. Settings shows when it was last heard, and whether it carried
+the figures. A status line someone else configured is never replaced. Like any status
 line, it makes Claude Code drop most of its footer's keyboard hints.
 
 ### Settings

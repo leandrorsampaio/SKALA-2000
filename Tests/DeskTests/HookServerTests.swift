@@ -392,6 +392,7 @@ struct StatuslineInstallerTests {
         let line = try #require(installed["statusLine"] as? [String: Any])
         #expect(line["type"] as? String == "command")
         #expect(line["command"] as? String == StatuslineInstaller.command)
+        #expect(line["refreshInterval"] as? Int == StatuslineInstaller.refreshInterval)
         #expect(FileManager.default.fileExists(atPath: installer.backup.path))
 
         try installer.remove()

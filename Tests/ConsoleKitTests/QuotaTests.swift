@@ -81,6 +81,25 @@ import Testing
         #expect(bench.lamp(PK4.quotaNear(.week)) == .off)
     }
 
+    /// A relaunch shows the last figures at once, until their window resets.
+    @Test func theLastFiguresSurviveARelaunchUntilTheyReset() {
+        let bench = Bench()
+        quota(bench, session: 0.4, week: 0.7, resetsIn: 3600)
+        bench.model.flush()
+
+        let relaunched = Bench(saved: bench.store.state)
+        #expect(relaunched.snap.meter(PK4.quotaMeter(.session)) == 0.4)
+        #expect(relaunched.snap.meter(PK4.quotaMeter(.week)) == 0.7)
+        #expect(relaunched.snap.nixie(PK4.sessionResets) == "01:00")
+
+        // Launched after the session window reset: only the week comes back.
+        var later = bench.store.state
+        later?.quota["session"]?.resets = Date(timeIntervalSince1970: 0)
+        let afterReset = Bench(saved: later)
+        #expect(afterReset.snap.meter(PK4.quotaMeter(.session)) == Needle.leftStop)
+        #expect(afterReset.snap.meter(PK4.quotaMeter(.week)) == 0.7)
+    }
+
     /// Already past 80% when the desk first hears of it: lit, but not announced.
     @Test func theFirstReadingIsTakenAsItIs() {
         let bench = Bench()

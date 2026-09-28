@@ -25,6 +25,10 @@ final class ConsoleHost {
     /// When a hook event last arrived, for Settings: the desk has no instrument for it.
     private(set) var lastHookEvent: Date?
     private(set) var hookEventCount = 0
+    /// When Claude Code last ran the status line command, and whether that run carried the
+    /// plan's usage: for Settings, which is how anyone can tell why panel E is dark.
+    private(set) var lastStatusline: Date?
+    private(set) var statuslineCarriedUsage = false
 
     var demo: Bool {
         didSet {
@@ -137,9 +141,12 @@ final class ConsoleHost {
         // Claude Code. The rest of what the status line is told is dropped here.
         server.statusline = { [weak self] body in
             let readings = ClaudeStatusline.readings(from: body, at: Date())
-            if !readings.isEmpty {
-                DispatchQueue.main.async { [weak self] in
-                    MainActor.assumeIsolated { self?.console?.ingest(readings) }
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.lastStatusline = Date()
+                    self.statuslineCarriedUsage = !readings.isEmpty
+                    if !readings.isEmpty { self.console?.ingest(readings) }
                 }
             }
             return ClaudeStatusline.line(from: body)

@@ -98,6 +98,18 @@ struct SettingsView: View {
             }
             Section("Claude Code status line") {
                 LabeledContent("Status line in ~/.claude/settings.json") { Text(statuslineText) }
+                LabeledContent("Last heard") {
+                    if let last = host.lastStatusline {
+                        HStack(spacing: 4) {
+                            Text(last, format: .relative(presentation: .named))
+                            Text(
+                                host.statuslineCarriedUsage
+                                    ? "· with plan usage" : "· without plan usage")
+                        }
+                    } else {
+                        Text("not since launch")
+                    }
+                }
                 HStack {
                     Button("Install status line") { settings.installStatusline() }
                         .disabled(settings.statuslineStatus != .notInstalled)
@@ -108,7 +120,7 @@ struct SettingsView: View {
                     Text(problem).font(.caption).foregroundStyle(.red)
                 }
                 Text(
-                    "The status line tells panel E how much of your plan's 5-hour and weekly limits you have used. Claude Code shows the model, the context used and both limits under its prompt, and stops showing most of its footer hints, as with any status line."
+                    "The status line tells panel E how much of your plan's 5-hour and weekly limits you have used. Claude Code runs it in terminal sessions after each answer and every 30 seconds, and shows the model, the context used and both limits under its prompt; it stops showing most of its footer hints, as with any status line. Sessions started before it was installed need a restart. The plan's usage comes on Pro and Max plans, once a session has had an answer."
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }

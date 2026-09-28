@@ -18,6 +18,10 @@ public struct StatuslineInstaller: Sendable {
         + "-H 'X-SKALA-Client: 1' -H 'Content-Type: application/json' --data-binary @- "
         + "'http://localhost\(HookServer.statuslinePath)' 2>/dev/null || true"
 
+    /// Seconds between Claude Code's runs of the command while a session is open, on top of
+    /// the one after each answer: the desk hears the plan's usage even from an idle session.
+    public static let refreshInterval = 30
+
     public let settings: URL
 
     public init(
@@ -72,7 +76,10 @@ public struct StatuslineInstaller: Sendable {
         if let current = root["statusLine"], !Self.isOurs(current) {
             throw Failure.otherStatusline
         }
-        root["statusLine"] = ["type": "command", "command": Self.command, "padding": 0]
+        root["statusLine"] = [
+            "type": "command", "command": Self.command, "padding": 0,
+            "refreshInterval": Self.refreshInterval,
+        ]
         try write(root)
     }
 

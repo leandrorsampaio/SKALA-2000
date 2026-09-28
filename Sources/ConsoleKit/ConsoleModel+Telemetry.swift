@@ -8,6 +8,7 @@ extension ConsoleModel {
 
     func applyMachine(_ reading: Reading, now: Date) {
         machine[reading.field] = reading
+        rememberQuota(reading, now)
         guard let flag = reading.value.flag else { return }
 
         // A round button is confirmed by the machine reporting the state it asked for,
@@ -269,6 +270,43 @@ extension ConsoleModel {
         defer { quotaHeard = lit }
         guard let before = quotaHeard else { return }
         if !lit.subtracting(before).isEmpty { signal(.quota) }
+    }
+
+    /// The fields each plan window is kept under, in the desk's memory and in `machine`.
+    static let quotaFields: [(key: String, used: Field, resets: Field)] = [
+        ("session", .quotaSession, .quotaSessionResets), ("week", .quotaWeek, .quotaWeekResets),
+    ]
+
+    /// Keeps a plan window's figures in the desk's memory as they arrive, so a relaunch
+    /// shows them until the window resets.
+    func rememberQuota(_ reading: Reading, _ now: Date) {
+        for window in Self.quotaFields
+        where window.used == reading.field || window.resets == reading.field {
+            guard let used = machine[window.used]?.value.amount,
+                let resets = machine[window.resets]?.value.time
+            else { return }
+            let remembered = PersistedConsole.QuotaWindow(used: used, resets: resets, heard: now)
+            // The same figures again, as the status line repeats them, change nothing.
+            if saved.quota[window.key].map({ $0.used == used && $0.resets == resets }) != true {
+                saved.quota[window.key] = remembered
+                scheduleSave(now)
+            }
+        }
+    }
+
+    /// Puts the remembered windows back at launch, those not yet reset, living until they do.
+    func restoreQuota(_ now: Date) {
+        for window in Self.quotaFields {
+            guard let remembered = saved.quota[window.key], remembered.resets > now else {
+                saved.quota[window.key] = nil
+                continue
+            }
+            let ttl = remembered.resets.timeIntervalSince(now)
+            machine[window.used] = Reading(
+                .machine, window.used, .amount(remembered.used), at: now, ttl: ttl)
+            machine[window.resets] = Reading(
+                .machine, window.resets, .time(remembered.resets), at: now, ttl: ttl)
+        }
     }
 
     /// The share of a plan window used, while the status line's last word on it holds.

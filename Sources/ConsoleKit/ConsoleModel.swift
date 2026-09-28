@@ -92,6 +92,7 @@ public final class ConsoleModel {
         power = poweredOn ? .poweringUp(since: now, chirped: false) : .off
         serviceMark = poweredOn ? now : nil
         if poweredOn { log.safety(SafetyEntry(at: now, event: .mainsOn)) }
+        restoreQuota(now)
         publish(force: true)
     }
 

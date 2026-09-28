@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.2
+
+Panel E, when it has nothing to show.
+
+- **The desk remembers the plan's usage** across a relaunch, until each window resets, so
+  it no longer waits dark for Claude Code to speak again.
+- **The status line runs every 30 seconds** while a Claude Code session is open, as well
+  as after each answer, so the desk hears even from an idle session.
+- **Settings says when the status line was last heard**, and whether it carried the
+  plan's usage: the way to tell a status line that is not running from one without the
+  figures.
+
 ## 0.4.1
 
 - **Panel B's lamps**: each group on one line, its plate on the left, as panel A's rows

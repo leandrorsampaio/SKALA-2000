@@ -94,6 +94,16 @@ public struct PersistedConsole: Codable, Equatable, Sendable {
     public var armedKeys: [InstrumentID] = []
     public var finish: Finish = .greyGreen
     public var buzzerMuted = false
+    /// The plan's usage windows as the status line last reported them, so a relaunch shows
+    /// them at once rather than waiting for Claude Code to speak again.
+    public var quota: [String: QuotaWindow] = [:]
+
+    public struct QuotaWindow: Codable, Equatable, Sendable {
+        /// The share used, 0 to 1.
+        public var used: Double
+        public var resets: Date
+        public var heard: Date
+    }
 
     public init() {}
 
@@ -113,6 +123,7 @@ public struct PersistedConsole: Codable, Equatable, Sendable {
             (try? container.decodeIfPresent([InstrumentID].self, forKey: .armedKeys)) ?? []
         finish = (try? container.decodeIfPresent(Finish.self, forKey: .finish)) ?? .greyGreen
         buzzerMuted = (try? container.decodeIfPresent(Bool.self, forKey: .buzzerMuted)) ?? false
+        quota = (try? container.decodeIfPresent([String: QuotaWindow].self, forKey: .quota)) ?? [:]
     }
 
     func pencil(_ slot: Int) -> String {
